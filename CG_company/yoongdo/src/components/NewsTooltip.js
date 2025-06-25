@@ -1,20 +1,24 @@
 import React from "react";
 
-const NewsTooltip = ({ data, companyNews = [], macroNews = [], onShowNews, date }) => {
+const NewsTooltip = ({ data, companyNews = [], macroNews = [], onShowNews, date, onLock }) => {
   // data는 tooltip.dataPoints 등에서 전달받은 값
   if (!data || data.length === 0) return null;
   // 예시 렌더링
   return (
-    <div style={{
-      background: "white",
-      border: "1px solid #ccc",
-      borderRadius: 8,
-      padding: 12,
-      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-      minWidth: 200,
-      fontSize: 14,
-      zIndex: 9999,
-    }}>
+    <div
+      style={{
+        background: "white",
+        border: "1px solid #ccc",
+        borderRadius: 8,
+        padding: 12,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        minWidth: 200,
+        fontSize: 14,
+        zIndex: 9999,
+      }}
+      onClick={onLock ? (e) => { e.stopPropagation(); onLock(); } : undefined}
+      onContextMenu={e => e.preventDefault()}
+    >
       <div><b>날짜:</b> {data[0].label}</div>
       <div><b>종가:</b> {data[0].formattedValue}</div>
       <div style={{ marginTop: 8 }}>
