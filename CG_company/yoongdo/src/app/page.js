@@ -47,16 +47,15 @@ export default function Page() {
     };
   };
 
-  // 뉴스 더보기 클릭 시 뉴스 객체를 찾아서 넘기는 핸들러
-  const handleShowNews = (date) => {
-    const found = stockData.find(d => d.date === date);
-    setSelectedNews(found || null);
+  // 뉴스 더보기 클릭 시 뉴스 객체를 받아서 넘기는 핸들러
+  const handleShowNews = (news) => {
+    setSelectedNews(news || null);
     setSelectedDate(null);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <FinanceHeader ticker={ticker} setTicker={setTicker} tickerName={tickerName} />
+      <FinanceHeader ticker={ticker} setTicker={setTicker} tickerName={tickerName} setTickerName={setTickerName} />
       <div className="max-w-5xl mx-auto py-8 px-4">
         {/* 차트 타입 선택 UI */}
         <div className="flex gap-2 mb-4">
@@ -78,7 +77,7 @@ export default function Page() {
             {chartType === "line" ? (
               <StockChart ticker={ticker} tickerName={tickerName} stockData={stockData} onShowNews={handleShowNews} />
             ) : (
-              <CandleChart ticker={ticker} tickerName={tickerName} stockData={stockData} onShowNews={d => { setSelectedNews(d); setSelectedDate(null); }} />
+              <CandleChart ticker={ticker} tickerName={tickerName} stockData={stockData} onShowNews={handleShowNews} />
             )}
           </div>
           <div className="w-96">

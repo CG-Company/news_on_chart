@@ -1,13 +1,27 @@
 import React, { useState } from "react";
 
-const SearchBar = ({ ticker, setTicker }) => {
+const SearchBar = ({ ticker, setTicker, setTickerName }) => {
   const [input, setInput] = useState(ticker);
 
   const handleSearch = async () => {
     if (!input.trim()) return;
     // 숫자만 입력된 경우(티커)
     if (/^\d+$/.test(input.trim())) {
-      setTicker(input.trim());
+      try {
+        const res = await fetch("/ticker_map.json");
+        const map = await res.json();
+        const found = map.find(item => item.ticker === input.trim());
+        if (found) {
+          setTicker(found.ticker);
+          setTickerName(found.name);
+        } else {
+          setTicker(input.trim());
+          setTickerName("");
+        }
+      } catch {
+        setTicker(input.trim());
+        setTickerName("");
+      }
       return;
     }
     // 종목명 검색
@@ -17,6 +31,7 @@ const SearchBar = ({ ticker, setTicker }) => {
       const found = map.find(item => item.name === input.trim());
       if (found) {
         setTicker(found.ticker);
+        setTickerName(found.name);
       } else {
         alert("해당 종목명을 찾을 수 없습니다.");
       }
