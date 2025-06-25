@@ -1,0 +1,1202 @@
+[
+  {
+    "ticker": "005930",
+    "company_name": "삼성전자",
+    "exchange": "KRX",
+    "sector": "통신 및 방송 장비 제조업"
+  },
+  {
+    "ticker": "000660",
+    "company_name": "SK하이닉스",
+    "exchange": "KRX",
+    "sector": "반도체 제조업"
+  },
+  {
+    "ticker": "207940",
+    "company_name": "삼성바이오로직스",
+    "exchange": "KRX",
+    "sector": "기초 의약물질 제조업"
+  },
+  {
+    "ticker": "373220",
+    "company_name": "LG에너지솔루션",
+    "exchange": "KRX",
+    "sector": "일차전지 및 이차전지 제조업"
+  },
+  {
+    "ticker": "035420",
+    "company_name": "NAVER",
+    "exchange": "KRX",
+    "sector": "자료처리, 호스팅, 포털 및 기타 인터넷 정보매개 서비스업"
+  },
+  {
+    "ticker": "034020",
+    "company_name": "두산에너빌리티",
+    "exchange": "KRX",
+    "sector": "일반 목적용 기계 제조업"
+  },
+  {
+    "ticker": "012450",
+    "company_name": "한화에어로스페이스",
+    "exchange": "KRX",
+    "sector": "항공기,우주선 및 부품 제조업"
+  },
+  {
+    "ticker": "005380",
+    "company_name": "현대자동차",
+    "exchange": "KRX",
+    "sector": "자동차용 엔진 및 자동차 제조업"
+  },
+  {
+    "ticker": "105560",
+    "company_name": "KB금융",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "329180",
+    "company_name": "HD현대중공업",
+    "exchange": "KRX",
+    "sector": "선박 및 보트 건조업"
+  },
+  {
+    "ticker": "000270",
+    "company_name": "기아",
+    "exchange": "KRX",
+    "sector": "자동차용 엔진 및 자동차 제조업"
+  },
+  {
+    "ticker": "068270",
+    "company_name": "셀트리온",
+    "exchange": "KRX",
+    "sector": "기초 의약물질 제조업"
+  },
+  {
+    "ticker": "035720",
+    "company_name": "카카오",
+    "exchange": "KRX",
+    "sector": "자료처리, 호스팅, 포털 및 기타 인터넷 정보매개 서비스업"
+  },
+  {
+    "ticker": "055550",
+    "company_name": "신한지주",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "028260",
+    "company_name": "삼성물산",
+    "exchange": "KRX",
+    "sector": "기타 전문 도매업"
+  },
+  {
+    "ticker": "009540",
+    "company_name": "HD한국조선해양",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "042660",
+    "company_name": "한화오션",
+    "exchange": "KRX",
+    "sector": "선박 및 보트 건조업"
+  },
+  {
+    "ticker": "012330",
+    "company_name": "현대모비스",
+    "exchange": "KRX",
+    "sector": "자동차 신품 부품 제조업"
+  },
+  {
+    "ticker": "032830",
+    "company_name": "삼성생명",
+    "exchange": "KRX",
+    "sector": "보험업"
+  },
+  {
+    "ticker": "011200",
+    "company_name": "HMM",
+    "exchange": "KRX",
+    "sector": "해상 운송업"
+  },
+  {
+    "ticker": "064350",
+    "company_name": "현대로템",
+    "exchange": "KRX",
+    "sector": "철도장비 제조업"
+  },
+  {
+    "ticker": "086790",
+    "company_name": "하나금융지주",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "402340",
+    "company_name": "SK스퀘어",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "005490",
+    "company_name": "POSCO홀딩스",
+    "exchange": "KRX",
+    "sector": "1차 철강 제조업"
+  },
+  {
+    "ticker": "138040",
+    "company_name": "메리츠금융지주",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "000810",
+    "company_name": "삼성화재해상보험",
+    "exchange": "KRX",
+    "sector": "보험업"
+  },
+  {
+    "ticker": "015760",
+    "company_name": "한국전력공사",
+    "exchange": "KRX",
+    "sector": "전기업"
+  },
+  {
+    "ticker": "267260",
+    "company_name": "HD현대일렉트릭",
+    "exchange": "KRX",
+    "sector": "전동기, 발전기 및 전기 변환 · 공급 · 제어 장치 제조업"
+  },
+  {
+    "ticker": "010130",
+    "company_name": "고려아연",
+    "exchange": "KRX",
+    "sector": "1차 비철금속 제조업"
+  },
+  {
+    "ticker": "259960",
+    "company_name": "크래프톤",
+    "exchange": "KRX",
+    "sector": "소프트웨어 개발 및 공급업"
+  },
+  {
+    "ticker": "316140",
+    "company_name": "우리금융지주",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "096770",
+    "company_name": "SK이노베이션",
+    "exchange": "KRX",
+    "sector": "석유 정제품 제조업"
+  },
+  {
+    "ticker": "033780",
+    "company_name": "케이티앤지",
+    "exchange": "KRX",
+    "sector": "담배 제조업"
+  },
+  {
+    "ticker": "323410",
+    "company_name": "카카오뱅크",
+    "exchange": "KRX",
+    "sector": "은행 및 저축기관"
+  },
+  {
+    "ticker": "018260",
+    "company_name": "삼성에스디에스",
+    "exchange": "KRX",
+    "sector": "컴퓨터 프로그래밍, 시스템 통합 및 관리업"
+  },
+  {
+    "ticker": "010140",
+    "company_name": "삼성중공업",
+    "exchange": "KRX",
+    "sector": "선박 및 보트 건조업"
+  },
+  {
+    "ticker": "051910",
+    "company_name": "LG화학",
+    "exchange": "KRX",
+    "sector": "기초 화학물질 제조업"
+  },
+  {
+    "ticker": "034730",
+    "company_name": "SK",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "079550",
+    "company_name": "LIG넥스원",
+    "exchange": "KRX",
+    "sector": "무기 및 총포탄 제조업"
+  },
+  {
+    "ticker": "024110",
+    "company_name": "기업은행",
+    "exchange": "KRX",
+    "sector": "은행 및 저축기관"
+  },
+  {
+    "ticker": "006400",
+    "company_name": "삼성SDI",
+    "exchange": "KRX",
+    "sector": "일차전지 및 이차전지 제조업"
+  },
+  {
+    "ticker": "030200",
+    "company_name": "케이티",
+    "exchange": "KRX",
+    "sector": "전기 통신업"
+  },
+  {
+    "ticker": "003550",
+    "company_name": "LG",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "352820",
+    "company_name": "하이브",
+    "exchange": "KRX",
+    "sector": "오디오물 출판 및 원판 녹음업"
+  },
+  {
+    "ticker": "377300",
+    "company_name": "카카오페이",
+    "exchange": "KRX",
+    "sector": "금융 지원 서비스업"
+  },
+  {
+    "ticker": "272210",
+    "company_name": "한화시스템",
+    "exchange": "KRX",
+    "sector": "전자부품 제조업"
+  },
+  {
+    "ticker": "006800",
+    "company_name": "미래에셋증권",
+    "exchange": "KRX",
+    "sector": "금융 지원 서비스업"
+  },
+  {
+    "ticker": "066570",
+    "company_name": "LG전자",
+    "exchange": "KRX",
+    "sector": "통신 및 방송 장비 제조업"
+  },
+  {
+    "ticker": "017670",
+    "company_name": "SK텔레콤",
+    "exchange": "KRX",
+    "sector": "전기 통신업"
+  },
+  {
+    "ticker": "000150",
+    "company_name": "두산",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "267250",
+    "company_name": "HD현대",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "086280",
+    "company_name": "현대글로비스",
+    "exchange": "KRX",
+    "sector": "기타 운송관련 서비스업"
+  },
+  {
+    "ticker": "003230",
+    "company_name": "삼양식품",
+    "exchange": "KRX",
+    "sector": "기타 식품 제조업"
+  },
+  {
+    "ticker": "009150",
+    "company_name": "삼성전기",
+    "exchange": "KRX",
+    "sector": "전자부품 제조업"
+  },
+  {
+    "ticker": "003670",
+    "company_name": "포스코퓨처엠",
+    "exchange": "KRX",
+    "sector": "일차전지 및 이차전지 제조업"
+  },
+  {
+    "ticker": "047810",
+    "company_name": "한국항공우주",
+    "exchange": "KRX",
+    "sector": "항공기,우주선 및 부품 제조업"
+  },
+  {
+    "ticker": "443060",
+    "company_name": "HD현대마린솔루션",
+    "exchange": "KRX",
+    "sector": "건축기술, 엔지니어링 및 관련 기술 서비스업"
+  },
+  {
+    "ticker": "047050",
+    "company_name": "포스코인터내셔널",
+    "exchange": "KRX",
+    "sector": "상품 중개업"
+  },
+  {
+    "ticker": "042700",
+    "company_name": "한미반도체",
+    "exchange": "KRX",
+    "sector": "특수 목적용 기계 제조업"
+  },
+  {
+    "ticker": "180640",
+    "company_name": "한진칼",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "005830",
+    "company_name": "DB손해보험",
+    "exchange": "KRX",
+    "sector": "보험업"
+  },
+  {
+    "ticker": "000720",
+    "company_name": "현대건설",
+    "exchange": "KRX",
+    "sector": "토목 건설업"
+  },
+  {
+    "ticker": "090430",
+    "company_name": "아모레퍼시픽",
+    "exchange": "KRX",
+    "sector": "기타 화학제품 제조업"
+  },
+  {
+    "ticker": "010120",
+    "company_name": "엘에스일렉트릭",
+    "exchange": "KRX",
+    "sector": "전동기, 발전기 및 전기 변환 · 공급 · 제어 장치 제조업"
+  },
+  {
+    "ticker": "000100",
+    "company_name": "유한양행",
+    "exchange": "KRX",
+    "sector": "의약품 제조업"
+  },
+  {
+    "ticker": "003490",
+    "company_name": "대한항공",
+    "exchange": "KRX",
+    "sector": "항공 여객 운송업"
+  },
+  {
+    "ticker": "010620",
+    "company_name": "HD현대미포",
+    "exchange": "KRX",
+    "sector": "선박 및 보트 건조업"
+  },
+  {
+    "ticker": "298040",
+    "company_name": "효성중공업",
+    "exchange": "KRX",
+    "sector": "전동기, 발전기 및 전기 변환 · 공급 · 제어 장치 제조업"
+  },
+  {
+    "ticker": "071050",
+    "company_name": "한국금융지주",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "326030",
+    "company_name": "에스케이바이오팜",
+    "exchange": "KRX",
+    "sector": "자연과학 및 공학 연구개발업"
+  },
+  {
+    "ticker": "010950",
+    "company_name": "S-Oil",
+    "exchange": "KRX",
+    "sector": "석유 정제품 제조업"
+  },
+  {
+    "ticker": "000880",
+    "company_name": "한화",
+    "exchange": "KRX",
+    "sector": "기타 화학제품 제조업"
+  },
+  {
+    "ticker": "021240",
+    "company_name": "코웨이",
+    "exchange": "KRX",
+    "sector": "그외 기타 개인 서비스업"
+  },
+  {
+    "ticker": "016360",
+    "company_name": "삼성증권",
+    "exchange": "KRX",
+    "sector": "금융 지원 서비스업"
+  },
+  {
+    "ticker": "005940",
+    "company_name": "NH투자증권",
+    "exchange": "KRX",
+    "sector": "금융 지원 서비스업"
+  },
+  {
+    "ticker": "032640",
+    "company_name": "LG유플러스",
+    "exchange": "KRX",
+    "sector": "전기 통신업"
+  },
+  {
+    "ticker": "006260",
+    "company_name": "LS",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "029780",
+    "company_name": "삼성카드",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "241560",
+    "company_name": "두산밥캣",
+    "exchange": "KRX",
+    "sector": "특수 목적용 기계 제조업"
+  },
+  {
+    "ticker": "278470",
+    "company_name": "에이피알",
+    "exchange": "KRX",
+    "sector": "기타 화학제품 제조업"
+  },
+  {
+    "ticker": "039490",
+    "company_name": "키움증권",
+    "exchange": "KRX",
+    "sector": "금융 지원 서비스업"
+  },
+  {
+    "ticker": "009830",
+    "company_name": "한화솔루션",
+    "exchange": "KRX",
+    "sector": "기초 화학물질 제조업"
+  },
+  {
+    "ticker": "051900",
+    "company_name": "LG생활건강",
+    "exchange": "KRX",
+    "sector": "기타 화학제품 제조업"
+  },
+  {
+    "ticker": "251270",
+    "company_name": "넷마블",
+    "exchange": "KRX",
+    "sector": "소프트웨어 개발 및 공급업"
+  },
+  {
+    "ticker": "161390",
+    "company_name": "한국타이어앤테크놀로지",
+    "exchange": "KRX",
+    "sector": "고무제품 제조업"
+  },
+  {
+    "ticker": "034220",
+    "company_name": "LG디스플레이",
+    "exchange": "KRX",
+    "sector": "전자부품 제조업"
+  },
+  {
+    "ticker": "001040",
+    "company_name": "CJ",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "028050",
+    "company_name": "삼성E&A",
+    "exchange": "KRX",
+    "sector": "건축기술, 엔지니어링 및 관련 기술 서비스업"
+  },
+  {
+    "ticker": "078930",
+    "company_name": "GS",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "052690",
+    "company_name": "한전기술",
+    "exchange": "KRX",
+    "sector": "건축기술, 엔지니어링 및 관련 기술 서비스업"
+  },
+  {
+    "ticker": "175330",
+    "company_name": "JB금융지주",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "036570",
+    "company_name": "엔씨소프트",
+    "exchange": "KRX",
+    "sector": "소프트웨어 개발 및 공급업"
+  },
+  {
+    "ticker": "011790",
+    "company_name": "SKC",
+    "exchange": "KRX",
+    "sector": "기타 화학제품 제조업"
+  },
+  {
+    "ticker": "271560",
+    "company_name": "오리온",
+    "exchange": "KRX",
+    "sector": "기타 식품 제조업"
+  },
+  {
+    "ticker": "103140",
+    "company_name": "풍산",
+    "exchange": "KRX",
+    "sector": "1차 비철금속 제조업"
+  },
+  {
+    "ticker": "128940",
+    "company_name": "한미약품",
+    "exchange": "KRX",
+    "sector": "의약품 제조업"
+  },
+  {
+    "ticker": "138930",
+    "company_name": "BNK금융지주",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "035250",
+    "company_name": "강원랜드",
+    "exchange": "KRX",
+    "sector": "유원지 및 기타 오락관련 서비스업"
+  },
+  {
+    "ticker": "454910",
+    "company_name": "두산로보틱스",
+    "exchange": "KRX",
+    "sector": "특수 목적용 기계 제조업"
+  },
+  {
+    "ticker": "004020",
+    "company_name": "현대제철",
+    "exchange": "KRX",
+    "sector": "1차 철강 제조업"
+  },
+  {
+    "ticker": "302440",
+    "company_name": "SK바이오사이언스",
+    "exchange": "KRX",
+    "sector": "기초 의약물질 제조업"
+  },
+  {
+    "ticker": "022100",
+    "company_name": "포스코DX",
+    "exchange": "KRX",
+    "sector": "건축기술, 엔지니어링 및 관련 기술 서비스업"
+  },
+  {
+    "ticker": "097950",
+    "company_name": "CJ제일제당",
+    "exchange": "KRX",
+    "sector": "기타 식품 제조업"
+  },
+  {
+    "ticker": "036460",
+    "company_name": "한국가스공사",
+    "exchange": "KRX",
+    "sector": "연료용 가스 제조 및 배관공급업"
+  },
+  {
+    "ticker": "011070",
+    "company_name": "LG이노텍",
+    "exchange": "KRX",
+    "sector": "전자부품 제조업"
+  },
+  {
+    "ticker": "017800",
+    "company_name": "현대엘리베이터",
+    "exchange": "KRX",
+    "sector": "일반 목적용 기계 제조업"
+  },
+  {
+    "ticker": "001440",
+    "company_name": "대한전선",
+    "exchange": "KRX",
+    "sector": "절연선 및 케이블 제조업"
+  },
+  {
+    "ticker": "192820",
+    "company_name": "코스맥스",
+    "exchange": "KRX",
+    "sector": "기타 화학제품 제조업"
+  },
+  {
+    "ticker": "383220",
+    "company_name": "F&F",
+    "exchange": "KRX",
+    "sector": "봉제의복 제조업"
+  },
+  {
+    "ticker": "011780",
+    "company_name": "금호석유화학",
+    "exchange": "KRX",
+    "sector": "기초 화학물질 제조업"
+  },
+  {
+    "ticker": "008930",
+    "company_name": "한미사이언스",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "450080",
+    "company_name": "에코프로머티",
+    "exchange": "KRX",
+    "sector": "일차전지 및 이차전지 제조업"
+  },
+  {
+    "ticker": "004990",
+    "company_name": "롯데지주",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "088350",
+    "company_name": "한화생명",
+    "exchange": "KRX",
+    "sector": "보험업"
+  },
+  {
+    "ticker": "111770",
+    "company_name": "영원무역",
+    "exchange": "KRX",
+    "sector": "상품 종합 도매업"
+  },
+  {
+    "ticker": "002380",
+    "company_name": "케이씨씨",
+    "exchange": "KRX",
+    "sector": "기타 화학제품 제조업"
+  },
+  {
+    "ticker": "051600",
+    "company_name": "한전KPS",
+    "exchange": "KRX",
+    "sector": "전기 및 통신 공사업"
+  },
+  {
+    "ticker": "012750",
+    "company_name": "에스원",
+    "exchange": "KRX",
+    "sector": "경비, 경호 및 탐정업"
+  },
+  {
+    "ticker": "026960",
+    "company_name": "동서",
+    "exchange": "KRX",
+    "sector": "음·식료품 및 담배 도매업"
+  },
+  {
+    "ticker": "011170",
+    "company_name": "롯데케미칼",
+    "exchange": "KRX",
+    "sector": "기초 화학물질 제조업"
+  },
+  {
+    "ticker": "001450",
+    "company_name": "현대해상",
+    "exchange": "KRX",
+    "sector": "보험업"
+  },
+  {
+    "ticker": "002790",
+    "company_name": "아모레퍼시픽홀딩스",
+    "exchange": "KRX",
+    "sector": "기타 화학제품 제조업"
+  },
+  {
+    "ticker": "004370",
+    "company_name": "농심",
+    "exchange": "KRX",
+    "sector": "기타 식품 제조업"
+  },
+  {
+    "ticker": "030000",
+    "company_name": "제일기획",
+    "exchange": "KRX",
+    "sector": "광고업"
+  },
+  {
+    "ticker": "042670",
+    "company_name": "HD현대인프라코어",
+    "exchange": "KRX",
+    "sector": "특수 목적용 기계 제조업"
+  },
+  {
+    "ticker": "139480",
+    "company_name": "이마트",
+    "exchange": "KRX",
+    "sector": "종합 소매업"
+  },
+  {
+    "ticker": "489790",
+    "company_name": "한화비전",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "018880",
+    "company_name": "한온시스템",
+    "exchange": "KRX",
+    "sector": "일반 목적용 기계 제조업"
+  },
+  {
+    "ticker": "023530",
+    "company_name": "롯데쇼핑",
+    "exchange": "KRX",
+    "sector": "종합 소매업"
+  },
+  {
+    "ticker": "282330",
+    "company_name": "BGF리테일",
+    "exchange": "KRX",
+    "sector": "종합 소매업"
+  },
+  {
+    "ticker": "161890",
+    "company_name": "한국콜마",
+    "exchange": "KRX",
+    "sector": "기타 화학제품 제조업"
+  },
+  {
+    "ticker": "028670",
+    "company_name": "팬오션",
+    "exchange": "KRX",
+    "sector": "해상 운송업"
+  },
+  {
+    "ticker": "000120",
+    "company_name": "CJ대한통운",
+    "exchange": "KRX",
+    "sector": "도로 화물 운송업"
+  },
+  {
+    "ticker": "006040",
+    "company_name": "동원산업",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "008770",
+    "company_name": "호텔신라",
+    "exchange": "KRX",
+    "sector": "기타 상품 전문 소매업"
+  },
+  {
+    "ticker": "361610",
+    "company_name": "SK아이이테크놀로지",
+    "exchange": "KRX",
+    "sector": "일차전지 및 이차전지 제조업"
+  },
+  {
+    "ticker": "112610",
+    "company_name": "씨에스윈드",
+    "exchange": "KRX",
+    "sector": "구조용 금속제품, 탱크 및 증기발생기 제조업"
+  },
+  {
+    "ticker": "139130",
+    "company_name": "iM금융지주",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "081660",
+    "company_name": "미스토홀딩스",
+    "exchange": "KRX",
+    "sector": "생활용품 도매업"
+  },
+  {
+    "ticker": "000240",
+    "company_name": "한국앤컴퍼니",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "004170",
+    "company_name": "신세계",
+    "exchange": "KRX",
+    "sector": "종합 소매업"
+  },
+  {
+    "ticker": "006360",
+    "company_name": "GS건설",
+    "exchange": "KRX",
+    "sector": "건물 건설업"
+  },
+  {
+    "ticker": "009970",
+    "company_name": "영원무역홀딩스",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "375500",
+    "company_name": "DL이앤씨",
+    "exchange": "KRX",
+    "sector": "토목 건설업"
+  },
+  {
+    "ticker": "047040",
+    "company_name": "대우건설",
+    "exchange": "KRX",
+    "sector": "건물 건설업"
+  },
+  {
+    "ticker": "066970",
+    "company_name": "엘앤에프",
+    "exchange": "KRX",
+    "sector": "일차전지 및 이차전지 제조업"
+  },
+  {
+    "ticker": "069620",
+    "company_name": "대웅제약",
+    "exchange": "KRX",
+    "sector": "의약품 제조업"
+  },
+  {
+    "ticker": "069960",
+    "company_name": "현대백화점",
+    "exchange": "KRX",
+    "sector": "종합 소매업"
+  },
+  {
+    "ticker": "014680",
+    "company_name": "한솔케미칼",
+    "exchange": "KRX",
+    "sector": "기초 화학물질 제조업"
+  },
+  {
+    "ticker": "005850",
+    "company_name": "에스엘",
+    "exchange": "KRX",
+    "sector": "자동차 신품 부품 제조업"
+  },
+  {
+    "ticker": "006280",
+    "company_name": "녹십자",
+    "exchange": "KRX",
+    "sector": "의약품 제조업"
+  },
+  {
+    "ticker": "204320",
+    "company_name": "HL만도",
+    "exchange": "KRX",
+    "sector": "자동차 신품 부품 제조업"
+  },
+  {
+    "ticker": "007310",
+    "company_name": "오뚜기",
+    "exchange": "KRX",
+    "sector": "기타 식품 제조업"
+  },
+  {
+    "ticker": "007070",
+    "company_name": "GS리테일",
+    "exchange": "KRX",
+    "sector": "종합 소매업"
+  },
+  {
+    "ticker": "000080",
+    "company_name": "하이트진로",
+    "exchange": "KRX",
+    "sector": "알코올음료 제조업"
+  },
+  {
+    "ticker": "001800",
+    "company_name": "오리온홀딩스",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "003090",
+    "company_name": "대웅",
+    "exchange": "KRX",
+    "sector": "의약품 제조업"
+  },
+  {
+    "ticker": "003240",
+    "company_name": "태광산업",
+    "exchange": "KRX",
+    "sector": "화학섬유 제조업"
+  },
+  {
+    "ticker": "007340",
+    "company_name": "DN오토모티브",
+    "exchange": "KRX",
+    "sector": "일차전지 및 이차전지 제조업"
+  },
+  {
+    "ticker": "009420",
+    "company_name": "한올바이오파마",
+    "exchange": "KRX",
+    "sector": "의약품 제조업"
+  },
+  {
+    "ticker": "300720",
+    "company_name": "한일시멘트",
+    "exchange": "KRX",
+    "sector": "시멘트, 석회, 플라스터 및 그 제품 제조업"
+  },
+  {
+    "ticker": "011210",
+    "company_name": "현대위아",
+    "exchange": "KRX",
+    "sector": "자동차 신품 부품 제조업"
+  },
+  {
+    "ticker": "012630",
+    "company_name": "HDC",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "017960",
+    "company_name": "한국카본",
+    "exchange": "KRX",
+    "sector": "구조용 금속제품, 탱크 및 증기발생기 제조업"
+  },
+  {
+    "ticker": "073240",
+    "company_name": "금호타이어",
+    "exchange": "KRX",
+    "sector": "고무제품 제조업"
+  },
+  {
+    "ticker": "137310",
+    "company_name": "에스디바이오센서",
+    "exchange": "KRX",
+    "sector": "의료용 기기 제조업"
+  },
+  {
+    "ticker": "010060",
+    "company_name": "OCI홀딩스",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "005300",
+    "company_name": "롯데칠성음료",
+    "exchange": "KRX",
+    "sector": "비알코올음료 및 얼음 제조업"
+  },
+  {
+    "ticker": "009240",
+    "company_name": "한샘",
+    "exchange": "KRX",
+    "sector": "생활용품 도매업"
+  },
+  {
+    "ticker": "185750",
+    "company_name": "종근당",
+    "exchange": "KRX",
+    "sector": "의약품 제조업"
+  },
+  {
+    "ticker": "457190",
+    "company_name": "이수스페셜티케미컬",
+    "exchange": "KRX",
+    "sector": "기초 화학물질 제조업"
+  },
+  {
+    "ticker": "280360",
+    "company_name": "롯데웰푸드",
+    "exchange": "KRX",
+    "sector": "기타 식품 제조업"
+  },
+  {
+    "ticker": "285130",
+    "company_name": "SK케미칼",
+    "exchange": "KRX",
+    "sector": "합성고무 및 플라스틱 물질 제조업"
+  },
+  {
+    "ticker": "298020",
+    "company_name": "효성티앤씨",
+    "exchange": "KRX",
+    "sector": "화학섬유 제조업"
+  },
+  {
+    "ticker": "192080",
+    "company_name": "더블유게임즈",
+    "exchange": "KRX",
+    "sector": "소프트웨어 개발 및 공급업"
+  },
+  {
+    "ticker": "000210",
+    "company_name": "DL",
+    "exchange": "KRX",
+    "sector": "기초 화학물질 제조업"
+  },
+  {
+    "ticker": "298050",
+    "company_name": "HS효성첨단소재",
+    "exchange": "KRX",
+    "sector": "화학섬유 제조업"
+  },
+  {
+    "ticker": "001430",
+    "company_name": "세아베스틸지주",
+    "exchange": "KRX",
+    "sector": "1차 철강 제조업"
+  },
+  {
+    "ticker": "001680",
+    "company_name": "대상",
+    "exchange": "KRX",
+    "sector": "기타 식품 제조업"
+  },
+  {
+    "ticker": "002840",
+    "company_name": "미원상사",
+    "exchange": "KRX",
+    "sector": "기타 화학제품 제조업"
+  },
+  {
+    "ticker": "003030",
+    "company_name": "세아제강지주",
+    "exchange": "KRX",
+    "sector": "기타 금융업"
+  },
+  {
+    "ticker": "004000",
+    "company_name": "롯데정밀화학",
+    "exchange": "KRX",
+    "sector": "기초 화학물질 제조업"
+  },
+  {
+    "ticker": "004490",
+    "company_name": "세방전지",
+    "exchange": "KRX",
+    "sector": "일차전지 및 이차전지 제조업"
+  },
+  {
+    "ticker": "005250",
+    "company_name": "녹십자홀딩스",
+    "exchange": "KRX",
+    "sector": "회사 본부 및 경영 컨설팅 서비스업"
+  },
+  {
+    "ticker": "014820",
+    "company_name": "동원시스템즈",
+    "exchange": "KRX",
+    "sector": "플라스틱제품 제조업"
+  },
+  {
+    "ticker": "039130",
+    "company_name": "하나투어",
+    "exchange": "KRX",
+    "sector": "여행사 및 기타 여행보조 서비스업"
+  },
+  {
+    "ticker": "071320",
+    "company_name": "지역난방공사",
+    "exchange": "KRX",
+    "sector": "증기, 냉·온수 및 공기조절 공급업"
+  },
+  {
+    "ticker": "114090",
+    "company_name": "GKL",
+    "exchange": "KRX",
+    "sector": "유원지 및 기타 오락관련 서비스업"
+  },
+  {
+    "ticker": "120110",
+    "company_name": "코오롱인더",
+    "exchange": "KRX",
+    "sector": "화학섬유 제조업"
+  },
+  {
+    "ticker": "000670",
+    "company_name": "영풍",
+    "exchange": "KRX",
+    "sector": "1차 비철금속 제조업"
+  },
+  {
+    "ticker": "003620",
+    "company_name": "KG모빌리티",
+    "exchange": "KRX",
+    "sector": "자동차용 엔진 및 자동차 제조업"
+  },
+  {
+    "ticker": "005420",
+    "company_name": "코스모화학",
+    "exchange": "KRX",
+    "sector": "기타 화학제품 제조업"
+  },
+  {
+    "ticker": "268280",
+    "company_name": "미원에스씨",
+    "exchange": "KRX",
+    "sector": "기초 화학물질 제조업"
+  },
+  {
+    "ticker": "069260",
+    "company_name": "티케이지휴켐스",
+    "exchange": "KRX",
+    "sector": "기타 화학제품 제조업"
+  },
+  {
+    "ticker": "145720",
+    "company_name": "덴티움",
+    "exchange": "KRX",
+    "sector": "의료용 기기 제조업"
+  },
+  {
+    "ticker": "008730",
+    "company_name": "율촌화학",
+    "exchange": "KRX",
+    "sector": "플라스틱제품 제조업"
+  },
+  {
+    "ticker": "002710",
+    "company_name": "TCC스틸",
+    "exchange": "KRX",
+    "sector": "1차 철강 제조업"
+  },
+  {
+    "ticker": "456040",
+    "company_name": "OCI",
+    "exchange": "KRX",
+    "sector": "기초 화학물질 제조업"
+  },
+  {
+    "ticker": "093370",
+    "company_name": "후성",
+    "exchange": "KRX",
+    "sector": "기초 화학물질 제조업"
+  },
+  {
+    "ticker": "006650",
+    "company_name": "대한유화",
+    "exchange": "KRX",
+    "sector": "기초 화학물질 제조업"
+  }
+]
