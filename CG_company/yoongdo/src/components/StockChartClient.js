@@ -6,7 +6,7 @@ function StockChart({ ticker, tickerName, onShowNews }) {
   const [stockData, setStockData] = useState([]);
 
   useEffect(() => {
-    fetch("/stock_data.json")
+    fetch(`http://localhost:8000/api/stock?ticker=${ticker}`)
       .then((res) => res.json())
       .then((data) => setStockData(data));
   }, [ticker]);
