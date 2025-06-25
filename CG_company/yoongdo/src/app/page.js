@@ -55,7 +55,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <FinanceHeader ticker={ticker} setTicker={setTicker} tickerName={tickerName} />
+      <FinanceHeader ticker={ticker} setTicker={setTicker} tickerName={tickerName} setTickerName={setTickerName} />
       <div className="max-w-5xl mx-auto py-8 px-4">
         {/* 차트 타입 선택 UI */}
         <div className="flex gap-2 mb-4">
