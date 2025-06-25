@@ -47,10 +47,9 @@ export default function Page() {
     };
   };
 
-  // 뉴스 더보기 클릭 시 뉴스 객체를 찾아서 넘기는 핸들러
-  const handleShowNews = (date) => {
-    const found = stockData.find(d => d.date === date);
-    setSelectedNews(found || null);
+  // 뉴스 더보기 클릭 시 뉴스 객체를 받아서 넘기는 핸들러
+  const handleShowNews = (news) => {
+    setSelectedNews(news || null);
     setSelectedDate(null);
   };
 
@@ -78,7 +77,7 @@ export default function Page() {
             {chartType === "line" ? (
               <StockChart ticker={ticker} tickerName={tickerName} stockData={stockData} onShowNews={handleShowNews} />
             ) : (
-              <CandleChart ticker={ticker} tickerName={tickerName} stockData={stockData} onShowNews={d => { setSelectedNews(d); setSelectedDate(null); }} />
+              <CandleChart ticker={ticker} tickerName={tickerName} stockData={stockData} onShowNews={handleShowNews} />
             )}
           </div>
           <div className="w-96">
