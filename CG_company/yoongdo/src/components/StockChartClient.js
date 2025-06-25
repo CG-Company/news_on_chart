@@ -14,8 +14,8 @@ import {
 import zoomPlugin from "chartjs-plugin-zoom";
 import { Line } from "react-chartjs-2";
 import "chartjs-adapter-date-fns";
-import * as ReactDOM from "react-dom/client";
-import NewsTooltip from "../components/NewsTooltip";
+import * as ReactDOM from 'react-dom/client';
+import NewsTooltip from '../components/NewsTooltip';
 
 ChartJS.register(
   LineElement,
@@ -44,49 +44,44 @@ function StockChart({ ticker, onShowNews }) {
 
   useEffect(() => {
     fetch("/stock_data.json")
-      .then((res) => res.json())
-      .then((data) => setStockData(data));
+      .then(res => res.json())
+      .then(data => setStockData(data));
   }, [ticker]);
 
   useEffect(() => {
     // 차트 외부 클릭 시 툴팁 고정 해제
     function handleDocumentClick(e) {
-      const tooltipEl = document.querySelector(".custom-tooltip");
+      const tooltipEl = document.querySelector('.custom-tooltip');
       if (tooltipLocked && tooltipEl && !tooltipEl.contains(e.target)) {
         setTooltipLocked(false);
         setLockedTooltipData(null);
       }
     }
-    document.addEventListener("mousedown", handleDocumentClick);
-    return () => document.removeEventListener("mousedown", handleDocumentClick);
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => document.removeEventListener('mousedown', handleDocumentClick);
   }, [tooltipLocked]);
 
-  const chartData = useMemo(
-    () => ({
-      labels: stockData.map((d) => d.date),
-      datasets: [
-        {
-          label: "종가",
-          data: stockData.map((d) => ({
-            x: d.date,
-            y: d.close,
-            companyNews: ["임의 기업 뉴스"],
-            macroNews: ["임의 거시 뉴스"],
-          })),
-        },
-      ],
-    }),
-    [stockData]
-  );
+  const chartData = useMemo(() => ({
+    labels: stockData.map(d => d.date),
+    datasets: [{
+      label: "종가",
+      data: stockData.map(d => ({
+        x: d.date,
+        y: d.close,
+        companyNews: ["임의 기업 뉴스"],
+        macroNews: ["임의 거시 뉴스"]
+      }))
+    }]
+  }), [stockData]);
 
   function externalTooltipHandler(context) {
     const { chart, tooltip } = context;
-    let tooltipEl = chart.canvas.parentNode.querySelector(".custom-tooltip");
+    let tooltipEl = chart.canvas.parentNode.querySelector('.custom-tooltip');
     if (!tooltipEl) {
-      tooltipEl = document.createElement("div");
-      tooltipEl.className = "custom-tooltip";
-      tooltipEl.style.position = "absolute";
-      tooltipEl.style.pointerEvents = "auto";
+      tooltipEl = document.createElement('div');
+      tooltipEl.className = 'custom-tooltip';
+      tooltipEl.style.position = 'absolute';
+      tooltipEl.style.pointerEvents = 'auto';
       chart.canvas.parentNode.appendChild(tooltipEl);
     }
 
@@ -116,8 +111,8 @@ function StockChart({ ticker, onShowNews }) {
       return;
     }
     tooltipEl.style.opacity = 1;
-    tooltipEl.style.left = chart.canvas.offsetLeft + tooltip.caretX + "px";
-    tooltipEl.style.top = chart.canvas.offsetTop + tooltip.caretY + "px";
+    tooltipEl.style.left = chart.canvas.offsetLeft + tooltip.caretX + 'px';
+    tooltipEl.style.top = chart.canvas.offsetTop + tooltip.caretY + 'px';
 
     if (!tooltipEl._root) {
       tooltipEl._root = ReactDOM.createRoot(tooltipEl);
@@ -143,85 +138,82 @@ function StockChart({ ticker, onShowNews }) {
             macroNews,
             date,
             left: tooltipEl.style.left,
-            top: tooltipEl.style.top,
+            top: tooltipEl.style.top
           });
         }}
       />
     );
   }
 
-  const options = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false,
-        },
-        tooltip: {
-          enabled: false,
-          external: externalTooltipHandler,
-          mode: "index",
-          intersect: false,
-        },
-        zoom: {
-          pan: {
-            enabled: true,
-            mode: "x",
-          },
-          zoom: {
-            wheel: {
-              enabled: true,
-            },
-            pinch: {
-              enabled: true,
-            },
-            mode: "x",
-          },
-          limits: {
-            x: { minRange: 1 },
-          },
-        },
+  const options = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
       },
-      scales: {
-        x: {
-          type: "time",
-          time: {
-            unit: "day",
-            tooltipFormat: "yyyy-MM-dd",
-            displayFormats: {
-              day: "yyyy-MM-dd",
-            },
-          },
-          grid: {
-            display: false,
-          },
-          ticks: {
-            color: "#6366f1",
-            font: { size: 14, family: "inherit" },
-          },
-        },
-        y: {
-          beginAtZero: false,
-          grid: {
-            color: "#e5e7eb",
-          },
-          ticks: {
-            color: "#6366f1",
-            font: { size: 14, family: "inherit" },
-            callback: function (value) {
-              return value.toLocaleString();
-            },
-          },
-        },
-      },
-      interaction: {
-        mode: "nearest",
+      tooltip: {
+        enabled: false,
+        external: externalTooltipHandler,
+        mode: "index",
         intersect: false,
       },
-    }),
-    [onShowNews, externalTooltipHandler]
-  );
+      zoom: {
+        pan: {
+          enabled: true,
+          mode: "x",
+        },
+        zoom: {
+          wheel: {
+            enabled: true,
+          },
+          pinch: {
+            enabled: true,
+          },
+          mode: "x",
+        },
+        limits: {
+          x: { minRange: 1 },
+        },
+      },
+    },
+    scales: {
+      x: {
+        type: "time",
+        time: {
+          unit: "day",
+          tooltipFormat: "yyyy-MM-dd",
+          displayFormats: {
+            day: "yyyy-MM-dd",
+          },
+        },
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color: "#6366f1",
+          font: { size: 14, family: "inherit" },
+        },
+      },
+      y: {
+        beginAtZero: false,
+        grid: {
+          color: "#e5e7eb",
+        },
+        ticks: {
+          color: "#6366f1",
+          font: { size: 14, family: "inherit" },
+          callback: function(value) {
+            return value.toLocaleString();
+          },
+        },
+      },
+    },
+    interaction: {
+      mode: "nearest",
+      intersect: false,
+    },
+  }), [onShowNews, externalTooltipHandler]);
 
   useEffect(() => {
     return () => {
@@ -240,4 +232,4 @@ function StockChart({ ticker, onShowNews }) {
   );
 }
 
-export default StockChart;
+export default StockChart; 

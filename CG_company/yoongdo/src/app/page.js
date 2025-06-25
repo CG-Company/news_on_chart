@@ -3,15 +3,9 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import FinanceHeader from "../components/FinanceHeader";
 
-const StockChart = dynamic(() => import("../components/StockChartClient"), {
-  ssr: false,
-});
-const SearchBar = dynamic(() => import("../components/SearchBar"), {
-  ssr: false,
-});
-const NewsPanel = dynamic(() => import("../components/NewsPanel"), {
-  ssr: false,
-});
+const StockChart = dynamic(() => import("../components/StockChartClient"), { ssr: false });
+const SearchBar = dynamic(() => import("../components/SearchBar"), { ssr: false });
+const NewsPanel = dynamic(() => import("../components/NewsPanel"), { ssr: false });
 
 export default function Page() {
   const [ticker, setTicker] = useState("000660");
@@ -24,7 +18,7 @@ export default function Page() {
     // 임의 더미
     return {
       companyNews: ["임의 기업 뉴스 상세"],
-      macroNews: ["임의 거시 뉴스 상세"],
+      macroNews: ["임의 거시 뉴스 상세"]
     };
   };
 
@@ -37,10 +31,7 @@ export default function Page() {
             <StockChart ticker={ticker} onShowNews={setSelectedDate} />
           </div>
           <div className="w-96">
-            <NewsPanel
-              date={selectedDate}
-              news={getNewsForDate(selectedDate)}
-            />
+            <NewsPanel date={selectedDate} news={getNewsForDate(selectedDate)} />
           </div>
         </div>
       </div>

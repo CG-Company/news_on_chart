@@ -20,24 +20,13 @@ const SearchBar = ({ ticker, setTicker }) => {
       <input
         className="flex-1 outline-none text-base bg-transparent placeholder-gray-400"
         value={input}
-        onChange={(e) => setInput(e.target.value)}
+        onChange={e => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="티커(종목코드) 입력 (예: 000660)"
       />
       {input && (
-        <button
-          className="ml-2"
-          onClick={handleClear}
-          tabIndex={-1}
-          type="button"
-        >
-          <svg
-            className="w-4 h-4 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
+        <button className="ml-2" onClick={handleClear} tabIndex={-1} type="button">
+          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
@@ -53,4 +42,4 @@ const SearchBar = ({ ticker, setTicker }) => {
   );
 };
 
-export default SearchBar;
+export default SearchBar; 

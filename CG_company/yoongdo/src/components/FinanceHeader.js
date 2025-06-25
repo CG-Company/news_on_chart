@@ -14,9 +14,7 @@ const FinanceHeader = ({ ticker, setTicker }) => {
           </svg>
         </div>
         {/* 타이틀 */}
-        <span className="font-extrabold text-3xl tracking-tight mr-auto">
-          CG finance
-        </span>
+        <span className="font-extrabold text-3xl tracking-tight mr-auto">CG finance</span>
         {/* SearchBar */}
         <div className="ml-4">
           <SearchBar ticker={ticker} setTicker={setTicker} />
@@ -28,4 +26,4 @@ const FinanceHeader = ({ ticker, setTicker }) => {
   );
 };
 
-export default FinanceHeader;
+export default FinanceHeader; 
