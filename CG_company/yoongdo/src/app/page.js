@@ -3,10 +3,18 @@ import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
 import FinanceHeader from "../components/FinanceHeader";
 
-const StockChart = dynamic(() => import("../components/StockChartClient"), { ssr: false });
-const CandleChart = dynamic(() => import("../components/CandleChartClient"), { ssr: false });
-const SearchBar = dynamic(() => import("../components/SearchBar"), { ssr: false });
-const NewsPanel = dynamic(() => import("../components/NewsPanel"), { ssr: false });
+const StockChart = dynamic(() => import("../components/StockChartClient"), {
+  ssr: false,
+});
+const CandleChart = dynamic(() => import("../components/CandleChartClient"), {
+  ssr: false,
+});
+const SearchBar = dynamic(() => import("../components/SearchBar"), {
+  ssr: false,
+});
+const NewsPanel = dynamic(() => import("../components/NewsPanel"), {
+  ssr: false,
+});
 
 export default function Page() {
   const [ticker, setTicker] = useState("000660");
@@ -20,9 +28,9 @@ export default function Page() {
     // ticker가 바뀔 때마다 ticker_map.json에서 종목명 조회
     async function fetchName() {
       try {
-        const res = await fetch("/ticker_map.json");
+        const res = await fetch("http://192.168.1.136:8000/api/ticker_map");
         const map = await res.json();
-        const found = map.find(item => item.ticker === ticker);
+        const found = map.find((item) => item.ticker === ticker);
         setTickerName(found ? found.name : "");
       } catch {
         setTickerName("");
@@ -32,9 +40,9 @@ export default function Page() {
   }, [ticker]);
 
   useEffect(() => {
-    fetch("/stock_data.json")
-      .then(res => res.json())
-      .then(data => setStockData(data));
+    fetch(`http://192.168.1.136:8000/api/stock?ticker=${ticker}`)
+      .then((res) => res.json())
+      .then((data) => setStockData(data));
   }, [ticker]);
 
   // 뉴스 데이터는 임의 더미로, 실제 구현시 API 연동
@@ -43,7 +51,7 @@ export default function Page() {
     // 임의 더미
     return {
       companyNews: ["임의 기업 뉴스 상세"],
-      macroNews: ["임의 거시 뉴스 상세"]
+      macroNews: ["임의 거시 뉴스 상세"],
     };
   };
 
@@ -55,19 +63,32 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <FinanceHeader ticker={ticker} setTicker={setTicker} tickerName={tickerName} setTickerName={setTickerName} />
+      <FinanceHeader
+        ticker={ticker}
+        setTicker={setTicker}
+        tickerName={tickerName}
+        setTickerName={setTickerName}
+      />
       <div className="max-w-5xl mx-auto py-8 px-4">
         {/* 차트 타입 선택 UI */}
         <div className="flex gap-2 mb-4">
           <button
             onClick={() => setChartType("line")}
-            className={`px-4 py-2 rounded-md font-semibold border transition-colors ${chartType === "line" ? "bg-blue-500 text-white border-blue-500" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"}`}
+            className={`px-4 py-2 rounded-md font-semibold border transition-colors ${
+              chartType === "line"
+                ? "bg-blue-500 text-white border-blue-500"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+            }`}
           >
             선차트
           </button>
           <button
             onClick={() => setChartType("candle")}
-            className={`px-4 py-2 rounded-md font-semibold border transition-colors ${chartType === "candle" ? "bg-blue-500 text-white border-blue-500" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"}`}
+            className={`px-4 py-2 rounded-md font-semibold border transition-colors ${
+              chartType === "candle"
+                ? "bg-blue-500 text-white border-blue-500"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+            }`}
           >
             캔들차트
           </button>
@@ -75,9 +96,19 @@ export default function Page() {
         <div className="flex gap-6 mt-6">
           <div className="flex-1">
             {chartType === "line" ? (
-              <StockChart ticker={ticker} tickerName={tickerName} stockData={stockData} onShowNews={handleShowNews} />
+              <StockChart
+                ticker={ticker}
+                tickerName={tickerName}
+                stockData={stockData}
+                onShowNews={handleShowNews}
+              />
             ) : (
-              <CandleChart ticker={ticker} tickerName={tickerName} stockData={stockData} onShowNews={handleShowNews} />
+              <CandleChart
+                ticker={ticker}
+                tickerName={tickerName}
+                stockData={stockData}
+                onShowNews={handleShowNews}
+              />
             )}
           </div>
           <div className="w-96">
