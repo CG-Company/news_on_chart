@@ -12,9 +12,9 @@ const SearchBar = ({ ticker, setTicker }) => {
     }
     // 종목명 검색
     try {
-      const res = await fetch("http://192.168.1.136:8000/api/ticker_map");
+      const res = await fetch("/ticker_map.json");
       const map = await res.json();
-      const found = map.find((item) => item.name === input.trim());
+      const found = map.find(item => item.name === input.trim());
       if (found) {
         setTicker(found.ticker);
       } else {
