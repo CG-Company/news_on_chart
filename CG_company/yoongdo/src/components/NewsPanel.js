@@ -29,7 +29,7 @@ const NewsPanel = ({ date, news }) => {
           </div>
         </>
       ) : (
-        <div className="text-gray-400">오른쪽에서 날짜를 선택하거나, 차트에서 '뉴스 더보기'를 클릭하세요.</div>
+        <div className="text-gray-400">오른쪽에서 날짜를 선택하거나, 차트에서 뉴스 더보기를 클릭하세요.</div>
       )}
     </div>
   );

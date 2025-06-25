@@ -39,12 +39,27 @@ function formatDate(dateStr) {
 function StockChart({ ticker, onShowNews }) {
   const chartRef = useRef();
   const [stockData, setStockData] = useState([]);
+  const [tooltipLocked, setTooltipLocked] = useState(false);
+  const [lockedTooltipData, setLockedTooltipData] = useState(null);
 
   useEffect(() => {
     fetch("/stock_data.json")
       .then(res => res.json())
       .then(data => setStockData(data));
   }, [ticker]);
+
+  useEffect(() => {
+    // 차트 외부 클릭 시 툴팁 고정 해제
+    function handleDocumentClick(e) {
+      const tooltipEl = document.querySelector('.custom-tooltip');
+      if (tooltipLocked && tooltipEl && !tooltipEl.contains(e.target)) {
+        setTooltipLocked(false);
+        setLockedTooltipData(null);
+      }
+    }
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => document.removeEventListener('mousedown', handleDocumentClick);
+  }, [tooltipLocked]);
 
   const chartData = useMemo(() => ({
     labels: stockData.map(d => d.date),
@@ -66,8 +81,29 @@ function StockChart({ ticker, onShowNews }) {
       tooltipEl = document.createElement('div');
       tooltipEl.className = 'custom-tooltip';
       tooltipEl.style.position = 'absolute';
-      tooltipEl.style.pointerEvents = 'none';
+      tooltipEl.style.pointerEvents = 'auto';
       chart.canvas.parentNode.appendChild(tooltipEl);
+    }
+
+    // 툴팁 고정 상태면 lockedTooltipData로 렌더링
+    if (tooltipLocked && lockedTooltipData) {
+      tooltipEl.style.opacity = 1;
+      tooltipEl.style.left = lockedTooltipData.left;
+      tooltipEl.style.top = lockedTooltipData.top;
+      if (!tooltipEl._root) {
+        tooltipEl._root = ReactDOM.createRoot(tooltipEl);
+      }
+      tooltipEl._root.render(
+        <NewsTooltip
+          data={lockedTooltipData.data}
+          companyNews={lockedTooltipData.companyNews}
+          macroNews={lockedTooltipData.macroNews}
+          onShowNews={onShowNews}
+          date={lockedTooltipData.date}
+          onLock={null}
+        />
+      );
+      return;
     }
 
     if (tooltip.opacity === 0) {
@@ -94,6 +130,17 @@ function StockChart({ ticker, onShowNews }) {
         macroNews={macroNews}
         onShowNews={onShowNews}
         date={date}
+        onLock={() => {
+          setTooltipLocked(true);
+          setLockedTooltipData({
+            data: tooltip.dataPoints,
+            companyNews,
+            macroNews,
+            date,
+            left: tooltipEl.style.left,
+            top: tooltipEl.style.top
+          });
+        }}
       />
     );
   }
@@ -166,7 +213,7 @@ function StockChart({ ticker, onShowNews }) {
       mode: "nearest",
       intersect: false,
     },
-  }), [onShowNews]);
+  }), [onShowNews, externalTooltipHandler]);
 
   useEffect(() => {
     return () => {
