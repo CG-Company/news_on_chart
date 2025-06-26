@@ -21,7 +21,6 @@ export default function Page() {
   const [tickerName, setTickerName] = useState("SK하이닉스");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedNews, setSelectedNews] = useState(null);
-  const [stockData, setStockData] = useState([]);
 
   // 종목명 조회
   useEffect(() => {
@@ -38,23 +37,9 @@ export default function Page() {
     fetchName();
   }, [ticker]);
 
-  // 주식 데이터 로드
-  useEffect(() => {
-    fetch("/stock_data.json")
-      .then((res) => res.json())
-      .then((data) => setStockData(data));
-  }, [ticker]);
-
   // 뉴스 더보기 클릭 핸들러
   const handleShowNews = (newsData) => {
-    if (typeof newsData === "string") {
-      // 날짜 문자열인 경우
-      const found = stockData.find((d) => d.date === newsData);
-      setSelectedNews(found || null);
-    } else {
-      // 뉴스 객체인 경우
-      setSelectedNews(newsData || null);
-    }
+    setSelectedNews(newsData || null);
     setSelectedDate(null);
   };
 
@@ -71,10 +56,7 @@ export default function Page() {
         {/* 메인 컨텐츠 영역 */}
         <main className="p-6">
           {/* 종목 카드들 */}
-          <StockCards
-            currentStock={{ ticker, tickerName }}
-            stockData={stockData}
-          />
+          <StockCards currentStock={{ ticker, tickerName }} />
 
           {/* 차트와 뉴스 패널 */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -83,7 +65,6 @@ export default function Page() {
               <ChartContainer
                 ticker={ticker}
                 tickerName={tickerName}
-                stockData={stockData}
                 onShowNews={handleShowNews}
               />
             </div>

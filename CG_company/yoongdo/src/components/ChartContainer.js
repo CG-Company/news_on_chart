@@ -5,6 +5,8 @@ import { Line } from "react-chartjs-2";
 import ApexChart from "react-apexcharts";
 import { createPortal } from "react-dom";
 import NewsTooltip from "./NewsTooltip";
+import { fetchStock } from "../utils/api";
+import CandleChartClient from "./CandleChartClient";
 
 // Chart.js imports
 import {
@@ -41,9 +43,10 @@ function formatDate(dateStr) {
     .padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
 }
 
-const ChartContainer = ({ ticker, tickerName, stockData, onShowNews }) => {
+const ChartContainer = ({ ticker, tickerName, onShowNews }) => {
   const [chartType, setChartType] = useState("line");
   const [timeRange, setTimeRange] = useState("1M");
+  const [data, setData] = useState([]);
 
   // Line Chart 상태
   const chartRef = useRef();
@@ -58,23 +61,22 @@ const ChartContainer = ({ ticker, tickerName, stockData, onShowNews }) => {
 
   // 현재가 및 변동률 계산
   const currentData = useMemo(() => {
-    if (stockData.length === 0) return null;
-    const latest = stockData[stockData.length - 1];
-    const previous =
-      stockData.length > 1 ? stockData[stockData.length - 2] : latest;
+    if (!data || data.length === 0) return null;
+    const latest = data[data.length - 1];
+    const previous = data.length > 1 ? data[data.length - 2] : latest;
     const change = latest.close - previous.close;
     const changePercent = (change / previous.close) * 100;
     return { latest, change, changePercent };
-  }, [stockData]);
+  }, [data]);
 
   // === LINE CHART 로직 ===
   const chartData = useMemo(
     () => ({
-      labels: stockData.map((d) => d.date),
+      labels: data.map((d) => d.date),
       datasets: [
         {
           label: "종가",
-          data: stockData.map((d) => ({
+          data: data.map((d) => ({
             x: d.date,
             y: d.close,
             companyNews: d.companyNews || [],
@@ -91,7 +93,7 @@ const ChartContainer = ({ ticker, tickerName, stockData, onShowNews }) => {
         },
       ],
     }),
-    [stockData]
+    [data]
   );
 
   function externalTooltipHandler(context) {
@@ -202,13 +204,13 @@ const ChartContainer = ({ ticker, tickerName, stockData, onShowNews }) => {
   // === CANDLE CHART 로직 ===
   const candleData = useMemo(
     () =>
-      stockData.map((d) => ({
+      data.map((d) => ({
         x: d.date,
         y: [d.open, d.high, d.low, d.close],
         companyNews: d.companyNews || [],
         macroNews: d.macroNews || [],
       })),
-    [stockData]
+    [data]
   );
 
   const candleOptions = useMemo(
@@ -280,12 +282,19 @@ const ChartContainer = ({ ticker, tickerName, stockData, onShowNews }) => {
   useEffect(() => {
     if (chartType === "line") {
       function handleChartDoubleClick(e) {
-        if (lastTooltipRef.current && lastTooltipRef.current.data && lastTooltipRef.current.data[0]) {
+        if (
+          lastTooltipRef.current &&
+          lastTooltipRef.current.data &&
+          lastTooltipRef.current.data[0]
+        ) {
           onShowNews(lastTooltipRef.current.data[0].raw);
         }
       }
       if (chartRef.current && chartRef.current.canvas) {
-        chartRef.current.canvas.addEventListener("dblclick", handleChartDoubleClick);
+        chartRef.current.canvas.addEventListener(
+          "dblclick",
+          handleChartDoubleClick
+        );
       }
       return () => {
         if (chartRef.current && chartRef.current.canvas) {
@@ -319,9 +328,10 @@ const ChartContainer = ({ ticker, tickerName, stockData, onShowNews }) => {
   let candleTooltipPortal = null;
 
   if (chartType === "candle") {
-    const d = tooltipIndex !== null && candleData[tooltipIndex]
-      ? candleData[tooltipIndex]
-      : null;
+    const d =
+      tooltipIndex !== null && candleData[tooltipIndex]
+        ? candleData[tooltipIndex]
+        : null;
     if (
       hoverIndex !== null &&
       d &&
@@ -352,6 +362,11 @@ const ChartContainer = ({ ticker, tickerName, stockData, onShowNews }) => {
     }
   }
 
+  useEffect(() => {
+    if (ticker) fetchStock(ticker).then(setData);
+  }, [ticker]);
+
+  if (!data || data.length === 0) return <div>Loading...</div>;
   return (
     <div
       ref={wrapperRef}
@@ -415,7 +430,7 @@ const ChartContainer = ({ ticker, tickerName, stockData, onShowNews }) => {
 
       {/* 차트 영역 */}
       <div className="relative" style={{ height: "400px" }}>
-        {stockData.length > 0 && (
+        {data.length > 0 && (
           <>
             {chartType === "line" ? (
               <Line ref={chartRef} data={chartData} options={lineOptions} />

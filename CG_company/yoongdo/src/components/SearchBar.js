@@ -1,9 +1,15 @@
 // components/SearchBar.js (업데이트됨)
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { fetchTickerMap } from "../utils/api";
 
 const SearchBar = ({ ticker, setTicker }) => {
   const [input, setInput] = useState(ticker);
   const [isLoading, setIsLoading] = useState(false);
+  const [map, setMap] = useState({});
+
+  useEffect(() => {
+    fetchTickerMap().then(setMap);
+  }, []);
 
   const handleSearch = async () => {
     if (!input.trim()) return;
@@ -19,8 +25,6 @@ const SearchBar = ({ ticker, setTicker }) => {
       }
 
       // 종목명 검색
-      const res = await fetch("/ticker_map.json");
-      const map = await res.json();
       const found = map.find((item) => item.name === input.trim());
 
       if (found) {
