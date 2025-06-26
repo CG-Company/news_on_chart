@@ -37,7 +37,7 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
       </div>
       <button
         onClick={() => onShowNews && onShowNews(date)}
-        className="w-full px-3 py-1.5 bg-tossBlue text-white rounded-md text-xs font-semibold hover:bg-blue-600 transition-colors"
+        className="w-full px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs font-semibold border border-blue-700 hover:bg-blue-800 transition-colors"
       >
         뉴스 더보기
       </button>
