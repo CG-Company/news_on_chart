@@ -95,6 +95,7 @@ export default function Page() {
                 ticker={ticker}
                 tickerName={tickerName}
                 onShowNews={handleShowNews}
+                newsData={newsData}
               />
             </div>
 

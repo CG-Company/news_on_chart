@@ -44,7 +44,7 @@ function formatDate(dateStr) {
     .padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
 }
 
-const ChartContainer = ({ ticker, tickerName, onShowNews }) => {
+const ChartContainer = ({ ticker, tickerName, onShowNews, newsData }) => {
   const [chartType, setChartType] = useState("line");
   const [timeRange, setTimeRange] = useState("1M");
   const [data, setData] = useState([]);
@@ -124,9 +124,21 @@ const ChartContainer = ({ ticker, tickerName, onShowNews }) => {
     }
     const dataIndex = tooltip.dataPoints[0]?.dataIndex;
     const dataItem = chart.data.datasets[0].data[dataIndex];
-    const companyNews = dataItem?.companyNews || [];
-    const macroNews = dataItem?.macroNews || [];
     const date = tooltip.dataPoints[0]?.label;
+
+    // 날짜별 뉴스 추출
+    let companyNews = [];
+    let macroNews = [];
+    if (newsData && Array.isArray(newsData)) {
+      const newsForDate = newsData.filter(
+        (n) => (n.published_at || "").slice(0, 10) === date
+      );
+      companyNews = newsForDate.map((n) => n.title); // 또는 n.summary 등 원하는 필드
+      // macroNews는 별도 분류가 없으므로 빈 배열로 둠
+    } else {
+      companyNews = dataItem?.companyNews || [];
+      macroNews = dataItem?.macroNews || [];
+    }
 
     lastTooltipRef.current = {
       data: tooltip.dataPoints,
