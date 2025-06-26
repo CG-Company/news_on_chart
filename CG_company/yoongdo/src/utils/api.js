@@ -11,3 +11,9 @@ export async function fetchTickerMap() {
   if (!res.ok) throw new Error("Ticker map fetch failed");
   return res.json();
 }
+
+export async function fetchNews(ticker) {
+  const res = await fetch(`${API_BASE}/news?ticker=${ticker}`);
+  if (!res.ok) throw new Error("News not found");
+  return res.json();
+}

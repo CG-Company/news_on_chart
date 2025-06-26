@@ -1,7 +1,7 @@
 # DB_team/api_server.py
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from utils import get_stock_data, get_ticker_map
+from utils import get_stock_data, get_ticker_map, get_news_data
 
 app = FastAPI()
 
@@ -23,3 +23,10 @@ def read_stock(ticker: str = Query(..., min_length=6, max_length=6)):
 @app.get("/api/ticker_map")
 def read_ticker_map():
     return get_ticker_map()
+
+@app.get("/api/news")
+def read_news(ticker: str = Query(..., min_length=6, max_length=6)):
+    data = get_news_data(ticker)
+    if not data:
+        raise HTTPException(404, detail="No news found for this ticker")
+    return data

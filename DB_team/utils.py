@@ -42,3 +42,20 @@ def get_ticker_map():
     df = pd.read_sql(text(sql), engine)
     # { ticker: "005930", name: "삼성전자" } 형태로 내려주려면:
     return [{"ticker": r["ticker"], "name": r["company_name"]} for r in df.to_dict(orient="records")]
+
+def get_news_data(ticker: str):
+    sql = """
+    SELECT
+        ticker,
+        published_at,
+        title,
+        summary,
+        content,
+        url
+    FROM news
+    WHERE ticker = :ticker
+    ORDER BY published_at DESC
+    """
+    df = pd.read_sql(text(sql), engine, params={"ticker": ticker})
+    df = df.fillna('')  # 결측값을 빈 문자열로 대체
+    return df.to_dict(orient="records")

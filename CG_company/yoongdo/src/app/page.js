@@ -2,6 +2,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
+import { fetchNews } from "../utils/api";
 
 // CG Finance 스타일 컴포넌트들
 import Sidebar from "../components/Sidebar";
@@ -21,6 +22,8 @@ export default function Page() {
   const [tickerName, setTickerName] = useState("SK하이닉스");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedNews, setSelectedNews] = useState(null);
+  const [newsData, setNewsData] = useState(null);
+  const [newsLoading, setNewsLoading] = useState(false);
 
   // 종목명 조회
   useEffect(() => {
@@ -35,6 +38,15 @@ export default function Page() {
       }
     }
     fetchName();
+  }, [ticker]);
+
+  // 뉴스 데이터 패칭
+  useEffect(() => {
+    setNewsLoading(true);
+    fetchNews(ticker)
+      .then((data) => setNewsData(data))
+      .catch(() => setNewsData([]))
+      .finally(() => setNewsLoading(false));
   }, [ticker]);
 
   // 뉴스 더보기 클릭 핸들러
@@ -71,7 +83,11 @@ export default function Page() {
 
             {/* 뉴스 패널 (1/3) */}
             <div className="lg:col-span-1">
-              <NewsPanel news={selectedNews} date={selectedDate} />
+              <NewsPanel
+                news={selectedNews || newsData}
+                date={selectedDate}
+                loading={newsLoading}
+              />
             </div>
           </div>
 
