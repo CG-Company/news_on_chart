@@ -49,11 +49,28 @@ export default function Page() {
       .finally(() => setNewsLoading(false));
   }, [ticker]);
 
-  // 뉴스 더보기 클릭 핸들러
-  const handleShowNews = (newsData) => {
-    setSelectedNews(newsData || null);
-    setSelectedDate(null);
+  // 뉴스 더보기 클릭/차트 날짜 선택 핸들러
+  const handleShowNews = (date) => {
+    setSelectedDate(date);
+    setSelectedNews(null);
+    console.log("onShowNews called with date:", date);
   };
+
+  // 날짜별 뉴스 필터링
+  const filteredNews = selectedDate
+    ? (newsData || []).filter((n) => {
+        const sel = selectedDate.slice(0, 10);
+        const pub = (n.published_at || "").slice(0, 10);
+        console.log("selectedDate:", sel, "published_at:", pub);
+        return pub === sel;
+      })
+    : [];
+
+  useEffect(() => {
+    if (selectedDate) {
+      console.log("selectedDate:", selectedDate);
+    }
+  }, [selectedDate]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -84,7 +101,7 @@ export default function Page() {
             {/* 뉴스 패널 (1/3) */}
             <div className="lg:col-span-1">
               <NewsPanel
-                news={selectedNews || newsData}
+                news={filteredNews}
                 date={selectedDate}
                 loading={newsLoading}
               />

@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import NewsTooltip from "./NewsTooltip";
 import { fetchStock } from "../utils/api";
 import CandleChartClient from "./CandleChartClient";
+import { getElementAtEvent } from "react-chartjs-2";
 
 // Chart.js imports
 import {
@@ -134,7 +135,7 @@ const ChartContainer = ({ ticker, tickerName, onShowNews }) => {
       date,
       left: tooltipEl.style.left,
       top: tooltipEl.style.top,
-      onShowNews: () => onShowNews(dataItem),
+      onShowNews: () => onShowNews(dataItem.x),
     };
 
     tooltipEl._root.render(
@@ -142,7 +143,7 @@ const ChartContainer = ({ ticker, tickerName, onShowNews }) => {
         data={tooltip.dataPoints}
         companyNews={companyNews}
         macroNews={macroNews}
-        onShowNews={() => onShowNews(dataItem)}
+        onShowNews={() => onShowNews(dataItem.x)}
         date={date}
       />
     );
@@ -233,7 +234,7 @@ const ChartContainer = ({ ticker, tickerName, onShowNews }) => {
           doubleClick: () => {
             if (hoverIndex !== null) {
               const d = candleData[hoverIndex];
-              if (d) onShowNews(d);
+              if (d) onShowNews(d.x);
             }
           },
           mouseLeave: () => {
@@ -287,7 +288,7 @@ const ChartContainer = ({ ticker, tickerName, onShowNews }) => {
           lastTooltipRef.current.data &&
           lastTooltipRef.current.data[0]
         ) {
-          onShowNews(lastTooltipRef.current.data[0].raw);
+          onShowNews(lastTooltipRef.current.data[0].x);
         }
       }
       if (chartRef.current && chartRef.current.canvas) {
@@ -313,7 +314,7 @@ const ChartContainer = ({ ticker, tickerName, onShowNews }) => {
       const handleDoubleClick = () => {
         if (hoverIndex !== null) {
           const d = candleData[hoverIndex];
-          if (d) onShowNews(d);
+          if (d) onShowNews(d.x);
         }
       };
       const el = wrapperRef.current;
@@ -353,7 +354,7 @@ const ChartContainer = ({ ticker, tickerName, onShowNews }) => {
             data={[{ raw: { y: d.y[3] } }]}
             companyNews={d.companyNews}
             macroNews={d.macroNews}
-            onShowNews={() => onShowNews(d)}
+            onShowNews={() => onShowNews(d.x)}
             date={d.x}
           />
         </div>,
@@ -365,6 +366,18 @@ const ChartContainer = ({ ticker, tickerName, onShowNews }) => {
   useEffect(() => {
     if (ticker) fetchStock(ticker).then(setData);
   }, [ticker]);
+
+  // 차트 호버 시 해당 날짜를 상위로 전달 (getElementAtEvent 사용)
+  const handleLineChartHover = (event) => {
+    if (!chartRef.current) return;
+    const elements = getElementAtEvent(chartRef.current, event);
+    if (elements && elements.length > 0) {
+      const index = elements[0].index;
+      const date = chartData.labels[index];
+      console.log("Line chart hovered date:", date);
+      onShowNews(date);
+    }
+  };
 
   if (!data || data.length === 0) return <div>Loading...</div>;
   return (
@@ -433,7 +446,12 @@ const ChartContainer = ({ ticker, tickerName, onShowNews }) => {
         {data.length > 0 && (
           <>
             {chartType === "line" ? (
-              <Line ref={chartRef} data={chartData} options={lineOptions} />
+              <Line
+                ref={chartRef}
+                data={chartData}
+                options={lineOptions}
+                onMouseMove={handleLineChartHover}
+              />
             ) : (
               <ApexChart
                 options={candleOptions}

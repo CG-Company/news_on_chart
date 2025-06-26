@@ -57,5 +57,6 @@ def get_news_data(ticker: str):
     ORDER BY published_at DESC
     """
     df = pd.read_sql(text(sql), engine, params={"ticker": ticker})
-    df = df.fillna('')  # 결측값을 빈 문자열로 대체
+    df = df.fillna('')
+    df['published_at'] = pd.to_datetime(df['published_at']).dt.strftime('%Y-%m-%d')
     return df.to_dict(orient="records")
