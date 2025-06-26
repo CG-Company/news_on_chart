@@ -1,15 +1,15 @@
+// app/page.js (업데이트됨)
 "use client";
 import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
-import FinanceHeader from "../components/FinanceHeader";
 
-const StockChart = dynamic(() => import("../components/StockChartClient"), {
-  ssr: false,
-});
-const CandleChart = dynamic(() => import("../components/CandleChartClient"), {
-  ssr: false,
-});
-const SearchBar = dynamic(() => import("../components/SearchBar"), {
+// CG Finance 스타일 컴포넌트들
+import Sidebar from "../components/Sidebar";
+import Header from "../components/Header";
+import StockCards from "../components/StockCards";
+
+// 동적 import로 차트 컴포넌트들 불러오기
+const ChartContainer = dynamic(() => import("../components/ChartContainer"), {
   ssr: false,
 });
 const NewsPanel = dynamic(() => import("../components/NewsPanel"), {
@@ -21,14 +21,13 @@ export default function Page() {
   const [tickerName, setTickerName] = useState("SK하이닉스");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedNews, setSelectedNews] = useState(null);
-  const [chartType, setChartType] = useState("line"); // "line" or "candle"
   const [stockData, setStockData] = useState([]);
 
+  // 종목명 조회
   useEffect(() => {
-    // ticker가 바뀔 때마다 ticker_map.json에서 종목명 조회
     async function fetchName() {
       try {
-        const res = await fetch("http://192.168.1.136:8000/api/ticker_map");
+        const res = await fetch("/ticker_map.json");
         const map = await res.json();
         const found = map.find((item) => item.ticker === ticker);
         setTickerName(found ? found.name : "");
@@ -39,82 +38,146 @@ export default function Page() {
     fetchName();
   }, [ticker]);
 
+  // 주식 데이터 로드
   useEffect(() => {
-    fetch(`http://192.168.1.136:8000/api/stock?ticker=${ticker}`)
+    fetch("/stock_data.json")
       .then((res) => res.json())
       .then((data) => setStockData(data));
   }, [ticker]);
 
-  // 뉴스 데이터는 임의 더미로, 실제 구현시 API 연동
-  const getNewsForDate = (date) => {
-    if (!date) return { companyNews: [], macroNews: [] };
-    // 임의 더미
-    return {
-      companyNews: ["임의 기업 뉴스 상세"],
-      macroNews: ["임의 거시 뉴스 상세"],
-    };
-  };
-
-  // 뉴스 더보기 클릭 시 뉴스 객체를 받아서 넘기는 핸들러
-  const handleShowNews = (news) => {
-    setSelectedNews(news || null);
+  // 뉴스 더보기 클릭 핸들러
+  const handleShowNews = (newsData) => {
+    if (typeof newsData === "string") {
+      // 날짜 문자열인 경우
+      const found = stockData.find((d) => d.date === newsData);
+      setSelectedNews(found || null);
+    } else {
+      // 뉴스 객체인 경우
+      setSelectedNews(newsData || null);
+    }
     setSelectedDate(null);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <FinanceHeader
-        ticker={ticker}
-        setTicker={setTicker}
-        tickerName={tickerName}
-        setTickerName={setTickerName}
-      />
-      <div className="max-w-5xl mx-auto py-8 px-4">
-        {/* 차트 타입 선택 UI */}
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setChartType("line")}
-            className={`px-4 py-2 rounded-md font-semibold border transition-colors ${
-              chartType === "line"
-                ? "bg-blue-500 text-white border-blue-500"
-                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-            }`}
-          >
-            선차트
-          </button>
-          <button
-            onClick={() => setChartType("candle")}
-            className={`px-4 py-2 rounded-md font-semibold border transition-colors ${
-              chartType === "candle"
-                ? "bg-blue-500 text-white border-blue-500"
-                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-            }`}
-          >
-            캔들차트
-          </button>
-        </div>
-        <div className="flex gap-6 mt-6">
-          <div className="flex-1">
-            {chartType === "line" ? (
-              <StockChart
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* 사이드바 */}
+      <Sidebar currentPage="dashboard" />
+
+      {/* 메인 컨텐츠 */}
+      <div className="flex-1 ml-52">
+        {/* 헤더 */}
+        <Header ticker={ticker} setTicker={setTicker} tickerName={tickerName} />
+
+        {/* 메인 컨텐츠 영역 */}
+        <main className="p-6">
+          {/* 종목 카드들 */}
+          <StockCards
+            currentStock={{ ticker, tickerName }}
+            stockData={stockData}
+          />
+
+          {/* 차트와 뉴스 패널 */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* 차트 영역 (2/3) */}
+            <div className="lg:col-span-2">
+              <ChartContainer
                 ticker={ticker}
                 tickerName={tickerName}
                 stockData={stockData}
                 onShowNews={handleShowNews}
               />
-            ) : (
-              <CandleChart
-                ticker={ticker}
-                tickerName={tickerName}
-                stockData={stockData}
-                onShowNews={handleShowNews}
-              />
-            )}
+            </div>
+
+            {/* 뉴스 패널 (1/3) */}
+            <div className="lg:col-span-1">
+              <NewsPanel news={selectedNews} date={selectedDate} />
+            </div>
           </div>
-          <div className="w-96">
-            <NewsPanel news={selectedNews} />
+
+          {/* 추가 정보 섹션 (옵션) */}
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* 시장 지표 카드 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                시장 지표
+              </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">KOSPI</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    2,520.45
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">KOSDAQ</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    785.23
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">USD/KRW</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    1,345.50
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 거래량 정보 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                거래 정보
+              </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">거래량</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    1,234,567
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">거래대금</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    1,532억원
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">시가총액</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    95.2조원
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 기술적 지표 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                기술적 지표
+              </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">RSI (14)</span>
+                  <span className="text-sm font-medium text-orange-500">
+                    65.4
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">MACD</span>
+                  <span className="text-sm font-medium text-green-500">
+                    +1.23
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">볼린저 밴드</span>
+                  <span className="text-sm font-medium text-blue-500">
+                    중립
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );

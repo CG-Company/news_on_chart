@@ -2,10 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   async rewrites() {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE || '/api';
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_BASE}/:path*`
+        destination: `${apiBase}/:path*`
       }
     ];
   }
