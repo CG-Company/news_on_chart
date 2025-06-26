@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 load_dotenv('stock.env')
 
 # DB 연결 헬퍼
+
 def get_db_connection():
     return psycopg2.connect(
         host=os.getenv("DB_HOST"),
@@ -37,7 +38,6 @@ def get_summary(ticker: str, date_str: str):
     ticker: 종목 코드 (예: '000660')
     date_str: YYYY-MM-DD 형식의 날짜 문자열
     """
-    # 날짜 파싱
     try:
         target_date = date.fromisoformat(date_str)
     except ValueError:
@@ -46,21 +46,23 @@ def get_summary(ticker: str, date_str: str):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
+        # summary 컬럼이 비어 있으면 content 컬럼으로 대체
         cur.execute(
-            "SELECT summary FROM news WHERE ticker = %s AND price_date = %s",
+            """
+            SELECT COALESCE(NULLIF(summary, ''), content) AS text
+            FROM news
+            WHERE ticker = %s AND price_date = %s
+            """,
             (ticker, target_date)
         )
         rows = cur.fetchall()
-        if not rows:
-            return {"ticker": ticker, "date": date_str, "summaries": []}
-        summaries = [row['summary'] for row in rows if row.get('summary')]
-        print({"ticker": ticker, "date": date_str, "summaries": summaries}) 
-        return {"ticker": ticker, "date": date_str, "summaries": summaries}
+        texts = [r['text'] for r in rows]
+        return {"ticker": ticker, "date": date_str, "summaries": texts}
     finally:
         cur.close()
         conn.close()
 
-# 전체 뉴스 조회 예시 엔드포인트
+# 전체 뉴스 조회 엔드포인트
 @app.get("/news/")
 def get_news(ticker: str, date_str: str = None):
     """
@@ -84,13 +86,13 @@ def get_news(ticker: str, date_str: str = None):
                 "SELECT title, url, published_at, summary FROM news WHERE ticker = %s ORDER BY published_at DESC LIMIT 20",
                 (ticker,)
             )
-
-        print({"ticker": ticker, "news": cur.fetchall()})
-        return {"ticker": ticker, "news": cur.fetchall()}
+        news_list = cur.fetchall()
+        return {"ticker": ticker, "news": news_list}
     finally:
         cur.close()
         conn.close()
 
+# 주가 조회 엔드포인트
 @app.get("/stock")
 def get_stock(ticker: str):
     """
@@ -102,11 +104,11 @@ def get_stock(ticker: str):
     try:
         cur.execute(
             "SELECT price_date, close_price FROM stock_price WHERE ticker = %s ORDER BY price_date",
-            (ticker,),
+            (ticker,)
         )
         rows = cur.fetchall()
         result = [
-            {"price_date": r["price_date"].isoformat(), "close_price": float(r["close_price"])}
+            {"price_date": r['price_date'].isoformat(), "close_price": float(r['close_price'])}
             for r in rows
         ]
         return {"ticker": ticker, "prices": result}
@@ -115,5 +117,3 @@ def get_stock(ticker: str):
         conn.close()
 
 
-
-        
