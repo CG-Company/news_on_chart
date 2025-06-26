@@ -340,6 +340,21 @@ const ChartContainer = ({ ticker, tickerName, onShowNews, newsData }) => {
   const tooltipPos = mousePos;
   let candleTooltipPortal = null;
 
+  // 캔들차트 호버 시 해당 날짜의 뉴스 전달
+  useEffect(() => {
+    if (
+      chartType === "candle" &&
+      hoverIndex !== null &&
+      candleData[hoverIndex]
+    ) {
+      const d = candleData[hoverIndex];
+      if (d && d.x) {
+        onShowNews(d.x);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartType, hoverIndex]);
+
   if (chartType === "candle") {
     const d =
       tooltipIndex !== null && candleData[tooltipIndex]
@@ -352,6 +367,18 @@ const ChartContainer = ({ ticker, tickerName, onShowNews, newsData }) => {
       typeof window !== "undefined" &&
       document.body
     ) {
+      // 날짜별 뉴스 추출
+      let companyNews = [];
+      let macroNews = [];
+      if (newsData && Array.isArray(newsData)) {
+        const newsForDate = newsData.filter(
+          (n) => (n.published_at || "").slice(0, 10) === d.x
+        );
+        companyNews = newsForDate.map((n) => n.title);
+      } else {
+        companyNews = d.companyNews || [];
+        macroNews = d.macroNews || [];
+      }
       candleTooltipPortal = createPortal(
         <div
           style={{
@@ -364,8 +391,8 @@ const ChartContainer = ({ ticker, tickerName, onShowNews, newsData }) => {
         >
           <NewsTooltip
             data={[{ raw: { y: d.y[3] } }]}
-            companyNews={d.companyNews}
-            macroNews={d.macroNews}
+            companyNews={companyNews}
+            macroNews={macroNews}
             onShowNews={() => onShowNews(d.x)}
             date={d.x}
           />
