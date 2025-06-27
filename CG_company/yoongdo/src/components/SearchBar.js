@@ -118,7 +118,6 @@ const SearchBar = ({ ticker, setTicker }) => {
 
       if (found) {
         setTicker(found.ticker);
-        setTickerName(found.name);
         setInput(found.name);
         setShowSuggestions(false);
       } else {

@@ -1,6 +1,6 @@
-// utils/api.js - 개선된 버전
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000/api";
-const REQUEST_TIMEOUT = 10000; // 10초
+// utils/api.js - 백엔드 FastAPI 연동 버전
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+const REQUEST_TIMEOUT = 15000; // 15초 (DB 쿼리 시간 고려)
 
 // 공통 fetch 래퍼 함수
 async function fetchWithTimeout(url, options = {}) {
@@ -13,6 +13,7 @@ async function fetchWithTimeout(url, options = {}) {
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         ...options.headers,
       },
     });
@@ -20,7 +21,15 @@ async function fetchWithTimeout(url, options = {}) {
     clearTimeout(timeoutId);
     
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // FastAPI 에러 응답 파싱
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorMessage;
+      } catch (e) {
+        // JSON 파싱 실패시 기본 메시지 사용
+      }
+      throw new Error(errorMessage);
     }
     
     return response;
@@ -28,7 +37,12 @@ async function fetchWithTimeout(url, options = {}) {
     clearTimeout(timeoutId);
     
     if (error.name === 'AbortError') {
-      throw new Error('요청 시간이 초과되었습니다.');
+      throw new Error('요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.');
+    }
+    
+    // 네트워크 에러 처리
+    if (error.message.includes('Failed to fetch') || error.message.includes('ERR_NETWORK')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.');
     }
     
     throw error;
@@ -43,6 +57,11 @@ async function fetchWithRetry(url, options = {}, maxRetries = 3) {
     } catch (error) {
       console.warn(`API 요청 실패 (시도 ${attempt}/${maxRetries}):`, error.message);
       
+      // 404나 422 같은 클라이언트 에러는 재시도하지 않음
+      if (error.message.includes('404') || error.message.includes('422') || error.message.includes('400')) {
+        throw error;
+      }
+      
       if (attempt === maxRetries) {
         throw error;
       }
@@ -54,39 +73,60 @@ async function fetchWithRetry(url, options = {}, maxRetries = 3) {
   }
 }
 
-// 주식 데이터 가져오기
+// 주식 데이터 가져오기 (PostgreSQL에서)
 export async function fetchStock(ticker) {
   try {
     if (!ticker || typeof ticker !== 'string') {
       throw new Error('유효하지 않은 티커 코드입니다.');
     }
     
-    const response = await fetchWithRetry(
-      `${API_BASE}/stock?ticker=${encodeURIComponent(ticker)}`
-    );
+    // 티커 형식 검증 (6자리 숫자)
+    if (!/^\d{6}$/.test(ticker)) {
+      throw new Error('티커 코드는 6자리 숫자여야 합니다. (예: 005930)');
+    }
+    
+    console.log(`🔍 주식 데이터 조회: ${ticker}`);
+    const response = await fetchWithRetry(`${API_BASE}/api/stock?ticker=${encodeURIComponent(ticker)}`);
     
     const data = await response.json();
     
-    // 데이터 검증
-    if (!data || !Array.isArray(data.stockData)) {
-      throw new Error('서버에서 유효하지 않은 데이터를 반환했습니다.');
+    // 데이터 검증: { stockData: [...] } 구조만 허용
+    if (data && Array.isArray(data.stockData)) {
+      if (data.stockData.length === 0) {
+        throw new Error('해당 종목의 주가 데이터가 없습니다.');
+      }
+      // 데이터 후처리 (날짜 형식 통일)
+      const processedData = data.stockData.map(item => ({
+        ...item,
+        date: item.date, // 이미 YYYY-MM-DD 형식으로 온다고 가정
+        companyNews: item.companyNews || [],
+        macroNews: item.macroNews || []
+      }));
+      console.log(`✅ 주식 데이터 로딩 완료: ${processedData.length}개 항목`);
+      return processedData;
+    } else {
+      throw new Error('서버에서 유효하지 않은 데이터 형식을 반환했습니다.');
     }
     
-    return data;
   } catch (error) {
     console.error('주식 데이터 조회 실패:', error);
-    throw new Error(
-      error.message.includes('404') 
-        ? '해당 종목을 찾을 수 없습니다.' 
-        : `주식 데이터 조회 중 오류가 발생했습니다: ${error.message}`
-    );
+    
+    // 사용자 친화적 에러 메시지
+    if (error.message.includes('404')) {
+      throw new Error(`종목 코드 '${ticker}'를 찾을 수 없습니다. 올바른 6자리 코드인지 확인해주세요.`);
+    } else if (error.message.includes('422')) {
+      throw new Error('종목 코드 형식이 올바르지 않습니다. 6자리 숫자를 입력해주세요.');
+    } else {
+      throw new Error(`주식 데이터 조회 중 오류가 발생했습니다: ${error.message}`);
+    }
   }
 }
 
-// 티커 맵 가져오기
+// 티커 맵 가져오기 (PostgreSQL에서)
 export async function fetchTickerMap() {
   try {
-    const response = await fetchWithRetry(`${API_BASE}/ticker_map`);
+    console.log('🔍 티커 맵 조회 중...');
+    const response = await fetchWithRetry(`${API_BASE}/api/ticker_map`);
     const data = await response.json();
     
     // 데이터 검증
@@ -94,16 +134,34 @@ export async function fetchTickerMap() {
       throw new Error('티커 맵 데이터 형식이 올바르지 않습니다.');
     }
     
-    return data;
+    // 데이터 구조 확인
+    const validData = data.filter(item => 
+      item && 
+      typeof item === 'object' && 
+      item.ticker && 
+      item.name &&
+      typeof item.ticker === 'string' &&
+      typeof item.name === 'string'
+    );
+    
+    if (validData.length === 0) {
+      throw new Error('유효한 티커 맵 데이터가 없습니다.');
+    }
+    
+    console.log(`✅ 티커 맵 로딩 완료: ${validData.length}개 종목`);
+    return validData;
+    
   } catch (error) {
     console.error('티커 맵 조회 실패:', error);
     
     // 로컬 백업 데이터 시도
     try {
+      console.log('🔄 로컬 백업 데이터 시도...');
       const backupResponse = await fetch('/ticker_map.json');
       if (backupResponse.ok) {
-        console.warn('로컬 백업 데이터를 사용합니다.');
-        return await backupResponse.json();
+        const backupData = await backupResponse.json();
+        console.warn('⚠️ 로컬 백업 데이터를 사용합니다.');
+        return backupData;
       }
     } catch (backupError) {
       console.error('백업 데이터도 사용할 수 없습니다:', backupError);
@@ -113,58 +171,66 @@ export async function fetchTickerMap() {
   }
 }
 
-// 뉴스 데이터 가져오기
-export async function fetchNews(ticker, dateRange = '1M') {
+// 뉴스 데이터 가져오기 (PostgreSQL에서)
+export async function fetchNews(ticker) {
   try {
     if (!ticker || typeof ticker !== 'string') {
       throw new Error('유효하지 않은 티커 코드입니다.');
     }
     
-    const params = new URLSearchParams({
-      ticker: ticker,
-      range: dateRange
-    });
+    if (!/^\d{6}$/.test(ticker)) {
+      throw new Error('티커 코드는 6자리 숫자여야 합니다.');
+    }
     
-    const response = await fetchWithRetry(
-      `${API_BASE}/news?${params.toString()}`
-    );
+    console.log(`🔍 뉴스 데이터 조회: ${ticker}`);
+    const response = await fetchWithRetry(`${API_BASE}/api/news?ticker=${encodeURIComponent(ticker)}`);
     
     const data = await response.json();
     
     // 데이터 검증
-    if (!data || typeof data !== 'object') {
+    if (!Array.isArray(data)) {
       throw new Error('서버에서 유효하지 않은 뉴스 데이터를 반환했습니다.');
     }
     
+    console.log(`✅ 뉴스 데이터 로딩 완료: ${data.length}개 뉴스`);
     return data;
+    
   } catch (error) {
     console.error('뉴스 데이터 조회 실패:', error);
-    throw new Error(
-      error.message.includes('404')
-        ? '해당 종목의 뉴스를 찾을 수 없습니다.'
-        : `뉴스 데이터 조회 중 오류가 발생했습니다: ${error.message}`
-    );
+    
+    if (error.message.includes('404')) {
+      throw new Error(`종목 '${ticker}'의 뉴스를 찾을 수 없습니다.`);
+    } else {
+      throw new Error(`뉴스 데이터 조회 중 오류가 발생했습니다: ${error.message}`);
+    }
   }
 }
 
-// API 상태 확인
+// API 상태 확인 (PostgreSQL 연결 상태 포함)
 export async function checkApiHealth() {
   try {
-    const response = await fetchWithTimeout(`${API_BASE}/health`);
-    return response.ok;
+    console.log('🔍 API 서버 상태 확인...');
+    const response = await fetchWithTimeout(`${API_BASE}/api/health`, {}, 5000); // 5초 타임아웃
+    const data = await response.json();
+    
+    const isHealthy = response.ok && data.status === 'ok';
+    console.log(`${isHealthy ? '✅' : '❌'} API 서버 상태: ${isHealthy ? '정상' : '비정상'}`);
+    
+    return isHealthy;
   } catch (error) {
-    console.error('API 상태 확인 실패:', error);
+    console.error('❌ API 상태 확인 실패:', error);
     return false;
   }
 }
 
 // 캐시 관리를 위한 유틸리티
 const cache = new Map();
-const CACHE_DURATION = 5 * 60 * 1000; // 5분
+const CACHE_DURATION = 5 * 60 * 1000; // 5분 (DB 데이터는 상대적으로 오래 캐시)
 
 export function getCachedData(key) {
   const cached = cache.get(key);
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    console.log(`📦 캐시된 데이터 사용: ${key}`);
     return cached.data;
   }
   cache.delete(key);
@@ -176,6 +242,7 @@ export function setCachedData(key, data) {
     data,
     timestamp: Date.now()
   });
+  console.log(`💾 데이터 캐시 저장: ${key}`);
 }
 
 // 캐시가 포함된 주식 데이터 가져오기
@@ -184,7 +251,6 @@ export async function fetchStockCached(ticker) {
   const cached = getCachedData(cacheKey);
   
   if (cached) {
-    console.log('캐시된 데이터 사용:', ticker);
     return cached;
   }
   
@@ -192,4 +258,92 @@ export async function fetchStockCached(ticker) {
   setCachedData(cacheKey, data);
   
   return data;
+}
+
+// 캐시가 포함된 티커 맵 가져오기
+export async function fetchTickerMapCached() {
+  const cacheKey = 'ticker_map';
+  const cached = getCachedData(cacheKey);
+  
+  if (cached) {
+    return cached;
+  }
+  
+  const data = await fetchTickerMap();
+  setCachedData(cacheKey, data);
+  
+  return data;
+}
+
+// 뉴스와 주식 데이터를 합쳐서 반환하는 함수
+export async function fetchStockWithNews(ticker) {
+  try {
+    console.log(`🔍 ${ticker} 종목의 주식 데이터와 뉴스를 함께 조회...`);
+    
+    // 병렬로 요청
+    const [stockData, newsData] = await Promise.all([
+      fetchStockCached(ticker),
+      fetchNews(ticker).catch(error => {
+        console.warn('뉴스 조회 실패, 빈 배열 반환:', error.message);
+        return [];
+      })
+    ]);
+    
+    // 뉴스를 날짜별로 그룹핑
+    const newsByDate = {};
+    newsData.forEach(news => {
+      const date = news.published_at;
+      if (!newsByDate[date]) {
+        newsByDate[date] = { companyNews: [], macroNews: [] };
+      }
+      // 뉴스 분류 로직 (제목에 따라 분류)
+      if (news.title.includes(ticker) || news.title.includes('기업')) {
+        newsByDate[date].companyNews.push(news.title);
+      } else {
+        newsByDate[date].macroNews.push(news.title);
+      }
+    });
+    
+    // 주식 데이터에 뉴스 정보 추가
+    const enrichedStockData = stockData.map(item => ({
+      ...item,
+      companyNews: newsByDate[item.date]?.companyNews || [],
+      macroNews: newsByDate[item.date]?.macroNews || []
+    }));
+    
+    console.log(`✅ 통합 데이터 생성 완료: 주식 ${enrichedStockData.length}개, 뉴스 ${newsData.length}개`);
+    
+    return {
+      stockData: enrichedStockData,
+      newsData: newsData,
+      summary: {
+        stockPoints: enrichedStockData.length,
+        newsCount: newsData.length,
+        dateRange: {
+          start: enrichedStockData[0]?.date,
+          end: enrichedStockData[enrichedStockData.length - 1]?.date
+        }
+      }
+    };
+    
+  } catch (error) {
+    console.error('통합 데이터 조회 실패:', error);
+    throw error;
+  }
+}
+
+// 캐시 초기화 (새로고침 등에 사용)
+export function clearCache() {
+  cache.clear();
+  console.log('🗑️ 모든 캐시 데이터가 삭제되었습니다.');
+}
+
+// 개발용 디버깅 함수
+export function getApiDebugInfo() {
+  return {
+    apiBase: API_BASE,
+    cacheSize: cache.size,
+    cachedKeys: Array.from(cache.keys()),
+    environment: process.env.NODE_ENV
+  };
 }

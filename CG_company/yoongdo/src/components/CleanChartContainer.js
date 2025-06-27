@@ -269,7 +269,7 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
       },
     },
     interaction: { mode: "nearest", intersect: false },
-  }), [onShowNews]);
+  }), [onShowNews, externalTooltipHandler]);
 
   // === TRADINGVIEW CANDLESTICK CHART 로직 ===
   useEffect(() => {
@@ -495,12 +495,13 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
           }
         }
       }
-      if (chartRef.current && chartRef.current.canvas) {
-        chartRef.current.canvas.addEventListener("dblclick", handleChartDoubleClick);
+      const chartInstance = chartRef.current;
+      if (chartInstance && chartInstance.canvas) {
+        chartInstance.canvas.addEventListener("dblclick", handleChartDoubleClick);
       }
       return () => {
-        if (chartRef.current && chartRef.current.canvas) {
-          chartRef.current.canvas.removeEventListener("dblclick", handleChartDoubleClick);
+        if (chartInstance && chartInstance.canvas) {
+          chartInstance.canvas.removeEventListener("dblclick", handleChartDoubleClick);
         }
       };
     }
