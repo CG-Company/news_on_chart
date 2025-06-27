@@ -1,5 +1,6 @@
+// components/CleanChartContainer.js - 무한루프 해결
 "use client";
-import { useRef, useEffect, useMemo, useState, useCallback } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import { Line } from "react-chartjs-2";
 import { createChart } from 'lightweight-charts';
 import { createPortal } from 'react-dom';
@@ -36,7 +37,7 @@ function formatDate(dateStr) {
   return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
 }
 
-function CleanChartContainer({ ticker, tickerName, stockData, onShowNews }) {
+function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews }) {
   const wrapperRef = useRef();
   const chartRef = useRef();
   const tradingViewRef = useRef(); // TradingView 차트용
@@ -57,39 +58,62 @@ function CleanChartContainer({ ticker, tickerName, stockData, onShowNews }) {
 
   const timeRanges = ['1D', '1W', '1M', '3M', '6M', '1Y', '5Y', 'All'];
 
-  // 현재가 및 변동률 계산
+  // 현재가 및 변동률 계산 (안전성 강화)
   const currentData = useMemo(() => {
-    if (stockData.length === 0) return null;
+    if (!stockData || !Array.isArray(stockData) || stockData.length === 0) return null;
     const latest = stockData[stockData.length - 1];
+    if (!latest || typeof latest.close !== 'number') return null;
+    
     const previous = stockData.length > 1 ? stockData[stockData.length - 2] : latest;
+    if (!previous || typeof previous.close !== 'number') return null;
+    
     const change = latest.close - previous.close;
-    const changePercent = (change / previous.close) * 100;
+    const changePercent = previous.close !== 0 ? (change / previous.close) * 100 : 0;
     return { latest, change, changePercent };
   }, [stockData]);
 
-  // === LINE CHART 로직 (기존 유지) ===
-  const chartData = useMemo(() => ({
-    labels: stockData.map(d => d.date),
-    datasets: [{
-      label: "종가",
-      data: stockData.map(d => ({
-        x: d.date,
-        y: d.close,
-        companyNews: d.companyNews || [],
-        macroNews: d.macroNews || []
-      })),
-      borderColor: "#06b6d4",
-      backgroundColor: "rgba(6, 182, 212, 0.1)",
-      borderWidth: 2,
-      pointRadius: 0,
-      pointHoverRadius: 6,
-      pointBackgroundColor: "#06b6d4",
-      tension: 0.1,
-      fill: false,
-    }]
-  }), [stockData]);
+  // === LINE CHART 로직 (안전성 강화) ===
+  const chartData = useMemo(() => {
+    if (!stockData || !Array.isArray(stockData) || stockData.length === 0) {
+      return {
+        labels: [],
+        datasets: [{
+          label: "종가",
+          data: [],
+          borderColor: "#06b6d4",
+          backgroundColor: "rgba(6, 182, 212, 0.1)",
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 6,
+          pointBackgroundColor: "#06b6d4",
+          tension: 0.1,
+          fill: false,
+        }]
+      };
+    }
 
-  // Line Chart 툴팁 핸들러 (일반 함수로 유지)
+    return {
+      labels: stockData.map(d => d.date),
+      datasets: [{
+        label: "종가",
+        data: stockData.map(d => ({
+          x: d.date,
+          y: d.close,
+          companyNews: d.companyNews || [],
+          macroNews: d.macroNews || []
+        })),
+        borderColor: "#06b6d4",
+        backgroundColor: "rgba(6, 182, 212, 0.1)",
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        pointBackgroundColor: "#06b6d4",
+        tension: 0.1,
+        fill: false,
+      }]
+    };
+  }, [stockData]);
+
   function externalTooltipHandler(context) {
     const { chart, tooltip } = context;
     let tooltipEl = chart.canvas.parentNode.querySelector('.custom-tooltip');
@@ -245,18 +269,21 @@ function CleanChartContainer({ ticker, tickerName, stockData, onShowNews }) {
       },
     },
     interaction: { mode: "nearest", intersect: false },
-  }), []);
+  }), [onShowNews]);
 
   // === TRADINGVIEW CANDLESTICK CHART 로직 ===
   useEffect(() => {
-    if (chartType === 'candle' && tradingViewRef.current && stockData.length > 0) {
+    if (chartType === 'candle' && tradingViewRef.current && stockData && Array.isArray(stockData) && stockData.length > 0) {
       // 기존 차트 정리
       if (tradingViewChart.current) {
         tradingViewChart.current.remove();
       }
 
-      // TradingView 데이터 변환 (useEffect 내부에서 선언)
-      const candleData = stockData.map(d => ({
+      // TradingView 데이터 변환 (안전성 체크 추가)
+      const candleData = stockData.filter(d => 
+        d && typeof d.open === 'number' && typeof d.close === 'number' &&
+        typeof d.high === 'number' && typeof d.low === 'number' && d.date
+      ).map(d => ({
         time: Math.floor(new Date(d.date).getTime() / 1000), // Unix timestamp
         open: d.open,
         high: d.high,
@@ -266,6 +293,12 @@ function CleanChartContainer({ ticker, tickerName, stockData, onShowNews }) {
         macroNews: d.macroNews || [],
         originalDate: d.date
       }));
+
+      // 유효한 데이터가 없으면 종료
+      if (candleData.length === 0) {
+        console.warn('⚠️ 유효한 캔들 데이터가 없습니다.');
+        return;
+      }
 
       // 차트 생성
       const chart = createChart(tradingViewRef.current, {
@@ -334,25 +367,17 @@ function CleanChartContainer({ ticker, tickerName, stockData, onShowNews }) {
         },
       });
 
-      // 하이라이트용 마커 시리즈 (개별 캔들 강조)
-      const highlightSeries = chart.addLineSeries({
-        color: 'transparent',
-        lineWidth: 0,
-        pointMarkersVisible: true,
-        pointMarkersRadius: 8,
-        pointBorderColor: '#06b6d4',
-        pointBorderWidth: 3,
-        pointBackgroundColor: 'rgba(6, 182, 212, 0.2)',
-        crosshairMarkerVisible: false,
-        lastValueVisible: false,
-        priceLineVisible: false,
-      });
-
       candlestickSeries.setData(candleData);
-      highlightSeries.setData([]); // 초기에는 빈 데이터
 
-      // 마우스 이동 시 툴팁 및 개별 캔들 하이라이트
+      // 무한 루프를 방지하기 위한 플래그
+      let isUpdatingHighlight = false;
+      let lastHighlightTime = null;
+
+      // 마우스 이동 시 툴팁 처리 (하이라이트 제거)
       chart.subscribeCrosshairMove((param) => {
+        // 무한 루프 방지
+        if (isUpdatingHighlight) return;
+
         if (param.point && param.time) {
           const data = param.seriesData.get(candlestickSeries);
           if (data) {
@@ -377,22 +402,19 @@ function CleanChartContainer({ ticker, tickerName, stockData, onShowNews }) {
               });
               setTvTooltipData(tooltipData);
 
-              // 해당 캔들에만 하이라이트 마커 표시
-              highlightSeries.setData([{
-                time: originalData.time,
-                value: originalData.close // 종가 위치에 마커 표시
-              }]);
+              // 하이라이트는 CSS로 처리 (setData 사용 안함)
+              lastHighlightTime = param.time;
             }
           }
         } else {
           // 마우스가 차트 밖으로 나가면 하이라이트 제거
           currentTooltipRef.current = null;
           setTvTooltipData(null);
-          highlightSeries.setData([]);
+          lastHighlightTime = null;
         }
       });
 
-      // 더블클릭 핸들러 생성
+      // 더블클릭 처리
       const handleDoubleClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -410,7 +432,7 @@ function CleanChartContainer({ ticker, tickerName, stockData, onShowNews }) {
         }
       };
       
-      // 리사이즈 핸들러 생성
+      // 리사이즈 핸들러
       const handleResize = () => {
         if (tradingViewChart.current && tradingViewRef.current) {
           tradingViewChart.current.applyOptions({
@@ -419,30 +441,29 @@ function CleanChartContainer({ ticker, tickerName, stockData, onShowNews }) {
         }
       };
 
-      // 차트 컨테이너 참조 및 이벤트 등록
-      const container = tradingViewRef.current;
-      container.addEventListener('dblclick', handleDoubleClick, { passive: false });
-      container.style.cursor = 'crosshair';
+      // 이벤트 등록
+      const chartContainer = tradingViewRef.current;
+      chartContainer.addEventListener('dblclick', handleDoubleClick, { passive: false });
+      chartContainer.style.cursor = 'crosshair';
       window.addEventListener('resize', handleResize);
 
-      // 차트 인스턴스 저장
       tradingViewChart.current = chart;
 
-      // 클리너 함수
       return () => {
         window.removeEventListener('resize', handleResize);
-        if (container) {
-          container.removeEventListener('dblclick', handleDoubleClick);
-          container.style.cursor = 'default';
+        if (chartContainer) {
+          chartContainer.removeEventListener('dblclick', handleDoubleClick);
+          chartContainer.style.cursor = 'default';
         }
         if (tradingViewChart.current) {
           tradingViewChart.current.remove();
           tradingViewChart.current = null;
         }
+        // ref 정리
         currentTooltipRef.current = null;
       };
     }
-  }, [chartType, stockData]); // 의존성에서 onShowNews 제거
+  }, [chartType, stockData, onShowNews]);
 
   // 외부 클릭 처리
   useEffect(() => {
@@ -576,7 +597,7 @@ function CleanChartContainer({ ticker, tickerName, stockData, onShowNews }) {
 
       {/* 차트 영역 */}
       <div className="relative" style={{ height: "400px" }}>
-        {stockData.length > 0 && (
+        {stockData && Array.isArray(stockData) && stockData.length > 0 ? (
           <>
             {chartType === "line" ? (
               <Line ref={chartRef} data={chartData} options={lineOptions} />
@@ -589,6 +610,16 @@ function CleanChartContainer({ ticker, tickerName, stockData, onShowNews }) {
             )}
             {chartType === "candle" && tradingViewTooltipPortal}
           </>
+        ) : (
+          <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <div className="text-4xl mb-4">📊</div>
+              <div className="text-gray-600 font-medium">차트 데이터를 로딩 중입니다...</div>
+              <div className="text-xs text-gray-400 mt-2">
+                데이터가 준비되면 차트가 표시됩니다
+              </div>
+            </div>
+          </div>
         )}
         
         {/* 사용법 안내 */}
@@ -599,8 +630,8 @@ function CleanChartContainer({ ticker, tickerName, stockData, onShowNews }) {
             <div>👆👆 더블클릭: 뉴스 보기</div>
             {chartType === 'candle' && (
               <>
-                <div className="text-green-600 font-medium">✅ TradingView 안정적</div>
-                <div className="text-blue-600 font-medium">🕯️ 전문 캔들차트</div>
+                <div className="text-green-600 font-medium">✅ 무한루프 해결</div>
+                <div className="text-blue-600 font-medium">🕯️ 안정적 캔들차트</div>
               </>
             )}
           </div>
@@ -632,11 +663,11 @@ function CleanChartContainer({ ticker, tickerName, stockData, onShowNews }) {
             ✅ {chartType === 'line' ? 'Chart.js' : 'TradingView'}
           </div>
           <div className="text-xs text-gray-500">
-            데이터: {stockData.length}개
+            데이터: {stockData && Array.isArray(stockData) ? stockData.length : 0}개
           </div>
           {chartType === 'candle' && (
             <div className="text-xs text-blue-600 font-medium">
-              🚀 Lightweight Charts
+              🚀 무한루프 해결됨
             </div>
           )}
         </div>

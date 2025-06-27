@@ -44,19 +44,30 @@ def get_ticker_map():
     return [{"ticker": r["ticker"], "name": r["company_name"]} for r in df.to_dict(orient="records")]
 
 def get_news_data(ticker: str):
+    # 종목별 뉴스(companyNews)와 macro 뉴스(macroNews)를 날짜별로 묶어서 반환
     sql = """
-    SELECT
-        ticker,
-        published_at,
-        title,
-        summary,
-        content,
-        url
-    FROM news
-    WHERE ticker = :ticker
-    ORDER BY published_at DESC
+    SELECT n.price_date AS date, n.title, n.url, n.summary, n.content, p.name AS publisher, n.ticker
+    FROM news n
+    JOIN publisher p ON n.publisher_id = p.publisher_id
+    WHERE n.ticker = :ticker OR n.ticker = 'macro'
+    ORDER BY n.price_date, n.ticker
     """
     df = pd.read_sql(text(sql), engine, params={"ticker": ticker})
-    df = df.fillna('')
-    df['published_at'] = pd.to_datetime(df['published_at']).dt.strftime('%Y-%m-%d')
-    return df.to_dict(orient="records")
+    # 날짜별로 companyNews, macroNews 분리
+    result = {}
+    for _, row in df.iterrows():
+        date = row['date'].strftime('%Y-%m-%d') if hasattr(row['date'], 'strftime') else str(row['date'])
+        if date not in result:
+            result[date] = {"date": date, "companyNews": [], "macroNews": []}
+        news_item = {
+            "title": row["title"],
+            "url": row["url"],
+            "summary": row["summary"],
+            "content": row["content"],
+            "publisher": row["publisher"]
+        }
+        if row["ticker"] == ticker:
+            result[date]["companyNews"].append(news_item)
+        elif row["ticker"] == "macro":
+            result[date]["macroNews"].append(news_item)
+    return list(result.values())

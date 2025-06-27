@@ -1,9 +1,9 @@
 // components/NewsPanel.js (업데이트됨)
 import React from "react";
 
-const NewsPanel = ({ date, news }) => {
+const NewsPanel = ({ date, news, loading }) => {
   // 뉴스 아이템 컴포넌트
-  const NewsItem = ({ title, source, time, summary, sentiment }) => (
+  const NewsItem = ({ title, source, time, summary, sentiment, url }) => (
     <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 last:border-b-0">
       <div className="flex items-start space-x-3">
         {/* 뉴스 아이콘 */}
@@ -26,12 +26,22 @@ const NewsPanel = ({ date, news }) => {
         {/* 뉴스 내용 */}
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-medium text-gray-900 line-clamp-2 leading-5">
-            {title}
+            {url ? (
+              <a href={url} target="_blank" rel="noopener noreferrer">
+                {title}
+              </a>
+            ) : (
+              title
+            )}
           </h4>
           <div className="flex items-center space-x-2 mt-1">
-            <span className="text-xs text-gray-500">{source}</span>
-            <span className="text-xs text-gray-400">•</span>
-            <span className="text-xs text-gray-500">{time}</span>
+            {source && <span className="text-xs text-gray-500">{source}</span>}
+            {time && (
+              <>
+                <span className="text-xs text-gray-400">•</span>
+                <span className="text-xs text-gray-500">{time}</span>
+              </>
+            )}
             {sentiment && (
               <>
                 <span className="text-xs text-gray-400">•</span>
@@ -78,12 +88,17 @@ const NewsPanel = ({ date, news }) => {
   );
 
   // 뉴스 데이터 파싱
-  const companyNews = news?.companyNews || [];
-  const macroNews = news?.macroNews || [];
-  const allNews = [
-    ...companyNews.map((n) => ({ type: "company", content: n })),
-    ...macroNews.map((n) => ({ type: "macro", content: n })),
-  ];
+  let newsList = [];
+  if (Array.isArray(news)) {
+    newsList = news;
+  } else if (news && (news.companyNews || news.macroNews)) {
+    const companyNews = news.companyNews || [];
+    const macroNews = news.macroNews || [];
+    newsList = [
+      ...companyNews.map((n) => ({ title: n, source: "Company News" })),
+      ...macroNews.map((n) => ({ title: n, source: "Economic News" })),
+    ];
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
@@ -106,86 +121,30 @@ const NewsPanel = ({ date, news }) => {
 
       {/* 뉴스 리스트 */}
       <div className="flex-1 overflow-y-auto">
-        {date || news?.x ? (
+        {loading ? (
           <>
-            {/* 뉴스가 있는 경우 */}
-            {allNews.length > 0 ? (
-              <div>
-                {/* 기업 뉴스 섹션 */}
-                {companyNews.length > 0 && (
-                  <div>
-                    <div className="px-6 py-3 bg-gray-50 border-b border-gray-100">
-                      <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                        기업 뉴스
-                      </h4>
-                    </div>
-                    {companyNews.map((newsItem, i) => (
-                      <NewsItem
-                        key={`company-${i}`}
-                        title={newsItem}
-                        source="Company News"
-                        time="09:30"
-                        summary="기업 관련 뉴스 요약입니다."
-                        sentiment="neutral"
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* 거시 뉴스 섹션 */}
-                {macroNews.length > 0 && (
-                  <div>
-                    <div className="px-6 py-3 bg-gray-50 border-b border-gray-100">
-                      <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                        거시경제 뉴스
-                      </h4>
-                    </div>
-                    {macroNews.map((newsItem, i) => (
-                      <NewsItem
-                        key={`macro-${i}`}
-                        title={newsItem}
-                        source="Economic News"
-                        time="10:15"
-                        summary="거시경제 관련 뉴스 요약입니다."
-                        sentiment="neutral"
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* 뉴스가 없는 경우 */
-              <div className="flex flex-col items-center justify-center h-64 text-center px-6">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <svg
-                    className="w-8 h-8 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15"
-                    />
-                  </svg>
-                </div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">
-                  뉴스 없음
-                </h4>
-                <p className="text-sm text-gray-500">
-                  해당 날짜에 관련 뉴스가 없습니다.
-                </p>
-              </div>
-            )}
+            <LoadingSkeleton />
+            <LoadingSkeleton />
+            <LoadingSkeleton />
           </>
+        ) : newsList.length > 0 ? (
+          <div>
+            {newsList.map((item, i) => (
+              <NewsItem
+                key={item.id || i}
+                title={item.title}
+                source={item.source}
+                time={item.published_at || item.date}
+                summary={item.summary}
+                url={item.url}
+              />
+            ))}
+          </div>
         ) : (
-          /* 기본 상태 */
           <div className="flex flex-col items-center justify-center h-64 text-center px-6">
-            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <svg
-                className="w-8 h-8 text-blue-600"
+                className="w-8 h-8 text-gray-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -194,17 +153,15 @@ const NewsPanel = ({ date, news }) => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+                  d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15"
                 />
               </svg>
             </div>
             <h4 className="text-sm font-medium text-gray-900 mb-2">
-              날짜를 선택하세요
+              뉴스 없음
             </h4>
             <p className="text-sm text-gray-500">
-              차트에서 날짜를 더블클릭하거나
-              <br />
-              '뉴스 더보기'를 클릭하세요.
+              해당 날짜에 관련 뉴스가 없습니다.
             </p>
           </div>
         )}
