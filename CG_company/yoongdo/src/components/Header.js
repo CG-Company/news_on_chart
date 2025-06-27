@@ -2,7 +2,7 @@
 import React from "react";
 import SearchBar from "./SearchBar";
 
-const Header = ({ ticker, setTicker, tickerName }) => {
+const Header = ({ ticker, setTicker, tickerName, setTickerName }) => {
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4 ml-52">
       <div className="flex items-center justify-between">
@@ -15,7 +15,11 @@ const Header = ({ ticker, setTicker, tickerName }) => {
 
         {/* 중앙 검색바 */}
         <div className="flex-1 max-w-lg mx-8">
-          <SearchBar ticker={ticker} setTicker={setTicker} />
+          <SearchBar
+            ticker={ticker}
+            setTicker={setTicker}
+            setTickerName={setTickerName}
+          />
         </div>
 
         {/* 우측 아이콘들 */}

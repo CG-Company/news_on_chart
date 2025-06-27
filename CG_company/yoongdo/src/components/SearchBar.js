@@ -4,14 +4,14 @@ import { fetchTickerMap } from "../utils/api";
 import { validateTickerMap } from "../utils/dataValidation";
 import { SearchLoadingSpinner } from "./LoadingSpinner";
 
-const SearchBar = ({ ticker, setTicker }) => {
+const SearchBar = ({ ticker, setTicker, setTickerName }) => {
   const [input, setInput] = useState(ticker);
   const [isLoading, setIsLoading] = useState(false);
   const [tickerMap, setTickerMap] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [error, setError] = useState(null);
-  
+
   const inputRef = useRef(null);
   const suggestionRefs = useRef([]);
 
@@ -21,28 +21,28 @@ const SearchBar = ({ ticker, setTicker }) => {
       try {
         setError(null);
         const data = await fetchTickerMap();
-        
+
         // 데이터 검증
         const validation = validateTickerMap(data);
         if (!validation.isValid) {
           throw new Error(validation.error);
         }
-        
+
         setTickerMap(data);
       } catch (err) {
-        console.error('티커 맵 로딩 실패:', err);
-        setError('검색 데이터를 불러올 수 없습니다.');
-        
+        console.error("티커 맵 로딩 실패:", err);
+        setError("검색 데이터를 불러올 수 없습니다.");
+
         // 로컬 백업 시도
         try {
-          const backupResponse = await fetch('/ticker_map.json');
+          const backupResponse = await fetch("/ticker_map.json");
           if (backupResponse.ok) {
             const backupData = await backupResponse.json();
             setTickerMap(backupData);
             setError(null);
           }
         } catch (backupError) {
-          console.error('백업 데이터 로딩도 실패:', backupError);
+          console.error("백업 데이터 로딩도 실패:", backupError);
         }
       }
     };
@@ -58,11 +58,11 @@ const SearchBar = ({ ticker, setTicker }) => {
   // 검색 제안 필터링 (메모이제이션)
   const suggestions = useMemo(() => {
     if (!input.trim() || tickerMap.length === 0) return [];
-    
+
     const query = input.toLowerCase().trim();
-    
+
     return tickerMap
-      .filter(item => {
+      .filter((item) => {
         const nameMatch = item.name.toLowerCase().includes(query);
         const tickerMatch = item.ticker.includes(query);
         return nameMatch || tickerMatch;
@@ -74,17 +74,17 @@ const SearchBar = ({ ticker, setTicker }) => {
         const bExactName = b.name.toLowerCase() === query;
         const aExactTicker = a.ticker === query;
         const bExactTicker = b.ticker === query;
-        
+
         if (aExactName || aExactTicker) return -1;
         if (bExactName || bExactTicker) return 1;
-        
+
         // 이름으로 시작하는 것을 우선
         const aStartsWithName = a.name.toLowerCase().startsWith(query);
         const bStartsWithName = b.name.toLowerCase().startsWith(query);
-        
+
         if (aStartsWithName && !bStartsWithName) return -1;
         if (!aStartsWithName && bStartsWithName) return 1;
-        
+
         // 알파벳 순 정렬
         return a.name.localeCompare(b.name);
       });
@@ -93,9 +93,9 @@ const SearchBar = ({ ticker, setTicker }) => {
   // 검색 실행
   const handleSearch = async (searchTicker = null) => {
     const targetTicker = searchTicker || input.trim();
-    
+
     if (!targetTicker) {
-      setError('검색어를 입력해주세요.');
+      setError("검색어를 입력해주세요.");
       return;
     }
 
@@ -112,21 +112,21 @@ const SearchBar = ({ ticker, setTicker }) => {
       }
 
       // 종목명으로 검색
-      const found = tickerMap.find(item => 
-        item.name === targetTicker || item.ticker === targetTicker
+      const found = tickerMap.find(
+        (item) => item.name === targetTicker || item.ticker === targetTicker
       );
 
       if (found) {
         setTicker(found.ticker);
-        setTickerName(found.name);
+        setTickerName && setTickerName(found.name);
         setInput(found.name);
         setShowSuggestions(false);
       } else {
         // 부분 일치 검색
-        const partialMatch = tickerMap.find(item =>
+        const partialMatch = tickerMap.find((item) =>
           item.name.toLowerCase().includes(targetTicker.toLowerCase())
         );
-        
+
         if (partialMatch) {
           setTicker(partialMatch.ticker);
           setInput(partialMatch.name);
@@ -134,18 +134,26 @@ const SearchBar = ({ ticker, setTicker }) => {
         } else {
           setError(`'${targetTicker}'에 해당하는 종목을 찾을 수 없습니다.`);
           // 유사한 종목 제안
-          const similar = tickerMap.filter(item =>
-            item.name.toLowerCase().includes(targetTicker.toLowerCase().substring(0, 2))
-          ).slice(0, 3);
-          
+          const similar = tickerMap
+            .filter((item) =>
+              item.name
+                .toLowerCase()
+                .includes(targetTicker.toLowerCase().substring(0, 2))
+            )
+            .slice(0, 3);
+
           if (similar.length > 0) {
-            setError(`'${targetTicker}'에 해당하는 종목을 찾을 수 없습니다. 혹시 이런 종목을 찾으시나요? ${similar.map(s => s.name).join(', ')}`);
+            setError(
+              `'${targetTicker}'에 해당하는 종목을 찾을 수 없습니다. 혹시 이런 종목을 찾으시나요? ${similar
+                .map((s) => s.name)
+                .join(", ")}`
+            );
           }
         }
       }
     } catch (err) {
-      console.error('검색 중 오류:', err);
-      setError('검색 중 오류가 발생했습니다.');
+      console.error("검색 중 오류:", err);
+      setError("검색 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +162,7 @@ const SearchBar = ({ ticker, setTicker }) => {
   // 키보드 이벤트 처리
   const handleKeyDown = (e) => {
     if (!showSuggestions) {
-      if (e.key === 'Enter') {
+      if (e.key === "Enter") {
         e.preventDefault();
         handleSearch();
       }
@@ -162,17 +170,17 @@ const SearchBar = ({ ticker, setTicker }) => {
     }
 
     switch (e.key) {
-      case 'ArrowDown':
+      case "ArrowDown":
         e.preventDefault();
-        setSelectedIndex(prev => 
+        setSelectedIndex((prev) =>
           prev < suggestions.length - 1 ? prev + 1 : prev
         );
         break;
-      case 'ArrowUp':
+      case "ArrowUp":
         e.preventDefault();
-        setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
         break;
-      case 'Enter':
+      case "Enter":
         e.preventDefault();
         if (selectedIndex >= 0 && suggestions[selectedIndex]) {
           handleSearch(suggestions[selectedIndex].ticker);
@@ -180,11 +188,11 @@ const SearchBar = ({ ticker, setTicker }) => {
           handleSearch();
         }
         break;
-      case 'Escape':
+      case "Escape":
         setShowSuggestions(false);
         setSelectedIndex(-1);
         break;
-      case 'Tab':
+      case "Tab":
         if (suggestions.length > 0 && selectedIndex >= 0) {
           e.preventDefault();
           setInput(suggestions[selectedIndex].name);
@@ -199,7 +207,7 @@ const SearchBar = ({ ticker, setTicker }) => {
     setInput(value);
     setError(null);
     setSelectedIndex(-1);
-    
+
     if (value.trim().length > 0) {
       setShowSuggestions(true);
     } else {
@@ -230,16 +238,16 @@ const SearchBar = ({ ticker, setTicker }) => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // 선택된 항목으로 스크롤
   useEffect(() => {
     if (selectedIndex >= 0 && suggestionRefs.current[selectedIndex]) {
       suggestionRefs.current[selectedIndex].scrollIntoView({
-        block: 'nearest',
-        behavior: 'smooth'
+        block: "nearest",
+        behavior: "smooth",
       });
     }
   }, [selectedIndex]);
@@ -247,14 +255,17 @@ const SearchBar = ({ ticker, setTicker }) => {
   return (
     <div className="relative max-w-md mx-auto" ref={inputRef}>
       {/* 메인 검색 입력 */}
-      <div className={`flex items-center bg-gray-50 rounded-lg border transition-colors ${
-        error ? 'border-red-300 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500' :
-        'border-gray-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500'
-      }`}>
+      <div
+        className={`flex items-center bg-gray-50 rounded-lg border transition-colors ${
+          error
+            ? "border-red-300 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500"
+            : "border-gray-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500"
+        }`}
+      >
         {/* 검색 아이콘 */}
         <div className="pl-3">
           <svg
-            className={`w-5 h-5 ${error ? 'text-red-400' : 'text-gray-400'}`}
+            className={`w-5 h-5 ${error ? "text-red-400" : "text-gray-400"}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -341,7 +352,7 @@ const SearchBar = ({ ticker, setTicker }) => {
             {suggestions.map((suggestion, index) => (
               <button
                 key={suggestion.ticker}
-                ref={el => suggestionRefs.current[index] = el}
+                ref={(el) => (suggestionRefs.current[index] = el)}
                 className={`w-full text-left px-3 py-2 text-sm rounded transition-colors flex items-center justify-between ${
                   index === selectedIndex
                     ? "bg-blue-50 text-blue-700"
@@ -352,7 +363,9 @@ const SearchBar = ({ ticker, setTicker }) => {
               >
                 <div>
                   <div className="font-medium">{suggestion.name}</div>
-                  <div className="text-xs text-gray-500">{suggestion.ticker}</div>
+                  <div className="text-xs text-gray-500">
+                    {suggestion.ticker}
+                  </div>
                 </div>
                 {/* 정확히 일치하는 항목 표시 */}
                 {(suggestion.name.toLowerCase() === input.toLowerCase() ||
@@ -371,11 +384,14 @@ const SearchBar = ({ ticker, setTicker }) => {
       {showSuggestions && suggestions.length === 0 && input.trim() && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
           <div className="p-4 text-center">
-            <div className="text-sm text-gray-500 mb-2">검색 결과가 없습니다</div>
+            <div className="text-sm text-gray-500 mb-2">
+              검색 결과가 없습니다
+            </div>
             <div className="text-xs text-gray-400">
-              • 정확한 종목명을 입력해보세요<br/>
-              • 6자리 종목 코드로 검색해보세요<br/>
-              • 예: "삼성전자" 또는 "005930"
+              • 정확한 종목명을 입력해보세요
+              <br />
+              • 6자리 종목 코드로 검색해보세요
+              <br />• 예: "삼성전자" 또는 "005930"
             </div>
           </div>
         </div>
