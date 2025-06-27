@@ -196,7 +196,7 @@ const ChartContainer = ({ ticker, tickerName, stockData, onShowNews }) => {
       },
       interaction: { mode: "nearest", intersect: false },
     }),
-    [onShowNews]
+    [onShowNews, externalTooltipHandler]
   );
 
   // === CANDLE CHART 로직 ===
@@ -217,23 +217,18 @@ const ChartContainer = ({ ticker, tickerName, stockData, onShowNews }) => {
         type: "candlestick",
         height: 400,
         toolbar: { show: false },
-        zoom: { enabled: true, type: "x", autoScaleYaxis: true },
+        zoom: { enabled: true, type: "x", autoScaleYaxis: true, resetOnDblClick: false },
         events: {
           dataPointMouseEnter: (event, _, config) => {
-            setTimeout(() => setHoverIndex(config.dataPointIndex), 0);
+            setTimeout(() => {
+              setHoverIndex(config.dataPointIndex);
+              setMousePos({ x: event.clientX, y: event.clientY });
+            }, 0);
           },
           dataPointMouseLeave: () => {
             setTimeout(() => setHoverIndex(null), 0);
           },
-          mouseMove: (event) => {
-            setMousePos({ x: event.clientX, y: event.clientY });
-          },
-          doubleClick: () => {
-            if (hoverIndex !== null) {
-              const d = candleData[hoverIndex];
-              if (d) onShowNews(d);
-            }
-          },
+          doubleClick: () => {},
           mouseLeave: () => {
             setHoverIndex(null);
           },
@@ -288,28 +283,31 @@ const ChartContainer = ({ ticker, tickerName, stockData, onShowNews }) => {
         chartRef.current.canvas.addEventListener("dblclick", handleChartDoubleClick);
       }
       return () => {
-        if (chartRef.current && chartRef.current.canvas) {
-          chartRef.current.canvas.removeEventListener(
+        const localChartRef = chartRef.current;
+        if (localChartRef && localChartRef.canvas) {
+          localChartRef.canvas.removeEventListener(
             "dblclick",
             handleChartDoubleClick
           );
         }
       };
     }
-  }, [chartType]);
+  }, [chartType, onShowNews]);
 
-  // 캔들차트 더블클릭: 캔들 위에서만 뉴스패널 업데이트
+  // 캔들차트 클릭: hoverIndex가 null이 아닐 때(캔들 위에 마우스가 있을 때)만 뉴스패널 업데이트
   useEffect(() => {
     if (chartType === "candle" && wrapperRef.current) {
-      const handleDoubleClick = () => {
+      const el = wrapperRef.current;
+      const handleClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         if (hoverIndex !== null) {
           const d = candleData[hoverIndex];
           if (d) onShowNews(d);
         }
       };
-      const el = wrapperRef.current;
-      el.addEventListener("dblclick", handleDoubleClick);
-      return () => el.removeEventListener("dblclick", handleDoubleClick);
+      el.addEventListener("click", handleClick);
+      return () => el.removeEventListener("click", handleClick);
     }
   }, [chartType, hoverIndex, candleData, onShowNews]);
 
@@ -336,7 +334,7 @@ const ChartContainer = ({ ticker, tickerName, stockData, onShowNews }) => {
             left: tooltipPos.x + 16,
             top: tooltipPos.y - 40,
             zIndex: 1000,
-            pointerEvents: "auto",
+            pointerEvents: "none",
           }}
         >
           <NewsTooltip

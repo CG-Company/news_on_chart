@@ -13,7 +13,7 @@ const Sidebar = ({ currentPage = "dashboard" }) => {
     <div className="w-52 bg-gray-900 h-screen fixed left-0 top-0 flex flex-col">
       {/* 로고 영역 */}
       <div className="p-6 border-b border-gray-700">
-        <h1 className="text-white text-xl font-bold">StockLens</h1>
+        <h1 className="text-white text-xl font-bold">CG finance</h1>
       </div>
 
       {/* 메뉴 영역 */}
