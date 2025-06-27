@@ -18,7 +18,7 @@ def read_stock(ticker: str = Query(..., min_length=6, max_length=6)):
     data = get_stock_data(ticker)
     if not data:
         raise HTTPException(404, detail="Ticker not found")
-    return data
+    return {"stockData": data}
 
 @app.get("/api/ticker_map")
 def read_ticker_map():
