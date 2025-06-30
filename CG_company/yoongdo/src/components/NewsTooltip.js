@@ -4,7 +4,7 @@ import { fetchMacroNews, fetchMainNews } from "../utils/api";
 
 const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker }) => {
   const [macroNewsForDate, setMacroNewsForDate] = useState([]);
-  const [mainNewsKeyword, setMainNewsKeyword] = useState("");
+  const [mainNewsForDate, setMainNewsForDate] = useState(null);
 
   useEffect(() => {
     if ((!macroNews || macroNews.length === 0) && date) {
@@ -21,22 +21,22 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker })
   }, [macroNews, date]);
 
   useEffect(() => {
-    if (companyNews && companyNews[0] && !companyNews[0].keyword && ticker && date) {
+    if (ticker && date) {
       fetchMainNews(ticker)
         .then((mainList) => {
           if (mainList && mainList.length > 0) {
             // 날짜까지 매칭
             const matched = mainList.find(item => item.published_at === date || item.date === date);
-            setMainNewsKeyword(matched?.keyword || "");
+            setMainNewsForDate(matched || null);
+          } else {
+            setMainNewsForDate(null);
           }
         })
-        .catch(() => setMainNewsKeyword(""));
-    } else if (companyNews && companyNews[0] && companyNews[0].keyword) {
-      setMainNewsKeyword(companyNews[0].keyword);
+        .catch(() => setMainNewsForDate(null));
     } else {
-      setMainNewsKeyword("");
+      setMainNewsForDate(null);
     }
-  }, [companyNews, ticker, date]);
+  }, [ticker, date]);
 
   // 더블클릭 핸들러
   const handleDoubleClick = (e) => {
@@ -99,6 +99,22 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker })
     }
   };
 
+  // 키워드 pill 렌더링 함수
+  function renderKeywordPills(keyword, color = 'blue') {
+    if (!keyword) return null;
+    // 특수문자 제거 (한글, 영문, 숫자, 공백, 쉼표만 허용)
+    const cleaned = keyword.replace(/[{}\[\]"'`]/g, '');
+    const keywords = cleaned.split(',').map(k => k.trim()).filter(Boolean);
+    const colorClass = color === 'blue' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700';
+    return (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {keywords.map((k, i) => (
+          <span key={i} className={`px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>{k}</span>
+        ))}
+      </div>
+    );
+  }
+
   // macroNews는 항상 빈 배열로 처리
   const macroNewsList = [];
   // companyNews는 기존 companyNews와 macroNews를 합쳐서 전달받았다고 가정
@@ -136,16 +152,19 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker })
               기업 메인뉴스
             </span>
           </div>
-          {companyNews && companyNews.length > 0 ? (
+          {mainNewsForDate ? (
+            <div className="space-y-1">
+              <div className="text-sm text-blue-900 font-semibold">
+                {mainNewsForDate.title}
+              </div>
+              {renderKeywordPills(mainNewsForDate.keyword, 'blue')}
+            </div>
+          ) : companyNews && companyNews.length > 0 ? (
             <div className="space-y-1">
               <div className="text-sm text-blue-900 font-semibold">
                 {companyNews[0].title}
               </div>
-              {(companyNews[0].keyword || mainNewsKeyword) ? (
-                <div className="text-xs text-blue-500 mt-1">
-                  키워드: {companyNews[0].keyword || mainNewsKeyword}
-                </div>
-              ) : null}
+              {renderKeywordPills(companyNews[0].keyword, 'blue')}
             </div>
           ) : (
             <div className="text-xs text-gray-400 italic">뉴스 없음</div>
@@ -164,11 +183,7 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker })
               <div className="text-sm text-orange-900 font-semibold">
                 {macroNewsForDate[0].title}
               </div>
-              {macroNewsForDate[0].keyword && (
-                <div className="text-xs text-orange-500 mt-1">
-                  {macroNewsForDate[0].keyword}
-                </div>
-              )}
+              {renderKeywordPills(macroNewsForDate[0].keyword, 'orange')}
             </div>
           ) : (
             <div className="text-xs text-gray-400 italic">뉴스 없음</div>
