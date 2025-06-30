@@ -55,3 +55,10 @@ def get_news_day(ticker: str, day: str):
         return {"ticker": ticker, "day": day, "news": news}
     except Exception as e:
         return {"error": str(e)}
+
+@app.get("/api/macro_news")
+def get_macro_news():
+    data = get_news_data('000000')
+    if not data:
+        raise HTTPException(404, detail="No macro news found")
+    return data
