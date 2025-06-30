@@ -65,26 +65,40 @@ function CleanChartContainer({
 
   const timeRanges = ["1D", "1W", "1M", "3M", "6M", "1Y", "5Y", "All"];
 
+  // 주말(토, 일) 데이터와 값이 0인 데이터 제외
+  const filteredStockData = useMemo(() => {
+    if (!stockData || !Array.isArray(stockData)) return [];
+    return stockData.filter((item) => {
+      const date = new Date(item.date);
+      const day = date.getDay(); // 0: 일, 6: 토
+      // 주말 제외, open/close/high/low가 모두 0인 데이터 제외
+      const isWeekend = day === 0 || day === 6;
+      const isAllZero = [item.open, item.close, item.high, item.low].every(
+        (v) => v === 0 || v === 0.0
+      );
+      return !isWeekend && !isAllZero;
+    });
+  }, [stockData]);
+
   // 현재가 및 변동률 계산 (안전성 강화)
   const currentData = useMemo(() => {
-    if (!stockData || !Array.isArray(stockData) || stockData.length === 0)
-      return null;
-    const latest = stockData[stockData.length - 1];
+    if (!filteredStockData || filteredStockData.length === 0) return null;
+    const latest = filteredStockData[filteredStockData.length - 1];
     if (!latest || typeof latest.close !== "number") return null;
-
     const previous =
-      stockData.length > 1 ? stockData[stockData.length - 2] : latest;
+      filteredStockData.length > 1
+        ? filteredStockData[filteredStockData.length - 2]
+        : latest;
     if (!previous || typeof previous.close !== "number") return null;
-
     const change = latest.close - previous.close;
     const changePercent =
       previous.close !== 0 ? (change / previous.close) * 100 : 0;
     return { latest, change, changePercent };
-  }, [stockData]);
+  }, [filteredStockData]);
 
   // === LINE CHART 로직 (안전성 강화) ===
   const chartData = useMemo(() => {
-    if (!stockData || !Array.isArray(stockData) || stockData.length === 0) {
+    if (!filteredStockData || filteredStockData.length === 0) {
       return {
         labels: [],
         datasets: [
@@ -103,13 +117,12 @@ function CleanChartContainer({
         ],
       };
     }
-
     return {
-      labels: stockData.map((d) => d.date),
+      labels: filteredStockData.map((d) => d.date),
       datasets: [
         {
           label: "종가",
-          data: stockData.map((d) => ({
+          data: filteredStockData.map((d) => ({
             x: d.date,
             y: d.close,
             companyNews: d.companyNews || [],
@@ -126,7 +139,7 @@ function CleanChartContainer({
         },
       ],
     };
-  }, [stockData]);
+  }, [filteredStockData]);
 
   function externalTooltipHandler(context) {
     const { chart, tooltip } = context;
@@ -293,9 +306,9 @@ function CleanChartContainer({
     if (
       chartType === "candle" &&
       tradingViewRef.current &&
-      stockData &&
-      Array.isArray(stockData) &&
-      stockData.length > 0
+      filteredStockData &&
+      Array.isArray(filteredStockData) &&
+      filteredStockData.length > 0
     ) {
       // 기존 차트 정리
       if (tradingViewChart.current) {
@@ -303,7 +316,7 @@ function CleanChartContainer({
       }
 
       // TradingView 데이터 변환 (안전성 체크 추가)
-      const candleData = stockData
+      const candleData = filteredStockData
         .filter(
           (d) =>
             d &&
@@ -501,7 +514,7 @@ function CleanChartContainer({
         currentTooltipRef.current = null;
       };
     }
-  }, [chartType, stockData, onShowNews]);
+  }, [chartType, filteredStockData, onShowNews]);
 
   // 외부 클릭 처리
   useEffect(() => {
@@ -531,7 +544,7 @@ function CleanChartContainer({
           lastTooltipRef.current.data &&
           lastTooltipRef.current.data[0]
         ) {
-          const dataItem = stockData.find(
+          const dataItem = filteredStockData.find(
             (d) => d.date === lastTooltipRef.current.date
           );
           if (dataItem) {
@@ -555,7 +568,7 @@ function CleanChartContainer({
         }
       };
     }
-  }, [chartType, stockData, onShowNews]);
+  }, [chartType, filteredStockData, onShowNews]);
 
   // TradingView 툴팁 포털
   const tradingViewTooltipPortal = tvTooltipData
@@ -663,7 +676,9 @@ function CleanChartContainer({
 
       {/* 차트 영역 */}
       <div className="relative" style={{ height: "400px" }}>
-        {stockData && Array.isArray(stockData) && stockData.length > 0 ? (
+        {filteredStockData &&
+        Array.isArray(filteredStockData) &&
+        filteredStockData.length > 0 ? (
           <>
             {chartType === "line" ? (
               <Line ref={chartRef} data={chartData} options={lineOptions} />
@@ -736,7 +751,10 @@ function CleanChartContainer({
           </div>
           <div className="text-xs text-gray-500">
             데이터:{" "}
-            {stockData && Array.isArray(stockData) ? stockData.length : 0}개
+            {filteredStockData && Array.isArray(filteredStockData)
+              ? filteredStockData.length
+              : 0}
+            개
           </div>
           {chartType === "candle" && (
             <div className="text-xs text-blue-600 font-medium">

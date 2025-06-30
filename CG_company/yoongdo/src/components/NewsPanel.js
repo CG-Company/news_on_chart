@@ -1,5 +1,7 @@
 // components/NewsPanel.js (업데이트됨)
-import React from "react";
+import React, { useState, useMemo } from "react";
+
+const PAGE_SIZE = 5;
 
 const NewsPanel = ({ date, news, loading }) => {
   // 뉴스 아이템 컴포넌트
@@ -27,7 +29,7 @@ const NewsPanel = ({ date, news, loading }) => {
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-medium text-gray-900 line-clamp-2 leading-5">
             {url ? (
-              <a href={url} target="_blank" rel="noopener noreferrer">
+              <a href={url} target="_blank" rel="noopener noreferrer" className="hover:underline">
                 {title}
               </a>
             ) : (
@@ -96,6 +98,14 @@ const NewsPanel = ({ date, news, loading }) => {
     newsList = allNews.map((n) => ({ title: n, source: "Company News" }));
   }
 
+  // 페이지네이션 상태
+  const [page, setPage] = useState(1);
+  const totalPages = Math.ceil(newsList.length / PAGE_SIZE);
+  const pagedNews = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return newsList.slice(start, start + PAGE_SIZE);
+  }, [newsList, page]);
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
       {/* 헤더 */}
@@ -123,11 +133,11 @@ const NewsPanel = ({ date, news, loading }) => {
             <LoadingSkeleton />
             <LoadingSkeleton />
           </>
-        ) : newsList.length > 0 ? (
+        ) : pagedNews.length > 0 ? (
           <div>
-            {newsList.map((item, i) => (
+            {pagedNews.map((item, i) => (
               <NewsItem
-                key={item.id || i}
+                key={item.id || i + (page - 1) * PAGE_SIZE}
                 title={item.title}
                 source={item.source}
                 time={item.published_at || item.date}
@@ -162,6 +172,21 @@ const NewsPanel = ({ date, news, loading }) => {
           </div>
         )}
       </div>
+      {/* 페이지네이션 */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center py-3 border-t border-gray-100 space-x-1">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => setPage(i + 1)}
+              className={`w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors
+                ${page === i + 1 ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-100'}`}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
