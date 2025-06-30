@@ -5,6 +5,7 @@ import { Line } from "react-chartjs-2";
 import { createChart } from 'lightweight-charts';
 import { createPortal } from 'react-dom';
 import NewsTooltip from './NewsTooltip';
+import { subDays, subWeeks, subMonths, subYears, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 
 // Chart.js 관련 imports (Line Chart용)
 import {
@@ -61,31 +62,118 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
   // 주말(토, 일) 데이터와 값이 0인 데이터 제외
   const filteredStockData = useMemo(() => {
     if (!stockData || !Array.isArray(stockData)) return [];
-    return stockData.filter(item => {
-      const date = new Date(item.date);
-      const day = date.getDay(); // 0: 일, 6: 토
-      // 주말 제외, open/close/high/low가 모두 0인 데이터 제외
-      const isWeekend = (day === 0 || day === 6);
-      const isAllZero = [item.open, item.close, item.high, item.low].every(v => v === 0 || v === 0.0);
-      return !isWeekend && !isAllZero;
-    });
+    let prevClose = null;
+    return stockData
+      .filter(item => {
+        const date = new Date(item.date);
+        const day = date.getDay();
+        // 주말 제외
+        return !(day === 0 || day === 6);
+      })
+      .map(item => {
+        const isAllZero = [item.open, item.close, item.high, item.low].every(v => v === 0 || v === 0.0);
+        if (isAllZero && prevClose !== null) {
+          // 0값이면 이전 종가로 대체 + 플래그 추가
+          const newItem = {
+            ...item,
+            open: prevClose,
+            high: prevClose,
+            low: prevClose,
+            close: prevClose,
+            isFilled: true,
+          };
+          prevClose = newItem.close;
+          return newItem;
+        } else {
+          prevClose = item.close;
+          return { ...item, isFilled: false };
+        }
+      });
   }, [stockData]);
 
-  // 현재가 및 변동률 계산 (안전성 강화)
+  // 봉 단위 매핑 함수
+  const getAggregationType = (range) => {
+    if (range === '1D') return 'day';
+    if (range === '1W') return 'week';
+    if (range === '1M') return 'month';
+    if (range === '3M') return '3month';
+    if (range === '6M') return '6month';
+    if (range === '1Y') return 'year';
+    if (range === '5Y') return '5year';
+    if (range === 'All') return 'year';
+    return 'day';
+  };
+
+  // 봉 타입에 따라 데이터 집계 함수
+  const getAggregatedData = (data, range) => {
+    if (!Array.isArray(data) || data.length === 0) return [];
+    const aggregationType = getAggregationType(range);
+    if (aggregationType === 'day') return data;
+
+    let grouped = {};
+    data.forEach(item => {
+      let key;
+      const date = new Date(item.date);
+      if (aggregationType === 'week') {
+        key = startOfWeek(date, { weekStartsOn: 1 }).toISOString().slice(0, 10);
+      } else if (aggregationType === 'month') {
+        key = startOfMonth(date).toISOString().slice(0, 7);
+      } else if (aggregationType === '3month') {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const groupMonth = Math.floor(month / 3) * 3;
+        key = `${year}-${(groupMonth + 1).toString().padStart(2, '0')}`;
+      } else if (aggregationType === '6month') {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const groupMonth = Math.floor(month / 6) * 6;
+        key = `${year}-${(groupMonth + 1).toString().padStart(2, '0')}`;
+      } else if (aggregationType === 'year') {
+        key = startOfYear(date).getFullYear().toString();
+      } else if (aggregationType === '5year') {
+        const year = date.getFullYear();
+        const groupYear = Math.floor(year / 5) * 5;
+        key = `${groupYear}-${groupYear + 4}`;
+      }
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    });
+    return Object.values(grouped).map(group => {
+      const sorted = group.sort((a, b) => new Date(a.date) - new Date(b.date));
+      return {
+        date: sorted[0].date,
+        open: sorted[0].open,
+        high: Math.max(...group.map(d => d.high)),
+        low: Math.min(...group.map(d => d.low)),
+        close: sorted[sorted.length - 1].close,
+        companyNews: sorted[sorted.length - 1].companyNews,
+        macroNews: sorted[sorted.length - 1].macroNews,
+        isFilled: sorted[sorted.length - 1].isFilled,
+      };
+    });
+  };
+
+  // 기존 rangeFilteredData → aggregation 적용
+  const aggregatedData = useMemo(
+    () => getAggregatedData(filteredStockData, timeRange),
+    [filteredStockData, timeRange]
+  );
+
+  // currentData도 aggregation 기준으로 계산
   const currentData = useMemo(() => {
-    if (!filteredStockData || filteredStockData.length === 0) return null;
-    const latest = filteredStockData[filteredStockData.length - 1];
+    if (!aggregatedData || aggregatedData.length === 0) return null;
+    const latest = aggregatedData[aggregatedData.length - 1];
     if (!latest || typeof latest.close !== 'number') return null;
-    const previous = filteredStockData.length > 1 ? filteredStockData[filteredStockData.length - 2] : latest;
+    const previous = aggregatedData.length > 1 ? aggregatedData[aggregatedData.length - 2] : latest;
     if (!previous || typeof previous.close !== 'number') return null;
     const change = latest.close - previous.close;
     const changePercent = previous.close !== 0 ? (change / previous.close) * 100 : 0;
     return { latest, change, changePercent };
-  }, [filteredStockData]);
+  }, [aggregatedData]);
 
   // === LINE CHART 로직 (안전성 강화) ===
   const chartData = useMemo(() => {
-    if (!filteredStockData || filteredStockData.length === 0) {
+    if (!aggregatedData || aggregatedData.length === 0) {
       return {
         labels: [],
         datasets: [{
@@ -103,10 +191,10 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
       };
     }
     return {
-      labels: filteredStockData.map(d => d.date),
+      labels: aggregatedData.map(d => d.date),
       datasets: [{
         label: "종가",
-        data: filteredStockData.map(d => ({
+        data: aggregatedData.map(d => ({
           x: d.date,
           y: d.close,
           companyNews: d.companyNews || [],
@@ -122,7 +210,7 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
         fill: false,
       }]
     };
-  }, [filteredStockData]);
+  }, [aggregatedData]);
 
   function externalTooltipHandler(context) {
     const { chart, tooltip } = context;
@@ -279,30 +367,34 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
       },
     },
     interaction: { mode: "nearest", intersect: false },
-  }), [onShowNews, externalTooltipHandler]);
+  }), [externalTooltipHandler]);
 
   // === TRADINGVIEW CANDLESTICK CHART 로직 ===
   useEffect(() => {
-    if (chartType === 'candle' && tradingViewRef.current && filteredStockData && Array.isArray(filteredStockData) && filteredStockData.length > 0) {
+    if (chartType === 'candle' && tradingViewRef.current && aggregatedData && Array.isArray(aggregatedData) && aggregatedData.length > 0) {
       // 기존 차트 정리
       if (tradingViewChart.current) {
         tradingViewChart.current.remove();
       }
 
       // TradingView 데이터 변환 (안전성 체크 추가)
-      const candleData = filteredStockData.filter(d => 
-        d && typeof d.open === 'number' && typeof d.close === 'number' &&
-        typeof d.high === 'number' && typeof d.low === 'number' && d.date
-      ).map(d => ({
-        time: Math.floor(new Date(d.date).getTime() / 1000), // Unix timestamp
-        open: d.open,
-        high: d.high,
-        low: d.low,
-        close: d.close,
-        companyNews: d.companyNews || [],
-        macroNews: d.macroNews || [],
-        originalDate: d.date
-      }));
+      const candleData = aggregatedData
+        .filter(d => !d.isFilled) // 휴면 구간 제외
+        .filter(d =>
+          d && typeof d.open === 'number' && typeof d.close === 'number' &&
+          typeof d.high === 'number' && typeof d.low === 'number' && d.date &&
+          !(d.open === 0 && d.high === 0 && d.low === 0 && d.close === 0) // 0값 완전 제외
+        )
+        .map(d => ({
+          time: Math.floor(new Date(d.date).getTime() / 1000), // Unix timestamp
+          open: d.open,
+          high: d.high,
+          low: d.low,
+          close: d.close,
+          companyNews: d.companyNews || [],
+          macroNews: d.macroNews || [],
+          originalDate: d.date
+        }));
 
       // 유효한 데이터가 없으면 종료
       if (candleData.length === 0) {
@@ -473,7 +565,7 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
         currentTooltipRef.current = null;
       };
     }
-  }, [chartType, filteredStockData, onShowNews]);
+  }, [chartType, aggregatedData, onShowNews]);
 
   // 외부 클릭 처리
   useEffect(() => {
@@ -499,7 +591,7 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
     if (chartType === "line") {
       function handleChartDoubleClick(e) {
         if (lastTooltipRef.current && lastTooltipRef.current.data && lastTooltipRef.current.data[0]) {
-          const dataItem = filteredStockData.find(d => d.date === lastTooltipRef.current.date);
+          const dataItem = aggregatedData.find(d => d.date === lastTooltipRef.current.date);
           if (dataItem) {
             onShowNews(dataItem);
           }
@@ -515,7 +607,7 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
         }
       };
     }
-  }, [chartType, filteredStockData, onShowNews]);
+  }, [chartType, aggregatedData, onShowNews]);
 
   // TradingView 툴팁 포털
   const tradingViewTooltipPortal = tvTooltipData ? createPortal(
@@ -608,7 +700,7 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
 
       {/* 차트 영역 */}
       <div className="relative" style={{ height: "400px" }}>
-        {filteredStockData && Array.isArray(filteredStockData) && filteredStockData.length > 0 ? (
+        {aggregatedData && Array.isArray(aggregatedData) && aggregatedData.length > 0 ? (
           <>
             {chartType === "line" ? (
               <Line ref={chartRef} data={chartData} options={lineOptions} />
@@ -674,7 +766,7 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
             ✅ {chartType === 'line' ? 'Chart.js' : 'TradingView'}
           </div>
           <div className="text-xs text-gray-500">
-            데이터: {filteredStockData && Array.isArray(filteredStockData) ? filteredStockData.length : 0}개
+            데이터: {aggregatedData && Array.isArray(aggregatedData) ? aggregatedData.length : 0}개
           </div>
           {chartType === 'candle' && (
             <div className="text-xs text-blue-600 font-medium">

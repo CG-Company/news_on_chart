@@ -5,75 +5,90 @@ const PAGE_SIZE = 5;
 
 const NewsPanel = ({ date, news, loading }) => {
   // 뉴스 아이템 컴포넌트
-  const NewsItem = ({ title, source, time, summary, sentiment, url }) => (
-    <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 last:border-b-0">
-      <div className="flex items-start space-x-3">
-        {/* 뉴스 아이콘 */}
-        <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-          <svg
-            className="w-4 h-4 text-blue-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-        </div>
+  const NewsItem = ({ title, source, time, summary, sentiment, url }) => {
+    const handleClick = (e) => {
+      if (url) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    };
 
-        {/* 뉴스 내용 */}
-        <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-gray-900 line-clamp-2 leading-5">
-            {url ? (
-              <a href={url} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                {title}
-              </a>
-            ) : (
-              title
-            )}
-          </h4>
-          <div className="flex items-center space-x-2 mt-1">
-            {source && <span className="text-xs text-gray-500">{source}</span>}
-            {time && (
-              <>
-                <span className="text-xs text-gray-400">•</span>
-                <span className="text-xs text-gray-500">{time}</span>
-              </>
-            )}
-            {sentiment && (
-              <>
-                <span className="text-xs text-gray-400">•</span>
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full ${
-                    sentiment === "positive"
-                      ? "bg-green-100 text-green-600"
-                      : sentiment === "negative"
-                      ? "bg-red-100 text-red-600"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
+    return (
+      <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 last:border-b-0">
+        <div className="flex items-start space-x-3">
+          {/* 뉴스 아이콘 */}
+          <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg
+              className="w-4 h-4 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+
+          {/* 뉴스 내용 */}
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-medium text-gray-900 line-clamp-2 leading-5">
+              {url ? (
+                <a 
+                  href={url} 
+                  onClick={handleClick}
+                  className="hover:underline cursor-pointer"
+                  title="새창에서 열기"
                 >
-                  {sentiment === "positive"
-                    ? "긍정"
-                    : sentiment === "negative"
-                    ? "부정"
-                    : "중립"}
-                </span>
-              </>
+                  {title}
+                </a>
+              ) : (
+                title
+              )}
+            </h4>
+            <div className="flex items-center space-x-2 mt-1">
+              {source && <span className="text-xs text-gray-500">{source}</span>}
+              {time && (
+                <>
+                  <span className="text-xs text-gray-400">•</span>
+                  <span className="text-xs text-gray-500">{time}</span>
+                </>
+              )}
+              {sentiment && (
+                <>
+                  <span className="text-xs text-gray-400">•</span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full ${
+                      sentiment === "positive"
+                        ? "bg-green-100 text-green-600"
+                        : sentiment === "negative"
+                        ? "bg-red-100 text-red-600"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {sentiment === "positive"
+                      ? "긍정"
+                      : sentiment === "negative"
+                      ? "부정"
+                      : "중립"}
+                  </span>
+                </>
+              )}
+            </div>
+            {summary && (
+              <p className="text-xs text-gray-600 mt-2 line-clamp-3 leading-4">
+                {summary}
+              </p>
             )}
           </div>
-          {summary && (
-            <p className="text-xs text-gray-600 mt-2 line-clamp-3 leading-4">
-              {summary}
-            </p>
-          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // 로딩 스켈레톤
   const LoadingSkeleton = () => (
@@ -96,15 +111,62 @@ const NewsPanel = ({ date, news, loading }) => {
   } else if (news && (news.companyNews || news.macroNews)) {
     const companyNews = news.companyNews || [];
     const macroNews = news.macroNews || [];
+    
+    console.log('🔍 NewsPanel 뉴스 데이터:', { companyNews, macroNews });
+    
+    // 뉴스 데이터가 객체인지 문자열인지 확인하여 처리
+    const processNews = (newsItem) => {
+      if (typeof newsItem === 'string') {
+        return { title: newsItem, source: "Company News" };
+      } else if (typeof newsItem === 'object' && newsItem.title) {
+        const processed = {
+          title: newsItem.title,
+          url: newsItem.url,
+          published_at: newsItem.published_at,
+          summary: newsItem.summary,
+          source: "Company News"
+        };
+        console.log('🔗 처리된 뉴스 (기업):', processed);
+        return processed;
+      }
+      return newsItem;
+    };
+    
+    const processMacroNews = (newsItem) => {
+      if (typeof newsItem === 'string') {
+        return { title: newsItem, source: "Economic News" };
+      } else if (typeof newsItem === 'object' && newsItem.title) {
+        const processed = {
+          title: newsItem.title,
+          url: newsItem.url,
+          published_at: newsItem.published_at,
+          summary: newsItem.summary,
+          source: "Economic News"
+        };
+        console.log('🔗 처리된 뉴스 (거시):', processed);
+        return processed;
+      }
+      return newsItem;
+    };
+    
     newsList = [
-      ...companyNews.map((n) => ({ title: n, source: "Company News" })),
-      ...macroNews.map((n) => ({ title: n, source: "Economic News" })),
+      ...companyNews.map(processNews),
+      ...macroNews.map(processMacroNews),
     ];
+    
+    console.log('📋 최종 뉴스 리스트:', newsList);
   }
 
   // 페이지네이션 상태
   const [page, setPage] = useState(1);
   const totalPages = Math.ceil(newsList.length / PAGE_SIZE);
+
+  // 페이지네이션 그룹 계산 (5개씩)
+  const PAGINATION_DISPLAY = 5;
+  const currentGroup = Math.floor((page - 1) / PAGINATION_DISPLAY);
+  const startPage = currentGroup * PAGINATION_DISPLAY + 1;
+  const endPage = Math.min(startPage + PAGINATION_DISPLAY - 1, totalPages);
+
   const pagedNews = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
     return newsList.slice(start, start + PAGE_SIZE);
@@ -179,16 +241,32 @@ const NewsPanel = ({ date, news, loading }) => {
       {/* 페이지네이션 */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center py-3 border-t border-gray-100 space-x-1">
-          {Array.from({ length: totalPages }, (_, i) => (
+          {startPage > 1 && (
             <button
-              key={i}
-              onClick={() => setPage(i + 1)}
-              className={`w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors
-                ${page === i + 1 ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-100'}`}
+              onClick={() => setPage(startPage - 1)}
+              className="w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors bg-gray-100 text-gray-700 hover:bg-blue-100"
             >
-              {i + 1}
+              &lt;
+            </button>
+          )}
+          {Array.from({ length: endPage - startPage + 1 }, (_, i) => (
+            <button
+              key={startPage + i}
+              onClick={() => setPage(startPage + i)}
+              className={`w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors
+                ${page === startPage + i ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-100'}`}
+            >
+              {startPage + i}
             </button>
           ))}
+          {endPage < totalPages && (
+            <button
+              onClick={() => setPage(endPage + 1)}
+              className="w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors bg-gray-100 text-gray-700 hover:bg-blue-100"
+            >
+              &gt;
+            </button>
+          )}
         </div>
       )}
     </div>
