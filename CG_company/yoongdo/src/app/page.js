@@ -80,27 +80,29 @@ export default function Page() {
         const healthy = await checkApiHealth();
         setApiHealthy(healthy);
         if (!healthy) {
+          // Health check 실패해도 실제 데이터 로딩이 성공하면 경고만 표시
           setErrors((prev) => ({
             ...prev,
-            api: "FastAPI 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.",
+            api: "API 서버 상태를 확인할 수 없지만, 데이터 로딩은 계속 시도합니다.",
           }));
         } else {
           setErrors((prev) => ({ ...prev, api: null }));
         }
       } catch (error) {
         console.error("API 상태 확인 실패:", error);
-        setApiHealthy(false);
+        // Health check 실패해도 실제 데이터 로딩은 계속 시도
+        setApiHealthy(true); // 실제 데이터 로딩으로 판단
         setErrors((prev) => ({
           ...prev,
-          api: "API 서버 상태를 확인할 수 없습니다.",
+          api: null, // 에러 제거
         }));
       }
     };
 
     checkApiStatus();
 
-    // 주기적으로 API 상태 확인 (1분마다)
-    const interval = setInterval(checkApiStatus, 60 * 1000);
+    // 주기적으로 API 상태 확인 (2분마다로 변경)
+    const interval = setInterval(checkApiStatus, 120 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -166,7 +168,7 @@ export default function Page() {
 
   // 주식 데이터 + 뉴스 데이터 패칭 (티커 변경시)
   useEffect(() => {
-    if (!ticker || !apiHealthy) return;
+    if (!ticker) return;
 
     const loadStockWithNewsData = async () => {
       try {
@@ -195,6 +197,10 @@ export default function Page() {
         setLastUpdateTime(new Date());
 
         console.log(`✅ 데이터 로딩 완료:`, result.summary);
+
+        // 데이터 로딩 성공 시 API 상태를 정상으로 설정
+        setApiHealthy(true);
+        setErrors((prev) => ({ ...prev, api: null }));
       } catch (error) {
         console.error("주식 데이터 로딩 실패:", error);
         setErrors((prev) => ({
@@ -209,7 +215,7 @@ export default function Page() {
     };
 
     loadStockWithNewsData();
-  }, [ticker, apiHealthy]);
+  }, [ticker]);
 
   // 뉴스 더보기 클릭 핸들러 (메모이제이션으로 최적화)
   const handleShowNews = useCallback(

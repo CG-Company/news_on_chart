@@ -232,17 +232,46 @@ export async function fetchNews(ticker) {
 export async function checkApiHealth() {
   try {
     console.log("🔍 API 서버 상태 확인...");
-    const response = await fetchWithTimeout(`${API_BASE}/api/health`, {}, 5000); // 5초 타임아웃
-    const data = await response.json();
 
-    const isHealthy = response.ok && data.status === "ok";
-    console.log(
-      `${isHealthy ? "✅" : "❌"} API 서버 상태: ${
-        isHealthy ? "정상" : "비정상"
-      }`
-    );
+    // 먼저 health 엔드포인트 시도
+    try {
+      const healthResponse = await fetchWithTimeout(
+        `${API_BASE}/api/health`,
+        {},
+        3000
+      );
+      if (healthResponse.ok) {
+        const data = await healthResponse.json();
+        const isHealthy = data.status === "ok";
+        console.log(
+          `${isHealthy ? "✅" : "❌"} API 서버 상태: ${
+            isHealthy ? "정상" : "비정상"
+          }`
+        );
+        return isHealthy;
+      }
+    } catch (healthError) {
+      console.log("⚠️ Health 엔드포인트 없음, 실제 API 테스트로 대체...");
+    }
 
-    return isHealthy;
+    // Health 엔드포인트가 없으면 실제 API 호출로 테스트
+    try {
+      const testResponse = await fetchWithTimeout(
+        `${API_BASE}/api/ticker_map`,
+        {},
+        5000
+      );
+      const isHealthy = testResponse.ok;
+      console.log(
+        `${isHealthy ? "✅" : "❌"} API 서버 상태: ${
+          isHealthy ? "정상" : "비정상"
+        } (실제 API 테스트)`
+      );
+      return isHealthy;
+    } catch (testError) {
+      console.log("⚠️ API 테스트 실패, 서버 연결 확인 필요");
+      return false;
+    }
   } catch (error) {
     console.error("❌ API 상태 확인 실패:", error);
     return false;

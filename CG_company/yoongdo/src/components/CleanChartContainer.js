@@ -613,6 +613,8 @@ function CleanChartContainer({
       )
     : null;
 
+  console.log(stockData); // 이 배열이 모두 같은 티커의 데이터인지 확인
+
   return (
     <div
       ref={wrapperRef}

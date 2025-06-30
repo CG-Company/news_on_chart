@@ -15,6 +15,37 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
     }
   };
 
+  // 뉴스 항목 렌더링 함수
+  const renderNewsItem = (news, index) => {
+    // news가 문자열인 경우와 객체인 경우를 모두 처리
+    const title = typeof news === 'string' ? news : news.title || news.content || '';
+    const url = typeof news === 'object' ? news.url : null;
+    
+    const displayText = title.length > 60 ? `${title.substring(0, 60)}...` : title;
+    
+    if (url) {
+      return (
+        <div key={index} className="text-xs text-gray-600 leading-relaxed">
+          <a 
+            href={url} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="hover:text-blue-600 hover:underline transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
+            • {displayText}
+          </a>
+        </div>
+      );
+    } else {
+      return (
+        <div key={index} className="text-xs text-gray-600 leading-relaxed">
+          • {displayText}
+        </div>
+      );
+    }
+  };
+
   return (
     <div
       className="bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-72 max-w-sm cursor-pointer hover:shadow-2xl transition-shadow duration-200"
@@ -55,11 +86,7 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
           </div>
           {companyNews && companyNews.length > 0 ? (
             <div className="space-y-1">
-              {companyNews.slice(0, 2).map((news, i) => (
-                <div key={i} className="text-xs text-gray-600 leading-relaxed">
-                  • {news.length > 60 ? `${news.substring(0, 60)}...` : news}
-                </div>
-              ))}
+              {companyNews.slice(0, 2).map((news, i) => renderNewsItem(news, i))}
               {companyNews.length > 2 && (
                 <div className="text-xs text-blue-600 font-medium">
                   +{companyNews.length - 2}개 더
@@ -86,11 +113,7 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
           </div>
           {macroNews && macroNews.length > 0 ? (
             <div className="space-y-1">
-              {macroNews.slice(0, 2).map((news, i) => (
-                <div key={i} className="text-xs text-gray-600 leading-relaxed">
-                  • {news.length > 60 ? `${news.substring(0, 60)}...` : news}
-                </div>
-              ))}
+              {macroNews.slice(0, 2).map((news, i) => renderNewsItem(news, i))}
               {macroNews.length > 2 && (
                 <div className="text-xs text-blue-600 font-medium">
                   +{macroNews.length - 2}개 더
