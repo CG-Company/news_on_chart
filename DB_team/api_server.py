@@ -1,7 +1,7 @@
 # DB_team/api_server.py
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from utils import get_stock_data, get_ticker_map, get_news_data, get_news_by_ticker_and_day, get_selected_news_by_ticker
+from utils import get_stock_data, get_ticker_map, get_news_data, get_news_by_ticker_and_day, get_selected_news_by_ticker, get_sector_stocks
 
 app = FastAPI()
 
@@ -62,3 +62,15 @@ def get_macro_news():
     if not data:
         raise HTTPException(404, detail="No macro news found")
     return data
+
+@app.get("/api/sector_stocks")
+def get_sector_stocks_api(ticker: str):
+    """
+    ticker: 종목코드 (예: '005930')
+    같은 섹터에 속한 종목 리스트 반환
+    """
+    try:
+        stocks = get_sector_stocks(ticker)
+        return {"ticker": ticker, "sectorStocks": stocks}
+    except Exception as e:
+        return {"error": str(e)}

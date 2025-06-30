@@ -1,7 +1,7 @@
 // components/StockCards.js
 import React from "react";
 
-const StockCards = ({ currentStock, stockData }) => {
+const StockCards = ({ sectorStocks = [], selectedTicker, onSelectStock }) => {
   // 임시 데이터 - 실제 구현시 props나 API에서 가져와야 함
   const stockCards = [
     {
@@ -15,8 +15,7 @@ const StockCards = ({ currentStock, stockData }) => {
     {
       symbol: "SK",
       name: "SK Hynix",
-      price: "124,500",
-      change: "-0.10%",
+      price: "124,500",      change: "-0.10%",
       trend: "down",
       logo: "💾",
     },
@@ -65,10 +64,11 @@ const StockCards = ({ currentStock, stockData }) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {stockCards.map((stock, index) => (
+      {sectorStocks.map((stock) => (
         <div
-          key={stock.symbol}
-          className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+          key={stock.ticker}
+          className={`bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer ${selectedTicker === stock.ticker ? "ring-2 ring-blue-400" : ""}`}
+          onClick={() => onSelectStock && onSelectStock(stock.ticker)}
         >
           <div className="flex items-center justify-between">
             {/* 좌측: 로고 + 정보 */}
@@ -78,7 +78,7 @@ const StockCards = ({ currentStock, stockData }) => {
               </div>
               <div>
                 <div className="text-xs text-gray-500 font-medium">
-                  {stock.symbol}
+                  {stock.ticker}
                 </div>
                 <div className="text-sm font-semibold text-gray-900">
                   {stock.name}
@@ -94,13 +94,18 @@ const StockCards = ({ currentStock, stockData }) => {
 
           {/* 하단: 가격 정보 */}
           <div className="mt-3 flex items-center justify-between">
-            <div className="text-lg font-bold text-gray-900">{stock.price}</div>
+            <div className="text-lg font-bold text-gray-900">{stock.price !== null ? stock.price.toLocaleString() : "-"}</div>
             <div
               className={`text-sm font-medium ${
-                stock.trend === "up" ? "text-green-500" : "text-red-500"
+                stock.change_rate > 0
+                  ? "text-green-500"
+                  : stock.change_rate < 0
+                  ? "text-red-500"
+                  : "text-gray-500"
               }`}
             >
-              {stock.change}
+              {stock.change_rate > 0 ? "+" : ""}
+              {stock.change_rate !== null ? stock.change_rate.toFixed(2) + "%" : "-"}
             </div>
           </div>
         </div>

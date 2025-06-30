@@ -223,6 +223,7 @@ function CleanChartContainer({
             y: d.close,
             companyNews: d.companyNews || [],
             macroNews: d.macroNews || [],
+            change_rate: d.change_rate,
           })),
           borderColor: "#06b6d4",
           backgroundColor: "rgba(6, 182, 212, 0.1)",
@@ -312,6 +313,7 @@ function CleanChartContainer({
         onShowNews={() => onShowNews(dataItem)}
         date={date}
         ticker={ticker}
+        change_rate={dataItem?.change_rate}
       />
     );
   }
@@ -432,16 +434,23 @@ function CleanChartContainer({
             d.date &&
             !(d.open === 0 && d.high === 0 && d.low === 0 && d.close === 0) // 0값 완전 제외
         )
-        .map((d) => ({
-          time: Math.floor(new Date(d.date).getTime() / 1000), // Unix timestamp
-          open: d.open,
-          high: d.high,
-          low: d.low,
-          close: d.close,
-          companyNews: d.companyNews || [],
-          macroNews: d.macroNews || [],
-          originalDate: d.date,
-        }));
+        .map((d, idx, arr) => {
+          // change_rate 계산
+          const prev = idx > 0 ? arr[idx - 1] : null;
+          const prevClose = prev ? prev.close : d.close;
+          const change_rate = prevClose !== 0 ? ((d.close - prevClose) / prevClose) * 100 : 0;
+          return {
+            time: Math.floor(new Date(d.date).getTime() / 1000), // Unix timestamp
+            open: d.open,
+            high: d.high,
+            low: d.low,
+            close: d.close,
+            companyNews: d.companyNews || [],
+            macroNews: d.macroNews || [],
+            originalDate: d.date,
+            change_rate,
+          };
+        });
 
       // 유효한 데이터가 없으면 종료
       if (candleData.length === 0) {
@@ -540,6 +549,7 @@ function CleanChartContainer({
                 macroNews: originalData.macroNews,
                 date: originalData.originalDate,
                 originalData: originalData,
+                change_rate: originalData.change_rate,
               };
 
               // ref에 저장 (무한 루프 방지)
@@ -716,6 +726,7 @@ function CleanChartContainer({
             }}
             date={tvTooltipData.date}
             ticker={ticker}
+            change_rate={tvTooltipData.change_rate}
           />
         </div>,
         document.body
