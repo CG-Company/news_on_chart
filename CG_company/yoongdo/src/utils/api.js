@@ -307,18 +307,26 @@ export async function fetchStockWithNews(ticker) {
       })
     ]);
     
-    // 뉴스를 날짜별로 그룹핑
+    // 뉴스를 날짜별로 그룹핑 (URL 정보 보존)
     const newsByDate = {};
     newsData.forEach(news => {
       const date = news.published_at;
       if (!newsByDate[date]) {
         newsByDate[date] = { companyNews: [], macroNews: [] };
       }
-      // 뉴스 분류 로직 (제목에 따라 분류)
+      // 뉴스 분류 로직 (제목에 따라 분류) - URL 정보 포함
+      const newsItem = {
+        title: news.title,
+        url: news.url,
+        published_at: news.published_at,
+        summary: news.summary,
+        keyword: news.keyword
+      };
+      
       if (news.title.includes(ticker) || news.title.includes('기업')) {
-        newsByDate[date].companyNews.push(news.title);
+        newsByDate[date].companyNews.push(newsItem);
       } else {
-        newsByDate[date].macroNews.push(news.title);
+        newsByDate[date].macroNews.push(newsItem);
       }
     });
     
