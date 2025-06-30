@@ -47,7 +47,7 @@ price_df["price_date"] = pd.to_datetime(price_df["price_date"]).dt.date
 # —————————————————————————————
 # ④ .env 로드 & DB 연결
 # —————————————————————————————
-load_dotenv()  # 프로젝트 루트의 .env 파일을 읽어옵니다.
+load_dotenv(".env.supabase", override=True)  # 프로젝트 루트의 .env 파일을 읽어옵니다.
 
 DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
@@ -55,10 +55,7 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 
-db_url = (
-    f"postgresql+psycopg2://{DB_USER}:{DB_PASS}"
-    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-)
+db_url = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
 engine = create_engine(db_url, echo=False)
 
 # —————————————————————————————
@@ -88,5 +85,21 @@ DO UPDATE SET
 with engine.begin() as conn:
     records = price_df.to_dict(orient="records")
     conn.execute(text(upsert_sql), records)
+
+    # 추가: open/high/low/volume이 0이고 close_price만 0이 아닌 행 보정
+    fix_sql = """
+    UPDATE stock_price
+    SET
+        open_price = close_price,
+        high_price = close_price,
+        low_price  = close_price
+    WHERE
+        open_price = 0
+        AND high_price = 0
+        AND low_price = 0
+        AND volume = 0
+        AND close_price != 0;
+    """
+    conn.execute(text(fix_sql))
 
 print("✅ 중복 방지 upsert를 이용해 stock_price 테이블에 데이터 반영 완료")

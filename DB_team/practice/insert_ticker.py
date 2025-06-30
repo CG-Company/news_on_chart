@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
 
-# 1) KRX “엑셀” 다운로드 (실제론 HTML 테이블)
+# 1) KRX "엑셀" 다운로드 (실제론 HTML 테이블)
 url  = "http://kind.krx.co.kr/corpgeneral/corpList.do?method=download&searchType=13"
 resp = requests.get(url)
 resp.raise_for_status()
@@ -33,7 +33,7 @@ print(ticker_df.head())
 
 
 # 1) 환경변수 로드 (.env 파일 필요)
-load_dotenv()
+load_dotenv(".env.supabase", override=True)
 DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_HOST = os.getenv("DB_HOST")
@@ -41,7 +41,7 @@ DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 
 # 2) SQLAlchemy 엔진 생성 (PostgreSQL 기준)
-db_url = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+db_url = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
 engine = create_engine(db_url, echo=False)
 
 # 3) 예시로 앞서 만든 DataFrame을 가져옵니다.
