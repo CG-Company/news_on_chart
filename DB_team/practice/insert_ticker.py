@@ -64,4 +64,20 @@ with engine.begin() as conn:
             "sector":        row.get("industry") or row.get("sector")
         })
 
+    # 거시 뉴스용 더미 티커 추가
+    conn.execute(text("""
+        INSERT INTO ticker (ticker, company_name, exchange, sector)
+        VALUES (:ticker, :company_name, :exchange, :sector)
+        ON CONFLICT (ticker)
+        DO UPDATE SET
+            company_name = EXCLUDED.company_name,
+            exchange     = EXCLUDED.exchange,
+            sector       = EXCLUDED.sector;
+    """), {
+        "ticker": "000000",
+        "company_name": "거시 뉴스",
+        "exchange": "KRX",
+        "sector": "Macro"
+    })
+
 print("✅ ticker 테이블에 데이터가 반영되었습니다!")
