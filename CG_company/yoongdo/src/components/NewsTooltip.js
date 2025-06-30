@@ -1,7 +1,43 @@
 // components/NewsTooltip.js (더블클릭 지원 버전)
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { fetchMacroNews, fetchMainNews } from "../utils/api";
 
-const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
+const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker }) => {
+  const [macroNewsForDate, setMacroNewsForDate] = useState([]);
+  const [mainNewsKeyword, setMainNewsKeyword] = useState("");
+
+  useEffect(() => {
+    if ((!macroNews || macroNews.length === 0) && date) {
+      fetchMacroNews()
+        .then((macroList) => {
+          // 날짜별로 필터링
+          const filtered = macroList.filter((item) => item.published_at === date || item.date === date);
+          setMacroNewsForDate(filtered);
+        })
+        .catch(() => setMacroNewsForDate([]));
+    } else {
+      setMacroNewsForDate(macroNews || []);
+    }
+  }, [macroNews, date]);
+
+  useEffect(() => {
+    if (companyNews && companyNews[0] && !companyNews[0].keyword && ticker && date) {
+      fetchMainNews(ticker)
+        .then((mainList) => {
+          if (mainList && mainList.length > 0) {
+            // 날짜까지 매칭
+            const matched = mainList.find(item => item.published_at === date || item.date === date);
+            setMainNewsKeyword(matched?.keyword || "");
+          }
+        })
+        .catch(() => setMainNewsKeyword(""));
+    } else if (companyNews && companyNews[0] && companyNews[0].keyword) {
+      setMainNewsKeyword(companyNews[0].keyword);
+    } else {
+      setMainNewsKeyword("");
+    }
+  }, [companyNews, ticker, date]);
+
   // 더블클릭 핸들러
   const handleDoubleClick = (e) => {
     e.stopPropagation();
@@ -92,45 +128,51 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
 
       {/* 뉴스 섹션 */}
       <div className="space-y-3">
-        {/* 기업 뉴스 */}
+        {/* 기업 메인뉴스 */}
         <div>
           <div className="flex items-center mb-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
             <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-              기업 뉴스
+              기업 메인뉴스
             </span>
-            {companyNews && companyNews.length > 0 && (
-              <span className="ml-auto text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">
-                {companyNews.length}
-              </span>
-            )}
           </div>
           {companyNews && companyNews.length > 0 ? (
             <div className="space-y-1">
-              {companyNews.slice(0, 2).map((news, i) => renderNewsItem(news, i))}
-              {companyNews.length > 2 && (
-                <div className="text-xs text-blue-600 font-medium">
-                  +{companyNews.length - 2}개 더
+              <div className="text-sm text-blue-900 font-semibold">
+                {companyNews[0].title}
+              </div>
+              {(companyNews[0].keyword || mainNewsKeyword) ? (
+                <div className="text-xs text-blue-500 mt-1">
+                  키워드: {companyNews[0].keyword || mainNewsKeyword}
                 </div>
-              )}
+              ) : null}
             </div>
           ) : (
             <div className="text-xs text-gray-400 italic">뉴스 없음</div>
           )}
         </div>
-
-        {/* 거시 뉴스 */}
+        {/* 거시경제 뉴스 */}
         <div>
           <div className="flex items-center mb-2">
             <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
             <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
               거시경제
             </span>
-            <span className="ml-auto text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">
-              0
-            </span>
           </div>
-          <div className="text-xs text-gray-400 italic">뉴스 없음</div>
+          {macroNewsForDate && macroNewsForDate.length > 0 ? (
+            <div className="space-y-1">
+              <div className="text-sm text-orange-900 font-semibold">
+                {macroNewsForDate[0].title}
+              </div>
+              {macroNewsForDate[0].keyword && (
+                <div className="text-xs text-orange-500 mt-1">
+                  {macroNewsForDate[0].keyword}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-xs text-gray-400 italic">뉴스 없음</div>
+          )}
         </div>
       </div>
 
