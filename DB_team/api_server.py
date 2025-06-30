@@ -1,7 +1,7 @@
 # DB_team/api_server.py
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from utils import get_stock_data, get_ticker_map, get_news_data
+from utils import get_stock_data, get_ticker_map, get_news_data, get_news_by_ticker_and_day, get_selected_news_by_ticker
 
 app = FastAPI()
 
@@ -32,6 +32,26 @@ def read_news(ticker: str = Query(..., min_length=6, max_length=6)):
         raise HTTPException(404, detail="No news found for this ticker")
     return data
 
+@app.get("/api/news_is_selected")
+def get_news_is_selected(ticker: str):
+    """
+    ticker: 종목코드 (예: '005930')
+    is_selected가 True인 뉴스만 반환
+    """
+    try:
+        news = get_selected_news_by_ticker(ticker)
+        return {"ticker": ticker, "news": news}
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.get("/api/news_day")
-def health_check():
-    return {"status": "ok"}
+def get_news_day(ticker: str, day: str):
+    """
+    ticker: 종목코드 (예: '005930')
+    day: 'yymmdd' 또는 'yyyymmdd' 형식의 날짜 문자열
+    """
+    try:
+        news = get_news_by_ticker_and_day(ticker, day)
+        return {"ticker": ticker, "day": day, "news": news}
+    except Exception as e:
+        return {"error": str(e)}
