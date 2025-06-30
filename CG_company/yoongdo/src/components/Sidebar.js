@@ -1,12 +1,13 @@
 // components/Sidebar.js
 import React from "react";
+import Link from "next/link";
 
-const Sidebar = ({ currentPage = "dashboard", onMenuSelect }) => {
+const Sidebar = ({ currentPage = "dashboard" }) => {
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: "📊", active: true },
-    { id: "analysis", label: "Stock Analysis", icon: "📈", active: true },
-    { id: "news", label: "News", icon: "📰", active: true },
-    { id: "settings", label: "Settings", icon: "⚙️", active: true },
+    { id: "dashboard", label: "Dashboard", icon: "📊", href: "/" },
+    { id: "analysis", label: "Stock Analysis", icon: "📈", href: "/analysis" },
+    { id: "news", label: "News", icon: "📰", href: "/news" },
+    { id: "settings", label: "Settings", icon: "⚙️", href: "/settings" },
   ];
 
   return (
@@ -21,9 +22,8 @@ const Sidebar = ({ currentPage = "dashboard", onMenuSelect }) => {
         <ul className="space-y-2">
           {menuItems.map((item) => (
             <li key={item.id}>
-              <a
-                href="#"
-                onClick={() => onMenuSelect && onMenuSelect(item.id)}
+              <Link
+                href={item.href}
                 className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                   item.id === currentPage
                     ? "bg-blue-600 text-white"
@@ -32,7 +32,7 @@ const Sidebar = ({ currentPage = "dashboard", onMenuSelect }) => {
               >
                 <span className="mr-3 text-lg">{item.icon}</span>
                 {item.label}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
