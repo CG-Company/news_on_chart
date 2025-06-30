@@ -18,20 +18,37 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
   // 뉴스 항목 렌더링 함수
   const renderNewsItem = (news, index) => {
     // news가 문자열인 경우와 객체인 경우를 모두 처리
-    const title = typeof news === 'string' ? news : news.title || news.content || '';
-    const url = typeof news === 'object' ? news.url : null;
+    let title, url;
+    
+    if (typeof news === 'string') {
+      title = news;
+      url = null;
+    } else if (typeof news === 'object') {
+      title = news.title || news.content || '';
+      url = news.url || null;
+    } else {
+      title = '';
+      url = null;
+    }
     
     const displayText = title.length > 60 ? `${title.substring(0, 60)}...` : title;
+    
+    const handleClick = (e) => {
+      if (url) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    };
     
     if (url) {
       return (
         <div key={index} className="text-xs text-gray-600 leading-relaxed">
           <a 
             href={url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="hover:text-blue-600 hover:underline transition-colors"
-            onClick={(e) => e.stopPropagation()}
+            onClick={handleClick}
+            className="hover:text-blue-600 hover:underline transition-colors cursor-pointer"
+            title="새창에서 열기"
           >
             • {displayText}
           </a>
