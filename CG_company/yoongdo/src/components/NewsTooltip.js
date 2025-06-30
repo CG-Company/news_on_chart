@@ -109,7 +109,7 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker })
     return (
       <div className="flex flex-wrap gap-1 mt-1">
         {keywords.map((k, i) => (
-          <span key={i} className={`px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>{k}</span>
+          <span key={i} className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${colorClass}`}>{k}</span>
         ))}
       </div>
     );
@@ -154,14 +154,14 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker })
           </div>
           {mainNewsForDate ? (
             <div className="space-y-1">
-              <div className="text-sm text-blue-900 font-semibold">
+              <div className="text-xs text-black">
                 {mainNewsForDate.title}
               </div>
               {renderKeywordPills(mainNewsForDate.keyword, 'blue')}
             </div>
           ) : companyNews && companyNews.length > 0 ? (
             <div className="space-y-1">
-              <div className="text-sm text-blue-900 font-semibold">
+              <div className="text-xs text-black">
                 {companyNews[0].title}
               </div>
               {renderKeywordPills(companyNews[0].keyword, 'blue')}
@@ -180,7 +180,7 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker })
           </div>
           {macroNewsForDate && macroNewsForDate.length > 0 ? (
             <div className="space-y-1">
-              <div className="text-sm text-orange-900 font-semibold">
+              <div className="text-xs text-black">
                 {macroNewsForDate[0].title}
               </div>
               {renderKeywordPills(macroNewsForDate[0].keyword, 'orange')}

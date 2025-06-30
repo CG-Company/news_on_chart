@@ -10,6 +10,7 @@ import {
   checkApiHealth,
   clearCache,
   getApiDebugInfo,
+  fetchMainNews,
 } from "../utils/api";
 import {
   validateStockData,
@@ -57,6 +58,7 @@ export default function Page() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedNews, setSelectedNews] = useState(null);
   const [selectedPage, setSelectedPage] = useState("dashboard");
+  const [mainNews, setMainNews] = useState(null);
 
   // 데이터 상태
   const [stockData, setStockData] = useState([]);
@@ -218,54 +220,74 @@ export default function Page() {
     loadStockWithNewsData();
   }, [ticker]);
 
-  // 뉴스 더보기 클릭 핸들러 (메모이제이션으로 최적화)
+  // 뉴스 더보기 클릭 핸들러 (더블클릭 등)
   const handleShowNews = useCallback(
-    (newsData) => {
-      console.log("📊 handleShowNews called with:", newsData);
-
+    async (newsData) => {
       try {
+        let date = null;
         if (!newsData) {
           setSelectedNews(null);
           setSelectedDate(null);
+          setMainNews(null);
           return;
         }
-
         if (typeof newsData === "string") {
-          // 날짜 문자열인 경우
+          date = newsData;
+        } else if (newsData.originalDate) {
+          date = newsData.originalDate;
+        } else if (newsData.date) {
+          date = newsData.date;
+        } else if (newsData.x) {
+          date = newsData.x;
+        } else if (newsData.time) {
+          date = new Date(newsData.time * 1000).toISOString().split("T")[0];
+        }
+        // macro 탭에서 거시경제 메인뉴스 올리기
+        if (date && selectedPage !== "news" && window?.__activeTab === 'macro') {
+          // macroNewsList는 NewsPanel 내부에서 관리되므로, selectedNews에서 macroNews 추출
+          let macroMain = null;
+          if (newsData && newsData.macroNews && Array.isArray(newsData.macroNews)) {
+            macroMain = newsData.macroNews.find(item => item.published_at === date || item.date === date);
+          }
+          if (!macroMain && newsData && newsData.published_at === date) macroMain = newsData;
+          if (macroMain) {
+            setMainNews(macroMain);
+          } else {
+            setMainNews(null);
+          }
+        } else if (date && ticker) {
+          const mainList = await fetchMainNews(ticker);
+          const matched = Array.isArray(mainList) ? mainList.find(item => item.published_at === date || item.date === date) : null;
+          setMainNews(matched || null);
+        } else {
+          setMainNews(null);
+        }
+        // 기존 selectedNews 처리
+        if (typeof newsData === "string") {
           const found = stockData.find((d) => d.date === newsData);
           setSelectedNews(found || null);
         } else if (newsData && newsData.originalDate) {
-          // TradingView에서 온 데이터
           const found = stockData.find((d) => d.date === newsData.originalDate);
           setSelectedNews(found || newsData);
         } else if (newsData && newsData.date) {
-          // 일반 뉴스 객체
           setSelectedNews(newsData);
         } else if (newsData && newsData.x) {
-          // Chart.js에서 온 데이터
           const found = stockData.find((d) => d.date === newsData.x);
           setSelectedNews(found || newsData);
         } else if (newsData && newsData.time) {
-          // TradingView timestamp
-          const dateStr = new Date(newsData.time * 1000)
-            .toISOString()
-            .split("T")[0];
+          const dateStr = new Date(newsData.time * 1000).toISOString().split("T")[0];
           const found = stockData.find((d) => d.date === dateStr);
           setSelectedNews(found || newsData);
         } else {
           setSelectedNews(newsData);
         }
-
-        // 뉴스가 선택되면 날짜 선택 해제
-        if (newsData) {
-          setSelectedDate(null);
-        }
+        if (newsData) setSelectedDate(null);
       } catch (error) {
-        console.error("뉴스 표시 중 오류:", error);
+        setMainNews(null);
         setSelectedNews(null);
       }
     },
-    [stockData]
+    [stockData, ticker, selectedPage]
   );
 
   // 현재가 및 변동률 계산 (메모이제이션)
@@ -395,7 +417,9 @@ export default function Page() {
             <NewsPanel
               news={newsData}
               loading={isLoadingStock}
-              // 필요시 추가 props
+              mainNews={mainNews}
+              ticker={ticker}
+              key={selectedNews ? `news-${selectedNews.date}` : "news-empty"}
             />
           ) : (
             // 기졸 메인 컨텐츠 영역 (차트, 카드 등)
@@ -558,10 +582,9 @@ export default function Page() {
                       news={selectedNews}
                       date={selectedDate}
                       loading={isLoadingStock}
-                      newsData={newsData}
-                      key={
-                        selectedNews ? `news-${selectedNews.date}` : "news-empty"
-                      }
+                      mainNews={mainNews}
+                      ticker={ticker}
+                      key={selectedNews ? `news-${selectedNews.date}` : "news-empty"}
                     />
                   </ErrorBoundary>
                 </div>

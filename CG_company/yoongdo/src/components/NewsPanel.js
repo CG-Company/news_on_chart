@@ -2,7 +2,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { fetchMacroNews } from "../utils/api";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE_COMPANY = 5;
+const PAGE_SIZE_MACRO = 4;
 
 const TABS = [
   { key: 'company', label: '기업뉴스' },
@@ -196,11 +197,12 @@ const NewsPanel = ({ date, news, loading, mainNews }) => {
     return macroNewsList.filter((item) => item.published_at === date || item.date === date);
   }, [macroNewsList, date]);
   const newsListByTab = activeTab === 'company' ? companyNewsList : filteredMacroNews;
-  const totalPages = Math.ceil(newsListByTab.length / PAGE_SIZE);
+  const pageSize = activeTab === 'company' ? PAGE_SIZE_COMPANY : PAGE_SIZE_MACRO;
+  const totalPages = Math.ceil(newsListByTab.length / pageSize);
   const pagedNews = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return newsListByTab.slice(start, start + PAGE_SIZE);
-  }, [newsListByTab, page]);
+    const start = (page - 1) * pageSize;
+    return newsListByTab.slice(start, start + pageSize);
+  }, [newsListByTab, page, pageSize]);
 
   // 페이지 이동
   const goPrev = () => setPage((p) => Math.max(1, p - 1));
@@ -213,7 +215,7 @@ const NewsPanel = ({ date, news, loading, mainNews }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-xl mx-auto">
+    <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-xl mx-auto min-h-[420px] h-full relative">
       {/* 탭 */}
       <div className="flex border-b mb-4">
         {TABS.map((tab) => (
@@ -231,73 +233,76 @@ const NewsPanel = ({ date, news, loading, mainNews }) => {
         ))}
       </div>
 
-      {/* 메인뉴스 강조 (기업 탭, mainNews 있을 때만, 첫 페이지에서만) */}
-      {activeTab === 'company' && mainNews && page === 1 && (
-        <div className="mb-4 p-4 bg-gradient-to-r from-blue-100 to-blue-50 rounded-lg border-2 border-blue-400 shadow flex items-start gap-3 relative">
-          <div className="w-8 h-8 flex items-center justify-center bg-blue-500 rounded-full text-white mr-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
-          </div>
-          <div className="flex-1">
-            <div className="text-blue-900 font-bold text-lg mb-1 flex items-center">
-              <span>메인뉴스</span>
-              <span className="ml-2 px-2 py-0.5 text-xs bg-blue-200 text-blue-800 rounded-full">주요</span>
-            </div>
-            <div className="text-base font-semibold text-blue-900 mb-1">{mainNews.title}</div>
-            {mainNews.summary && (
-              <div className="text-blue-700 text-sm mb-1">{mainNews.summary}</div>
-            )}
-            {mainNews.keyword && (
-              <div className="text-xs text-blue-500 mb-1">키워드: {mainNews.keyword}</div>
-            )}
-            {mainNews.url && (
+      {/* 메인뉴스 강조 card 완전 제거, 리스트 내에서만 메인 pill+title+summary+날짜로 통일 */}
+      <ul className="divide-y divide-gray-100 mb-4">
+        {activeTab === 'company' && mainNews && page === 1 && (
+          <li className="py-3">
+            <a
+              href={mainNews.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block hover:bg-gray-50 rounded px-2 py-1"
+            >
+              <div className="flex items-center mb-1 gap-2 flex-nowrap">
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700 shrink-0">메인</span>
+                <div className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">{mainNews.title}</div>
+              </div>
+              {mainNews.summary && (
+                <div className="text-xs text-gray-600 mt-1">{mainNews.summary}</div>
+              )}
+              <div className="flex justify-end">
+                <span className="text-xs text-gray-400 font-medium mt-1">{mainNews.published_at || mainNews.date}</span>
+              </div>
+            </a>
+          </li>
+        )}
+        {activeTab === 'macro' && filteredMacroNews.length > 0 && page === 1 && (
+          <li className="py-3">
+            <a
+              href={filteredMacroNews[0].url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block hover:bg-gray-50 rounded px-2 py-1"
+            >
+              <div className="flex items-center mb-1 gap-2 flex-nowrap">
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 shrink-0">메인</span>
+                <div className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">{filteredMacroNews[0].title}</div>
+              </div>
+              {filteredMacroNews[0].summary && (
+                <div className="text-xs text-gray-600 mt-1">{filteredMacroNews[0].summary}</div>
+              )}
+              <div className="flex justify-end">
+                <span className="text-xs text-gray-400 font-medium mt-1">{filteredMacroNews[0].published_at || filteredMacroNews[0].date}</span>
+              </div>
+            </a>
+          </li>
+        )}
+        {/* 일반 뉴스 리스트 (메인뉴스와 중복 제거, summary 없으면 아무것도 표시 X) */}
+        {pagedNews
+          .filter(news => !((activeTab === 'company' && mainNews && page === 1 && news.title === mainNews.title) || (activeTab === 'macro' && filteredMacroNews.length > 0 && page === 1 && news.title === filteredMacroNews[0].title)))
+          .map((news, idx) => (
+            <li key={idx} className="py-3">
               <a
-                href={mainNews.url}
+                href={news.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-blue-500 underline hover:text-blue-700"
+                className="block hover:bg-gray-50 rounded px-2 py-1"
               >
-                기사 바로가기
+                <div className="font-semibold text-gray-900 text-sm mb-1">{news.title}</div>
+                {news.summary && news.summary !== 'None' && (
+                  <div className="text-xs text-gray-600 mb-1">{news.summary}</div>
+                )}
+                <div className="flex justify-end">
+                  <span className="text-xs text-gray-400">{news.published_at || news.date}</span>
+                </div>
               </a>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 뉴스 리스트 (mainNews와 중복 제거) */}
-      {activeTab === 'macro' && macroLoading ? (
-        <div className="py-8 text-center text-gray-400">거시경제 뉴스 로딩 중...</div>
-      ) : activeTab === 'macro' && macroError ? (
-        <div className="py-8 text-center text-red-400">{macroError}</div>
-      ) : (
-        <ul className="divide-y divide-gray-100 mb-4">
-          {pagedNews.length === 0 ? (
-            <li className="py-6 text-center text-gray-400">뉴스 없음</li>
-          ) : (
-            pagedNews
-              .filter(news => !(activeTab === 'company' && mainNews && page === 1 && news.title === mainNews.title))
-              .map((news, idx) => (
-                <li key={idx} className="py-3">
-                  <a
-                    href={news.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block hover:bg-gray-50 rounded px-2 py-1"
-                  >
-                    <div className="font-semibold text-gray-900 text-sm mb-1">{news.title}</div>
-                    {news.keyword && (
-                      <div className="text-xs text-orange-500 mb-1">{news.keyword}</div>
-                    )}
-                    <div className="text-xs text-gray-400">{news.published_at || news.date}</div>
-                  </a>
-                </li>
-              ))
-          )}
-        </ul>
-      )}
+            </li>
+          ))}
+      </ul>
 
       {/* 페이지네이션 */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2">
+        <div className="absolute bottom-4 left-0 w-full flex justify-center items-center gap-2">
           <button
             onClick={goPrev}
             disabled={page === 1}
