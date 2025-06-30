@@ -63,6 +63,10 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
     }
   };
 
+  // macroNews는 항상 빈 배열로 처리
+  const macroNewsList = [];
+  // companyNews는 기존 companyNews와 macroNews를 합쳐서 전달받았다고 가정
+
   return (
     <div
       className="bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-72 max-w-sm cursor-pointer hover:shadow-2xl transition-shadow duration-200"
@@ -122,24 +126,11 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
             <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
               거시경제
             </span>
-            {macroNews && macroNews.length > 0 && (
-              <span className="ml-auto text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">
-                {macroNews.length}
-              </span>
-            )}
+            <span className="ml-auto text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">
+              0
+            </span>
           </div>
-          {macroNews && macroNews.length > 0 ? (
-            <div className="space-y-1">
-              {macroNews.slice(0, 2).map((news, i) => renderNewsItem(news, i))}
-              {macroNews.length > 2 && (
-                <div className="text-xs text-blue-600 font-medium">
-                  +{macroNews.length - 2}개 더
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-xs text-gray-400 italic">뉴스 없음</div>
-          )}
+          <div className="text-xs text-gray-400 italic">뉴스 없음</div>
         </div>
       </div>
 

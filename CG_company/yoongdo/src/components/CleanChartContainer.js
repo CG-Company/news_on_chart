@@ -2,10 +2,18 @@
 "use client";
 import { useRef, useEffect, useMemo, useState } from "react";
 import { Line } from "react-chartjs-2";
-import { createChart } from 'lightweight-charts';
-import { createPortal } from 'react-dom';
-import NewsTooltip from './NewsTooltip';
-import { subDays, subWeeks, subMonths, subYears, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
+import { createChart } from "lightweight-charts";
+import { createPortal } from "react-dom";
+import NewsTooltip from "./NewsTooltip";
+import {
+  subDays,
+  subWeeks,
+  subMonths,
+  subYears,
+  startOfWeek,
+  startOfMonth,
+  startOfYear,
+} from "date-fns";
 
 // Chart.js 관련 imports (Line Chart용)
 import {
@@ -20,7 +28,7 @@ import {
 } from "chart.js";
 import zoomPlugin from "chartjs-plugin-zoom";
 import "chartjs-adapter-date-fns";
-import * as ReactDOM from 'react-dom/client';
+import * as ReactDOM from "react-dom/client";
 
 ChartJS.register(
   LineElement,
@@ -35,18 +43,25 @@ ChartJS.register(
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
-  return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
+  return `${d.getFullYear()}-${(d.getMonth() + 1)
+    .toString()
+    .padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
 }
 
-function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews }) {
+function CleanChartContainer({
+  ticker,
+  tickerName,
+  stockData = [],
+  onShowNews,
+}) {
   const wrapperRef = useRef();
   const chartRef = useRef();
   const tradingViewRef = useRef(); // TradingView 차트용
   const tradingViewChart = useRef(null); // TradingView 차트 인스턴스
-  
-  const [chartType, setChartType] = useState('line');
-  const [timeRange, setTimeRange] = useState('1M');
-  
+
+  const [chartType, setChartType] = useState("line");
+  const [timeRange, setTimeRange] = useState("1M");
+
   // Line Chart 상태
   const [tooltipLocked, setTooltipLocked] = useState(false);
   const [lockedTooltipData, setLockedTooltipData] = useState(null);
@@ -57,21 +72,23 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
   const [tvTooltipPosition, setTvTooltipPosition] = useState({ x: 0, y: 0 });
   const currentTooltipRef = useRef(null); // ref로 현재 툴팁 데이터 저장
 
-  const timeRanges = ['1D', '1W', '1M', '3M', '6M', '1Y', '5Y', 'All'];
+  const timeRanges = ["1D", "1W", "1M", "3M", "6M", "1Y", "5Y", "All"];
 
   // 주말(토, 일) 데이터와 값이 0인 데이터 제외
   const filteredStockData = useMemo(() => {
     if (!stockData || !Array.isArray(stockData)) return [];
     let prevClose = null;
     return stockData
-      .filter(item => {
+      .filter((item) => {
         const date = new Date(item.date);
         const day = date.getDay();
         // 주말 제외
         return !(day === 0 || day === 6);
       })
-      .map(item => {
-        const isAllZero = [item.open, item.close, item.high, item.low].every(v => v === 0 || v === 0.0);
+      .map((item) => {
+        const isAllZero = [item.open, item.close, item.high, item.low].every(
+          (v) => v === 0 || v === 0.0
+        );
         if (isAllZero && prevClose !== null) {
           // 0값이면 이전 종가로 대체 + 플래그 추가
           const newItem = {
@@ -93,44 +110,44 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
 
   // 봉 단위 매핑 함수
   const getAggregationType = (range) => {
-    if (range === '1D') return 'day';
-    if (range === '1W') return 'week';
-    if (range === '1M') return 'month';
-    if (range === '3M') return '3month';
-    if (range === '6M') return '6month';
-    if (range === '1Y') return 'year';
-    if (range === '5Y') return '5year';
-    if (range === 'All') return 'year';
-    return 'day';
+    if (range === "1D") return "day";
+    if (range === "1W") return "week";
+    if (range === "1M") return "month";
+    if (range === "3M") return "3month";
+    if (range === "6M") return "6month";
+    if (range === "1Y") return "year";
+    if (range === "5Y") return "5year";
+    if (range === "All") return "year";
+    return "day";
   };
 
   // 봉 타입에 따라 데이터 집계 함수
   const getAggregatedData = (data, range) => {
     if (!Array.isArray(data) || data.length === 0) return [];
     const aggregationType = getAggregationType(range);
-    if (aggregationType === 'day') return data;
+    if (aggregationType === "day") return data;
 
     let grouped = {};
-    data.forEach(item => {
+    data.forEach((item) => {
       let key;
       const date = new Date(item.date);
-      if (aggregationType === 'week') {
+      if (aggregationType === "week") {
         key = startOfWeek(date, { weekStartsOn: 1 }).toISOString().slice(0, 10);
-      } else if (aggregationType === 'month') {
+      } else if (aggregationType === "month") {
         key = startOfMonth(date).toISOString().slice(0, 7);
-      } else if (aggregationType === '3month') {
+      } else if (aggregationType === "3month") {
         const year = date.getFullYear();
         const month = date.getMonth();
         const groupMonth = Math.floor(month / 3) * 3;
-        key = `${year}-${(groupMonth + 1).toString().padStart(2, '0')}`;
-      } else if (aggregationType === '6month') {
+        key = `${year}-${(groupMonth + 1).toString().padStart(2, "0")}`;
+      } else if (aggregationType === "6month") {
         const year = date.getFullYear();
         const month = date.getMonth();
         const groupMonth = Math.floor(month / 6) * 6;
-        key = `${year}-${(groupMonth + 1).toString().padStart(2, '0')}`;
-      } else if (aggregationType === 'year') {
+        key = `${year}-${(groupMonth + 1).toString().padStart(2, "0")}`;
+      } else if (aggregationType === "year") {
         key = startOfYear(date).getFullYear().toString();
-      } else if (aggregationType === '5year') {
+      } else if (aggregationType === "5year") {
         const year = date.getFullYear();
         const groupYear = Math.floor(year / 5) * 5;
         key = `${groupYear}-${groupYear + 4}`;
@@ -138,13 +155,13 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(item);
     });
-    return Object.values(grouped).map(group => {
+    return Object.values(grouped).map((group) => {
       const sorted = group.sort((a, b) => new Date(a.date) - new Date(b.date));
       return {
         date: sorted[0].date,
         open: sorted[0].open,
-        high: Math.max(...group.map(d => d.high)),
-        low: Math.min(...group.map(d => d.low)),
+        high: Math.max(...group.map((d) => d.high)),
+        low: Math.min(...group.map((d) => d.low)),
         close: sorted[sorted.length - 1].close,
         companyNews: sorted[sorted.length - 1].companyNews,
         macroNews: sorted[sorted.length - 1].macroNews,
@@ -163,11 +180,15 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
   const currentData = useMemo(() => {
     if (!aggregatedData || aggregatedData.length === 0) return null;
     const latest = aggregatedData[aggregatedData.length - 1];
-    if (!latest || typeof latest.close !== 'number') return null;
-    const previous = aggregatedData.length > 1 ? aggregatedData[aggregatedData.length - 2] : latest;
-    if (!previous || typeof previous.close !== 'number') return null;
+    if (!latest || typeof latest.close !== "number") return null;
+    const previous =
+      aggregatedData.length > 1
+        ? aggregatedData[aggregatedData.length - 2]
+        : latest;
+    if (!previous || typeof previous.close !== "number") return null;
     const change = latest.close - previous.close;
-    const changePercent = previous.close !== 0 ? (change / previous.close) * 100 : 0;
+    const changePercent =
+      previous.close !== 0 ? (change / previous.close) * 100 : 0;
     return { latest, change, changePercent };
   }, [aggregatedData]);
 
@@ -176,9 +197,33 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
     if (!aggregatedData || aggregatedData.length === 0) {
       return {
         labels: [],
-        datasets: [{
+        datasets: [
+          {
+            label: "종가",
+            data: [],
+            borderColor: "#06b6d4",
+            backgroundColor: "rgba(6, 182, 212, 0.1)",
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            pointBackgroundColor: "#06b6d4",
+            tension: 0.1,
+            fill: false,
+          },
+        ],
+      };
+    }
+    return {
+      labels: aggregatedData.map((d) => d.date),
+      datasets: [
+        {
           label: "종가",
-          data: [],
+          data: aggregatedData.map((d) => ({
+            x: d.date,
+            y: d.close,
+            companyNews: d.companyNews || [],
+            macroNews: d.macroNews || [],
+          })),
           borderColor: "#06b6d4",
           backgroundColor: "rgba(6, 182, 212, 0.1)",
           borderWidth: 2,
@@ -187,40 +232,20 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
           pointBackgroundColor: "#06b6d4",
           tension: 0.1,
           fill: false,
-        }]
-      };
-    }
-    return {
-      labels: aggregatedData.map(d => d.date),
-      datasets: [{
-        label: "종가",
-        data: aggregatedData.map(d => ({
-          x: d.date,
-          y: d.close,
-          companyNews: d.companyNews || [],
-          macroNews: d.macroNews || []
-        })),
-        borderColor: "#06b6d4",
-        backgroundColor: "rgba(6, 182, 212, 0.1)",
-        borderWidth: 2,
-        pointRadius: 0,
-        pointHoverRadius: 6,
-        pointBackgroundColor: "#06b6d4",
-        tension: 0.1,
-        fill: false,
-      }]
+        },
+      ],
     };
   }, [aggregatedData]);
 
   function externalTooltipHandler(context) {
     const { chart, tooltip } = context;
-    let tooltipEl = chart.canvas.parentNode.querySelector('.custom-tooltip');
+    let tooltipEl = chart.canvas.parentNode.querySelector(".custom-tooltip");
     if (!tooltipEl) {
-      tooltipEl = document.createElement('div');
-      tooltipEl.className = 'custom-tooltip';
-      tooltipEl.style.position = 'absolute';
-      tooltipEl.style.pointerEvents = 'auto';
-      tooltipEl.style.zIndex = '1000';
+      tooltipEl = document.createElement("div");
+      tooltipEl.className = "custom-tooltip";
+      tooltipEl.style.position = "absolute";
+      tooltipEl.style.pointerEvents = "auto";
+      tooltipEl.style.zIndex = "1000";
       chart.canvas.parentNode.appendChild(tooltipEl);
     }
 
@@ -234,8 +259,10 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
       tooltipEl._root.render(
         <NewsTooltip
           data={lockedTooltipData.data}
-          companyNews={lockedTooltipData.companyNews}
-          macroNews={lockedTooltipData.macroNews}
+          companyNews={[
+            ...(lockedTooltipData.companyNews || []),
+            ...(lockedTooltipData.macroNews || []),
+          ]}
           onShowNews={lockedTooltipData.onShowNews}
           date={lockedTooltipData.date}
         />
@@ -250,8 +277,8 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
     }
 
     tooltipEl.style.opacity = 1;
-    tooltipEl.style.left = chart.canvas.offsetLeft + tooltip.caretX + 'px';
-    tooltipEl.style.top = chart.canvas.offsetTop + tooltip.caretY + 'px';
+    tooltipEl.style.left = chart.canvas.offsetLeft + tooltip.caretX + "px";
+    tooltipEl.style.top = chart.canvas.offsetTop + tooltip.caretY + "px";
 
     if (!tooltipEl._root) {
       tooltipEl._root = ReactDOM.createRoot(tooltipEl);
@@ -269,109 +296,117 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
       date,
       left: tooltipEl.style.left,
       top: tooltipEl.style.top,
-      onShowNews: () => onShowNews(dataItem)
+      onShowNews: () => onShowNews(dataItem),
     };
 
     tooltipEl._root.render(
       <NewsTooltip
         data={tooltip.dataPoints}
-        companyNews={companyNews}
-        macroNews={macroNews}
+        companyNews={[...(companyNews || []), ...(macroNews || [])]}
         onShowNews={() => onShowNews(dataItem)}
         date={date}
       />
     );
   }
 
-  const lineOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        enabled: false,
-        external: externalTooltipHandler,
-        mode: "nearest",
-        intersect: false,
-      },
-      zoom: {
-        pan: { enabled: true, mode: "x" },
+  const lineOptions = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: false,
+          external: externalTooltipHandler,
+          mode: "nearest",
+          intersect: false,
+        },
         zoom: {
-          wheel: { enabled: true },
-          pinch: { enabled: true },
-          mode: "x",
-        },
-        limits: { x: { minRange: 1 } },
-      },
-    },
-    scales: {
-      x: {
-        type: "time",
-        time: {
-          unit: "day",
-          tooltipFormat: "yyyy-MM-dd",
-          displayFormats: { 
-            day: "MM/dd",
-            week: "MM/dd", 
-            month: "MM/dd"
+          pan: { enabled: true, mode: "x" },
+          zoom: {
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: "x",
           },
-        },
-        grid: { 
-          display: true,
-          color: "#f1f5f9",
-          lineWidth: 1,
-        },
-        ticks: {
-          color: "#64748b",
-          font: { 
-            size: 11, 
-            family: "Inter, system-ui, sans-serif",
-            weight: 500
-          },
-          maxTicksLimit: 12,
-          callback: function(val, index) {
-            const date = new Date(val);
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const day = date.getDate().toString().padStart(2, '0');
-            return `${month}/${day}`;
-          }
-        },
-        border: {
-          display: true,
-          color: '#e5e7eb',
-          width: 1,
+          limits: { x: { minRange: 1 } },
         },
       },
-      y: {
-        beginAtZero: false,
-        grid: { 
-          color: "#f1f5f9",
-          lineWidth: 1,
-        },
-        ticks: {
-          color: "#64748b",
-          font: { 
-            size: 11, 
-            family: "Inter, system-ui, sans-serif",
-            weight: 500
+      scales: {
+        x: {
+          type: "time",
+          time: {
+            unit: "day",
+            tooltipFormat: "yyyy-MM-dd",
+            displayFormats: {
+              day: "MM/dd",
+              week: "MM/dd",
+              month: "MM/dd",
+            },
           },
-          callback: function(value) {
-            return value.toLocaleString() + '원';
+          grid: {
+            display: true,
+            color: "#f1f5f9",
+            lineWidth: 1,
+          },
+          ticks: {
+            color: "#64748b",
+            font: {
+              size: 11,
+              family: "Inter, system-ui, sans-serif",
+              weight: 500,
+            },
+            maxTicksLimit: 12,
+            callback: function (val, index) {
+              const date = new Date(val);
+              const month = (date.getMonth() + 1).toString().padStart(2, "0");
+              const day = date.getDate().toString().padStart(2, "0");
+              return `${month}/${day}`;
+            },
+          },
+          border: {
+            display: true,
+            color: "#e5e7eb",
+            width: 1,
           },
         },
-        border: {
-          display: true,
-          color: '#e5e7eb',
-          width: 1,
+        y: {
+          beginAtZero: false,
+          grid: {
+            color: "#f1f5f9",
+            lineWidth: 1,
+          },
+          ticks: {
+            color: "#64748b",
+            font: {
+              size: 11,
+              family: "Inter, system-ui, sans-serif",
+              weight: 500,
+            },
+            callback: function (value) {
+              return value.toLocaleString() + "원";
+            },
+          },
+          border: {
+            display: true,
+            color: "#e5e7eb",
+            width: 1,
+          },
         },
       },
-    },
-    interaction: { mode: "nearest", intersect: false },
-  }), [externalTooltipHandler]);
+      interaction: { mode: "nearest", intersect: false },
+    }),
+    [externalTooltipHandler]
+  );
 
   // === TRADINGVIEW CANDLESTICK CHART 로직 ===
   useEffect(() => {
-    if (chartType === 'candle' && tradingViewRef.current && aggregatedData && Array.isArray(aggregatedData) && aggregatedData.length > 0) {
+    if (
+      chartType === "candle" &&
+      tradingViewRef.current &&
+      aggregatedData &&
+      Array.isArray(aggregatedData) &&
+      aggregatedData.length > 0
+    ) {
       // 기존 차트 정리
       if (tradingViewChart.current) {
         tradingViewChart.current.remove();
@@ -379,13 +414,18 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
 
       // TradingView 데이터 변환 (안전성 체크 추가)
       const candleData = aggregatedData
-        .filter(d => !d.isFilled) // 휴면 구간 제외
-        .filter(d =>
-          d && typeof d.open === 'number' && typeof d.close === 'number' &&
-          typeof d.high === 'number' && typeof d.low === 'number' && d.date &&
-          !(d.open === 0 && d.high === 0 && d.low === 0 && d.close === 0) // 0값 완전 제외
+        .filter((d) => !d.isFilled) // 휴면 구간 제외
+        .filter(
+          (d) =>
+            d &&
+            typeof d.open === "number" &&
+            typeof d.close === "number" &&
+            typeof d.high === "number" &&
+            typeof d.low === "number" &&
+            d.date &&
+            !(d.open === 0 && d.high === 0 && d.low === 0 && d.close === 0) // 0값 완전 제외
         )
-        .map(d => ({
+        .map((d) => ({
           time: Math.floor(new Date(d.date).getTime() / 1000), // Unix timestamp
           open: d.open,
           high: d.high,
@@ -393,12 +433,12 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
           close: d.close,
           companyNews: d.companyNews || [],
           macroNews: d.macroNews || [],
-          originalDate: d.date
+          originalDate: d.date,
         }));
 
       // 유효한 데이터가 없으면 종료
       if (candleData.length === 0) {
-        console.warn('⚠️ 유효한 캔들 데이터가 없습니다.');
+        console.warn("⚠️ 유효한 캔들 데이터가 없습니다.");
         return;
       }
 
@@ -407,38 +447,38 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
         width: tradingViewRef.current.clientWidth,
         height: 400,
         layout: {
-          background: { color: '#ffffff' },
-          textColor: '#64748b',
+          background: { color: "#ffffff" },
+          textColor: "#64748b",
           fontSize: 11,
-          fontFamily: 'Inter, system-ui, sans-serif',
+          fontFamily: "Inter, system-ui, sans-serif",
         },
         grid: {
-          vertLines: { color: '#f1f5f9' },
-          horzLines: { color: '#f1f5f9' },
+          vertLines: { color: "#f1f5f9" },
+          horzLines: { color: "#f1f5f9" },
         },
         rightPriceScale: {
-          borderColor: '#e5e7eb',
-          textColor: '#64748b',
+          borderColor: "#e5e7eb",
+          textColor: "#64748b",
         },
         timeScale: {
-          borderColor: '#e5e7eb',
-          textColor: '#64748b',
+          borderColor: "#e5e7eb",
+          textColor: "#64748b",
           timeVisible: true,
           secondsVisible: false,
         },
         crosshair: {
           mode: 1, // Normal crosshair mode
           vertLine: {
-            color: '#06b6d4',
+            color: "#06b6d4",
             width: 1,
             style: 2, // LineStyle.Dashed
-            labelBackgroundColor: '#06b6d4',
+            labelBackgroundColor: "#06b6d4",
           },
           horzLine: {
-            color: '#06b6d4',
+            color: "#06b6d4",
             width: 1,
             style: 2, // LineStyle.Dashed
-            labelBackgroundColor: '#06b6d4',
+            labelBackgroundColor: "#06b6d4",
           },
         },
         handleScroll: {
@@ -456,14 +496,14 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
 
       // 캔들스틱 시리즈 추가
       const candlestickSeries = chart.addCandlestickSeries({
-        upColor: '#22c55e',
-        downColor: '#ef4444',
-        borderDownColor: '#ef4444',
-        borderUpColor: '#22c55e',
-        wickDownColor: '#ef4444',
-        wickUpColor: '#22c55e',
+        upColor: "#22c55e",
+        downColor: "#ef4444",
+        borderDownColor: "#ef4444",
+        borderUpColor: "#22c55e",
+        wickDownColor: "#ef4444",
+        wickUpColor: "#22c55e",
         priceFormat: {
-          type: 'price',
+          type: "price",
           precision: 0,
           minMove: 1,
         },
@@ -483,7 +523,7 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
         if (param.point && param.time) {
           const data = param.seriesData.get(candlestickSeries);
           if (data) {
-            const originalData = candleData.find(d => d.time === param.time);
+            const originalData = candleData.find((d) => d.time === param.time);
             if (originalData) {
               // 툴팁 위치 설정
               const rect = tradingViewRef.current.getBoundingClientRect();
@@ -492,15 +532,15 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
                 companyNews: originalData.companyNews,
                 macroNews: originalData.macroNews,
                 date: originalData.originalDate,
-                originalData: originalData
+                originalData: originalData,
               };
-              
+
               // ref에 저장 (무한 루프 방지)
               currentTooltipRef.current = tooltipData;
-              
+
               setTvTooltipPosition({
                 x: rect.left + param.point.x + 10,
-                y: rect.top + param.point.y - 10
+                y: rect.top + param.point.y - 10,
               });
               setTvTooltipData(tooltipData);
 
@@ -520,20 +560,26 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
       const handleDoubleClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        
-        console.log('🖱️ DOM 더블클릭 이벤트!', { 
+
+        console.log("🖱️ DOM 더블클릭 이벤트!", {
           hasTooltip: !!currentTooltipRef.current,
-          tooltipData: currentTooltipRef.current 
+          tooltipData: currentTooltipRef.current,
         });
-        
-        if (currentTooltipRef.current && currentTooltipRef.current.originalData) {
-          console.log('🎯 뉴스 패널 업데이트:', currentTooltipRef.current.originalData);
+
+        if (
+          currentTooltipRef.current &&
+          currentTooltipRef.current.originalData
+        ) {
+          console.log(
+            "🎯 뉴스 패널 업데이트:",
+            currentTooltipRef.current.originalData
+          );
           onShowNews(currentTooltipRef.current.originalData);
         } else {
-          console.log('⚠️ 툴팁이 없습니다. 먼저 캔들에 마우스를 올려주세요.');
+          console.log("⚠️ 툴팁이 없습니다. 먼저 캔들에 마우스를 올려주세요.");
         }
       };
-      
+
       // 리사이즈 핸들러
       const handleResize = () => {
         if (tradingViewChart.current && tradingViewRef.current) {
@@ -545,17 +591,19 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
 
       // 이벤트 등록
       const chartContainer = tradingViewRef.current;
-      chartContainer.addEventListener('dblclick', handleDoubleClick, { passive: false });
-      chartContainer.style.cursor = 'crosshair';
-      window.addEventListener('resize', handleResize);
+      chartContainer.addEventListener("dblclick", handleDoubleClick, {
+        passive: false,
+      });
+      chartContainer.style.cursor = "crosshair";
+      window.addEventListener("resize", handleResize);
 
       tradingViewChart.current = chart;
 
       return () => {
-        window.removeEventListener('resize', handleResize);
+        window.removeEventListener("resize", handleResize);
         if (chartContainer) {
-          chartContainer.removeEventListener('dblclick', handleDoubleClick);
-          chartContainer.style.cursor = 'default';
+          chartContainer.removeEventListener("dblclick", handleDoubleClick);
+          chartContainer.style.cursor = "default";
         }
         if (tradingViewChart.current) {
           tradingViewChart.current.remove();
@@ -590,8 +638,14 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
   useEffect(() => {
     if (chartType === "line") {
       function handleChartDoubleClick(e) {
-        if (lastTooltipRef.current && lastTooltipRef.current.data && lastTooltipRef.current.data[0]) {
-          const dataItem = aggregatedData.find(d => d.date === lastTooltipRef.current.date);
+        if (
+          lastTooltipRef.current &&
+          lastTooltipRef.current.data &&
+          lastTooltipRef.current.data[0]
+        ) {
+          const dataItem = aggregatedData.find(
+            (d) => d.date === lastTooltipRef.current.date
+          );
           if (dataItem) {
             onShowNews(dataItem);
           }
@@ -599,53 +653,72 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
       }
       const chartInstance = chartRef.current;
       if (chartInstance && chartInstance.canvas) {
-        chartInstance.canvas.addEventListener("dblclick", handleChartDoubleClick);
+        chartInstance.canvas.addEventListener(
+          "dblclick",
+          handleChartDoubleClick
+        );
       }
       return () => {
         if (chartInstance && chartInstance.canvas) {
-          chartInstance.canvas.removeEventListener("dblclick", handleChartDoubleClick);
+          chartInstance.canvas.removeEventListener(
+            "dblclick",
+            handleChartDoubleClick
+          );
         }
       };
     }
   }, [chartType, aggregatedData, onShowNews]);
 
   // TradingView 툴팁 포털
-  const tradingViewTooltipPortal = tvTooltipData ? createPortal(
-    <div 
-      style={{
-        position: "fixed",
-        left: tvTooltipPosition.x,
-        top: tvTooltipPosition.y,
-        zIndex: 1000,
-        pointerEvents: "auto",
-        cursor: "pointer",
-      }}
-      onDoubleClick={(e) => {
-        e.stopPropagation();
-        console.log('🎯 툴팁에서 더블클릭!', currentTooltipRef.current);
-        if (currentTooltipRef.current && currentTooltipRef.current.originalData) {
-          onShowNews(currentTooltipRef.current.originalData);
-        }
-      }}
-      title="더블클릭하여 뉴스 보기"
-    >
-      <NewsTooltip
-        data={[{ raw: { y: tvTooltipData.price } }]}
-        companyNews={tvTooltipData.companyNews}
-        macroNews={tvTooltipData.macroNews}
-        onShowNews={() => {
-          if (currentTooltipRef.current && currentTooltipRef.current.originalData) {
-            onShowNews(currentTooltipRef.current.originalData);
-          }
-        }}
-        date={tvTooltipData.date}
-      />
-    </div>,
-    document.body
-  ) : null;
+  const tradingViewTooltipPortal = tvTooltipData
+    ? createPortal(
+        <div
+          style={{
+            position: "fixed",
+            left: tvTooltipPosition.x,
+            top: tvTooltipPosition.y,
+            zIndex: 1000,
+            pointerEvents: "auto",
+            cursor: "pointer",
+          }}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            console.log("🎯 툴팁에서 더블클릭!", currentTooltipRef.current);
+            if (
+              currentTooltipRef.current &&
+              currentTooltipRef.current.originalData
+            ) {
+              onShowNews(currentTooltipRef.current.originalData);
+            }
+          }}
+          title="더블클릭하여 뉴스 보기"
+        >
+          <NewsTooltip
+            data={[{ raw: { y: tvTooltipData.price } }]}
+            companyNews={[
+              ...(tvTooltipData.companyNews || []),
+              ...(tvTooltipData.macroNews || []),
+            ]}
+            onShowNews={() => {
+              if (
+                currentTooltipRef.current &&
+                currentTooltipRef.current.originalData
+              ) {
+                onShowNews(currentTooltipRef.current.originalData);
+              }
+            }}
+            date={tvTooltipData.date}
+          />
+        </div>,
+        document.body
+      )
+    : null;
 
   return (
-    <div ref={wrapperRef} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div
+      ref={wrapperRef}
+      className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+    >
       {/* 차트 헤더 */}
       <div className="flex items-center justify-between mb-6">
         {/* 종목 정보 */}
@@ -661,11 +734,15 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
               <span className="text-xl font-semibold text-gray-900">
                 {currentData.latest.close.toLocaleString()}원
               </span>
-              <span className={`text-sm font-medium ${
-                currentData.change >= 0 ? "text-green-500" : "text-red-500"
-              }`}>
-                {currentData.change >= 0 ? "+" : ""}{currentData.changePercent.toFixed(2)}% 
-                ({currentData.change >= 0 ? "+" : ""}{currentData.change.toLocaleString()}원)
+              <span
+                className={`text-sm font-medium ${
+                  currentData.change >= 0 ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                {currentData.change >= 0 ? "+" : ""}
+                {currentData.changePercent.toFixed(2)}% (
+                {currentData.change >= 0 ? "+" : ""}
+                {currentData.change.toLocaleString()}원)
               </span>
             </div>
           )}
@@ -700,13 +777,15 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
 
       {/* 차트 영역 */}
       <div className="relative" style={{ height: "400px" }}>
-        {aggregatedData && Array.isArray(aggregatedData) && aggregatedData.length > 0 ? (
+        {aggregatedData &&
+        Array.isArray(aggregatedData) &&
+        aggregatedData.length > 0 ? (
           <>
             {chartType === "line" ? (
               <Line ref={chartRef} data={chartData} options={lineOptions} />
             ) : (
-              <div 
-                ref={tradingViewRef} 
+              <div
+                ref={tradingViewRef}
                 className="w-full h-full"
                 style={{ height: "400px" }}
               />
@@ -717,24 +796,30 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
           <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
             <div className="text-center">
               <div className="text-4xl mb-4">📊</div>
-              <div className="text-gray-600 font-medium">차트 데이터를 로딩 중입니다...</div>
+              <div className="text-gray-600 font-medium">
+                차트 데이터를 로딩 중입니다...
+              </div>
               <div className="text-xs text-gray-400 mt-2">
                 데이터가 준비되면 차트가 표시됩니다
               </div>
             </div>
           </div>
         )}
-        
+
         {/* 사용법 안내 */}
         <div className="absolute top-2 right-2 text-xs text-gray-400 bg-white bg-opacity-95 px-3 py-2 rounded-lg shadow-sm border border-gray-200">
           <div className="space-y-1">
             <div>🖱️ 드래그: 차트 이동</div>
             <div>🔍 휠: 확대/축소</div>
             <div>👆👆 더블클릭: 뉴스 보기</div>
-            {chartType === 'candle' && (
+            {chartType === "candle" && (
               <>
-                <div className="text-green-600 font-medium">✅ 무한루프 해결</div>
-                <div className="text-blue-600 font-medium">🕯️ 안정적 캔들차트</div>
+                <div className="text-green-600 font-medium">
+                  ✅ 무한루프 해결
+                </div>
+                <div className="text-blue-600 font-medium">
+                  🕯️ 안정적 캔들차트
+                </div>
               </>
             )}
           </div>
@@ -763,12 +848,16 @@ function CleanChartContainer({ ticker, tickerName, stockData = [], onShowNews })
         {/* 상태 표시 */}
         <div className="flex items-center space-x-2">
           <div className="text-xs text-green-500 font-medium">
-            ✅ {chartType === 'line' ? 'Chart.js' : 'TradingView'}
+            ✅ {chartType === "line" ? "Chart.js" : "TradingView"}
           </div>
           <div className="text-xs text-gray-500">
-            데이터: {aggregatedData && Array.isArray(aggregatedData) ? aggregatedData.length : 0}개
+            데이터:{" "}
+            {aggregatedData && Array.isArray(aggregatedData)
+              ? aggregatedData.length
+              : 0}
+            개
           </div>
-          {chartType === 'candle' && (
+          {chartType === "candle" && (
             <div className="text-xs text-blue-600 font-medium">
               🚀 무한루프 해결됨
             </div>

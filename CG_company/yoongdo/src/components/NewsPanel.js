@@ -3,14 +3,14 @@ import React, { useState, useMemo } from "react";
 
 const PAGE_SIZE = 5;
 
-const NewsPanel = ({ date, news, loading }) => {
+const NewsPanel = ({ date, news, loading, mainNews }) => {
   // 뉴스 아이템 컴포넌트
   const NewsItem = ({ title, source, time, summary, sentiment, url }) => {
     const handleClick = (e) => {
       if (url) {
         e.preventDefault();
         e.stopPropagation();
-        window.open(url, '_blank', 'noopener,noreferrer');
+        window.open(url, "_blank", "noopener,noreferrer");
       }
     };
 
@@ -38,8 +38,8 @@ const NewsPanel = ({ date, news, loading }) => {
           <div className="flex-1 min-w-0">
             <h4 className="text-sm font-medium text-gray-900 line-clamp-2 leading-5">
               {url ? (
-                <a 
-                  href={url} 
+                <a
+                  href={url}
                   onClick={handleClick}
                   className="hover:underline cursor-pointer"
                   title="새창에서 열기"
@@ -51,7 +51,9 @@ const NewsPanel = ({ date, news, loading }) => {
               )}
             </h4>
             <div className="flex items-center space-x-2 mt-1">
-              {source && <span className="text-xs text-gray-500">{source}</span>}
+              {source && (
+                <span className="text-xs text-gray-500">{source}</span>
+              )}
               {time && (
                 <>
                   <span className="text-xs text-gray-400">•</span>
@@ -111,50 +113,50 @@ const NewsPanel = ({ date, news, loading }) => {
   } else if (news && (news.companyNews || news.macroNews)) {
     const companyNews = news.companyNews || [];
     const macroNews = news.macroNews || [];
-    
-    console.log('🔍 NewsPanel 뉴스 데이터:', { companyNews, macroNews });
-    
+
+    console.log("🔍 NewsPanel 뉴스 데이터:", { companyNews, macroNews });
+
     // 뉴스 데이터가 객체인지 문자열인지 확인하여 처리
     const processNews = (newsItem) => {
-      if (typeof newsItem === 'string') {
+      if (typeof newsItem === "string") {
         return { title: newsItem, source: "Company News" };
-      } else if (typeof newsItem === 'object' && newsItem.title) {
+      } else if (typeof newsItem === "object" && newsItem.title) {
         const processed = {
           title: newsItem.title,
           url: newsItem.url,
           published_at: newsItem.published_at,
           summary: newsItem.summary,
-          source: "Company News"
+          source: "Company News",
         };
-        console.log('🔗 처리된 뉴스 (기업):', processed);
+        console.log("🔗 처리된 뉴스 (기업):", processed);
         return processed;
       }
       return newsItem;
     };
-    
+
     const processMacroNews = (newsItem) => {
-      if (typeof newsItem === 'string') {
+      if (typeof newsItem === "string") {
         return { title: newsItem, source: "Economic News" };
-      } else if (typeof newsItem === 'object' && newsItem.title) {
+      } else if (typeof newsItem === "object" && newsItem.title) {
         const processed = {
           title: newsItem.title,
           url: newsItem.url,
           published_at: newsItem.published_at,
           summary: newsItem.summary,
-          source: "Economic News"
+          source: "Economic News",
         };
-        console.log('🔗 처리된 뉴스 (거시):', processed);
+        console.log("🔗 처리된 뉴스 (거시):", processed);
         return processed;
       }
       return newsItem;
     };
-    
+
     newsList = [
       ...companyNews.map(processNews),
       ...macroNews.map(processMacroNews),
     ];
-    
-    console.log('📋 최종 뉴스 리스트:', newsList);
+
+    console.log("📋 최종 뉴스 리스트:", newsList);
   }
 
   // 페이지네이션 상태
@@ -193,6 +195,20 @@ const NewsPanel = ({ date, news, loading }) => {
 
       {/* 뉴스 리스트 */}
       <div className="flex-1 overflow-y-auto">
+        {/* 메인뉴스 강조 (첫 페이지에서만) */}
+        {mainNews && page === 1 && (
+          <div className="p-4 mb-2 rounded-lg border-2 border-blue-400 bg-blue-50">
+            <div className="text-xs font-bold text-blue-700 mb-1">메인뉴스</div>
+            <div className="text-base font-semibold text-blue-900">
+              {mainNews.title}
+            </div>
+            {mainNews.summary && (
+              <div className="text-sm text-blue-800 mt-1">
+                {mainNews.summary}
+              </div>
+            )}
+          </div>
+        )}
         {loading ? (
           <>
             <LoadingSkeleton />
@@ -254,7 +270,11 @@ const NewsPanel = ({ date, news, loading }) => {
               key={startPage + i}
               onClick={() => setPage(startPage + i)}
               className={`w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors
-                ${page === startPage + i ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-100'}`}
+                ${
+                  page === startPage + i
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-blue-100"
+                }`}
             >
               {startPage + i}
             </button>
