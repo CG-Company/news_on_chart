@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchMacroNews, fetchMainNews } from "../utils/api";
 
-const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker }) => {
+const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker, change_rate }) => {
   const [macroNewsForDate, setMacroNewsForDate] = useState([]);
   const [mainNewsForDate, setMainNewsForDate] = useState(null);
 
@@ -136,8 +136,11 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker })
               {date}
             </div>
           </div>
-          <div className="text-xs text-green-600 font-medium mt-1">
-            +2.1% (+2,600원) {/* 실제 변동률로 교체 필요 */}
+          <div className={`text-xs font-medium mt-1 ${
+            change_rate > 0 ? "text-green-600" : change_rate < 0 ? "text-red-600" : "text-gray-600"
+          }`}>
+            {change_rate > 0 ? "+" : ""}
+            {change_rate !== null && change_rate !== undefined ? change_rate.toFixed(2) + "%" : "-"}
           </div>
         </div>
       )}
