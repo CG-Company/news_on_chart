@@ -48,8 +48,20 @@ engine = create_engine(db_url, echo=False)
 
 # 4) DB에 upsert(INSERT ... ON CONFLICT)로 반영
 with engine.begin() as conn:
-    for _, row in ticker_df.iterrows():
-        conn.execute(text("""
+    # bulk upsert용 파라미터 리스트 생성
+    params = [
+        {
+            "ticker":        row["ticker"],
+            "company_name":  row["company_name"],
+            "exchange":      row.get("exchange", "KRX"),
+            "sector":        row.get("industry") or row.get("sector")
+        }
+        for _, row in ticker_df.iterrows()
+    ]
+
+    # bulk upsert 실행
+    conn.execute(
+        text("""
             INSERT INTO ticker (ticker, company_name, exchange, sector)
             VALUES (:ticker, :company_name, :exchange, :sector)
             ON CONFLICT (ticker)
@@ -57,14 +69,11 @@ with engine.begin() as conn:
                 company_name = EXCLUDED.company_name,
                 exchange     = EXCLUDED.exchange,
                 sector       = EXCLUDED.sector;
-        """), {
-            "ticker":        row["ticker"],
-            "company_name":  row["company_name"],
-            "exchange":      row.get("exchange", "KRX"),
-            "sector":        row.get("industry") or row.get("sector")
-        })
+        """),
+        params
+    )
 
-    # 거시 뉴스용 더미 티커 추가
+    # 거시 뉴스용 더미 티커 추가 (이건 한 줄이니 그대로)
     conn.execute(text("""
         INSERT INTO ticker (ticker, company_name, exchange, sector)
         VALUES (:ticker, :company_name, :exchange, :sector)

@@ -20,6 +20,16 @@ end_str   = end_date.strftime("%Y%m%d")
 # ② 코스피200 구성 종목 코드 가져오기
 # —————————————————————————————
 kospi200_tickers = stock.get_index_portfolio_deposit_file("1028")
+# 예시: 특정 티커만 가져오고 싶을 때 (예: 삼성전자 '005930'만)
+kospi200_tickers = ["278470"]
+
+# 여러 티커를 직접 지정하고 싶을 때:
+# kospi200_tickers = ["005930", "000660", "035420"]
+
+# 위의 두 줄 중 하나를 주석 해제해서 사용하세요.
+
+
+print("✅ 주가 가져오기 완료")
 
 # —————————————————————————————
 # ③ 종목별 OHLCV 수집 & DataFrame 결합
@@ -28,14 +38,15 @@ price_data_list = []
 
 for ticker in kospi200_tickers:
     df = stock.get_market_ohlcv(start_str, end_str, ticker)
-    df = df.reset_index()[["날짜", "시가", "고가", "저가", "종가", "거래량"]]
+    df = df.reset_index()[["날짜", "시가", "고가", "저가", "종가", "거래량", "등락률"]]
     df.columns = [
         "price_date",
         "open_price",
         "high_price",
         "low_price",
         "close_price",
-        "volume"
+        "volume",
+        "change_rate"
     ]
     df["adj_close"] = df["close_price"]
     df["ticker"]   = ticker
@@ -43,11 +54,12 @@ for ticker in kospi200_tickers:
 
 price_df = pd.concat(price_data_list, ignore_index=True)
 price_df["price_date"] = pd.to_datetime(price_df["price_date"]).dt.date
+print("✅ 종목별 OHLCV 수집 & DataFrame 결합")
 
 # —————————————————————————————
 # ④ .env 로드 & DB 연결
 # —————————————————————————————
-load_dotenv(".env.supabase", override=True)  # 프로젝트 루트의 .env 파일을 읽어옵니다.
+load_dotenv(".env", override=True)  # 프로젝트 루트의 .env 파일을 읽어옵니다.
 
 DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
@@ -55,7 +67,7 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 
-db_url = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
+db_url = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 engine = create_engine(db_url, echo=False)
 
 # —————————————————————————————
@@ -65,12 +77,12 @@ upsert_sql = """
 INSERT INTO stock_price (
     ticker, price_date,
     open_price, high_price, low_price,
-    close_price, volume, adj_close
+    close_price, volume, adj_close, change_rate
 )
 VALUES (
     :ticker, :price_date,
     :open_price, :high_price, :low_price,
-    :close_price, :volume, :adj_close
+    :close_price, :volume, :adj_close, :change_rate
 )
 ON CONFLICT (ticker, price_date)
 DO UPDATE SET
@@ -79,7 +91,8 @@ DO UPDATE SET
     low_price   = EXCLUDED.low_price,
     close_price = EXCLUDED.close_price,
     volume      = EXCLUDED.volume,
-    adj_close   = EXCLUDED.adj_close;
+    adj_close   = EXCLUDED.adj_close,
+    change_rate = EXCLUDED.change_rate;
 """
 
 with engine.begin() as conn:

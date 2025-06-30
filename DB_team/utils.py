@@ -20,7 +20,9 @@ def get_stock_data(ticker: str):
         open_price  AS open,
         high_price  AS high,
         low_price   AS low,
-        close_price AS close
+        close_price AS close,
+        change_rate AS change_rate
+       
     FROM stock_price
     WHERE ticker = :ticker
       AND close_price != 0
@@ -28,21 +30,17 @@ def get_stock_data(ticker: str):
     """
     df = pd.read_sql(text(sql), engine, params={"ticker": ticker})
 
-    # # companyNews, macroNews 컬럼이 없으므로 빈 리스트로 생성
-    df["companyNews"] = [[] for _ in range(len(df))]
-    df["macroNews"]   = [[] for _ in range(len(df))]
-
     return df.to_dict(orient="records")
 
 def get_ticker_map():
     sql = """
-    SELECT ticker, company_name
+    SELECT ticker, company_name, sector
     FROM ticker
     ORDER BY ticker
     """
     df = pd.read_sql(text(sql), engine)
     # { ticker: "005930", name: "삼성전자" } 형태로 내려주려면:
-    return [{"ticker": r["ticker"], "name": r["company_name"]} for r in df.to_dict(orient="records")]
+    return [{"ticker": r["ticker"], "name": r["company_name"], "sector": r["sector"]} for r in df.to_dict(orient="records")]
 
 def get_news_data(ticker: str):
     sql = """
