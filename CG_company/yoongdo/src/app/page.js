@@ -56,6 +56,7 @@ export default function Page() {
   const [tickerName, setTickerName] = useState("SK하이닉스");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedNews, setSelectedNews] = useState(null);
+  const [selectedPage, setSelectedPage] = useState("dashboard");
 
   // 데이터 상태
   const [stockData, setStockData] = useState([]);
@@ -379,437 +380,450 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* 사이드바 */}
-      <Sidebar currentPage="dashboard" />
+      <Sidebar
+        currentPage={selectedPage}
+        onMenuSelect={setSelectedPage}
+      />
 
       {/* 메인 컨텐츠 */}
       <div className="flex-1 ml-52">
-        {/* 헤더 */}
         <Header ticker={ticker} setTicker={setTicker} tickerName={tickerName} />
 
-        {/* 메인 컨텐츠 영역 */}
         <main className="p-6">
-          {/* API 상태 알림 */}
-          {!apiHealthy && (
-            <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-yellow-600 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                    />
-                  </svg>
-                  <div>
-                    <p className="text-sm font-medium text-yellow-800">
-                      FastAPI 서버 연결 불안정
-                    </p>
-                    <p className="text-xs text-yellow-700 mt-1">
-                      PostgreSQL 데이터베이스 연결을 확인하고 있습니다.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="text-xs bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded-lg transition-colors"
-                >
-                  새로고침
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 데이터 업데이트 정보 */}
-          {lastUpdateTime && apiHealthy && (
-            <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-600 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <div>
-                    <p className="text-sm font-medium text-green-800">
-                      PostgreSQL 데이터 연결 완료
-                    </p>
-                    <p className="text-xs text-green-700 mt-1">
-                      마지막 업데이트: {lastUpdateTime.toLocaleString("ko-KR")}{" "}
-                      | 주식 데이터: {stockData.length}개 | 뉴스:{" "}
-                      {newsData.length}개
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleManualRefresh}
-                  disabled={isLoadingStock}
-                  className="text-xs bg-green-100 hover:bg-green-200 text-green-800 px-3 py-1 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {isLoadingStock ? "업데이트 중..." : "새로고침"}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 종목 카드들 */}
-          <ErrorBoundary name="StockCards">
-            {isLoadingStock ? (
-              <StockCardsSkeleton />
-            ) : (
-              <StockCards
-                currentStock={{ ticker, tickerName }}
-                stockData={stockData}
-                currentData={currentData}
-              />
-            )}
-          </ErrorBoundary>
-
-          {/* 차트와 뉴스 패널 */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* 차트 영역 (2/3) */}
-            <div className="lg:col-span-2">
-              <ErrorBoundary
-                name="ChartContainer"
-                fallback={(error, retry) => (
-                  <ChartErrorFallback error={error} onRetry={retry} />
-                )}
-              >
-                {errors.stock ? (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-96 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-6 h-6 text-red-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        데이터베이스 연결 실패
-                      </h3>
-                      <p className="text-gray-600 text-sm mb-4">
-                        {errors.stock}
-                      </p>
-                      <button
-                        onClick={handleRetryStock}
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          {/* News 탭 클릭 시 NewsPanel만 보여주기 */}
+          {selectedPage === "news" ? (
+            <NewsPanel
+              news={newsData}
+              loading={isLoadingStock}
+              // 필요시 추가 props
+            />
+          ) : (
+            // 기졸 메인 컨텐츠 영역 (차트, 카드 등)
+            <>
+              {/* API 상태 알림 */}
+              {!apiHealthy && (
+                <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <svg
+                        className="w-5 h-5 text-yellow-600 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        다시 시도
-                      </button>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
+                      </svg>
+                      <div>
+                        <p className="text-sm font-medium text-yellow-800">
+                          FastAPI 서버 연결 불안정
+                        </p>
+                        <p className="text-xs text-yellow-700 mt-1">
+                          PostgreSQL 데이터베이스 연결을 확인하고 있습니다.
+                        </p>
+                      </div>
                     </div>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="text-xs bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded-lg transition-colors"
+                    >
+                      새로고침
+                    </button>
                   </div>
-                ) : isLoadingStock ? (
-                  <ChartLoadingSkeleton />
+                </div>
+              )}
+
+              {/* 데이터 업데이트 정보 */}
+              {lastUpdateTime && apiHealthy && (
+                <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <svg
+                        className="w-5 h-5 text-green-600 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <div>
+                        <p className="text-sm font-medium text-green-800">
+                          PostgreSQL 데이터 연결 완료
+                        </p>
+                        <p className="text-xs text-green-700 mt-1">
+                          마지막 업데이트: {lastUpdateTime.toLocaleString("ko-KR")}{" "}
+                          | 주식 데이터: {stockData.length}개 | 뉴스:{" "}
+                          {newsData.length}개
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleManualRefresh}
+                      disabled={isLoadingStock}
+                      className="text-xs bg-green-100 hover:bg-green-200 text-green-800 px-3 py-1 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {isLoadingStock ? "업데이트 중..." : "새로고침"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 종목 카드들 */}
+              <ErrorBoundary name="StockCards">
+                {isLoadingStock ? (
+                  <StockCardsSkeleton />
                 ) : (
-                  <CleanChartContainer
-                    ticker={ticker}
-                    tickerName={tickerName}
+                  <StockCards
+                    currentStock={{ ticker, tickerName }}
                     stockData={stockData}
-                    onShowNews={handleShowNews}
-                    key={`chart-${ticker}-${stockData.length}`}
+                    currentData={currentData}
                   />
                 )}
               </ErrorBoundary>
-            </div>
 
-            {/* 뉴스 패널 (1/3) */}
-            <div className="lg:col-span-1">
-              <ErrorBoundary
-                name="NewsPanel"
-                fallback={(error, retry) => (
-                  <NewsErrorFallback error={error} onRetry={retry} />
-                )}
-              >
-                <NewsPanel
-                  news={selectedNews}
-                  date={selectedDate}
-                  loading={isLoadingStock}
-                  newsData={newsData}
-                  key={
-                    selectedNews ? `news-${selectedNews.date}` : "news-empty"
-                  }
-                />
-              </ErrorBoundary>
-            </div>
-          </div>
-
-          {/* 차트 상태 표시 */}
-          {isLoadingStock && (
-            <div className="mt-4 flex items-center justify-center">
-              <LoadingSpinner
-                size="sm"
-                message="PostgreSQL에서 차트 데이터 로딩 중..."
-              />
-            </div>
-          )}
-
-          {!isLoadingStock && stockData.length > 0 && (
-            <div className="mt-4 text-center">
-              <div className="text-xs text-green-500 bg-green-50 px-3 py-2 rounded-lg inline-block">
-                🐘 PostgreSQL 연동 | 📊 주식 데이터: {stockData.length}개 | 📰
-                뉴스: {newsData.length}개 | 🎯 실시간 DB 연결
-              </div>
-            </div>
-          )}
-
-          {/* 데이터베이스 정보 섹션 */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* DB 연결 상태 */}
-            <ErrorBoundary name="DatabaseStatus">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center space-x-2 mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    데이터베이스
-                  </h3>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      apiHealthy
-                        ? "bg-green-100 text-green-600"
-                        : "bg-red-100 text-red-600"
-                    }`}
+              {/* 차트와 뉴스 패널 */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* 차트 영역 (2/3) */}
+                <div className="lg:col-span-2">
+                  <ErrorBoundary
+                    name="ChartContainer"
+                    fallback={(error, retry) => (
+                      <ChartErrorFallback error={error} onRetry={retry} />
+                    )}
                   >
-                    {apiHealthy ? "PostgreSQL 연결됨" : "연결 실패"}
-                  </span>
+                    {errors.stock ? (
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-96 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                            <svg
+                              className="w-6 h-6 text-red-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                          </div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            데이터베이스 연결 실패
+                          </h3>
+                          <p className="text-gray-600 text-sm mb-4">
+                            {errors.stock}
+                          </p>
+                          <button
+                            onClick={handleRetryStock}
+                            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                          >
+                            다시 시도
+                          </button>
+                        </div>
+                      </div>
+                    ) : isLoadingStock ? (
+                      <ChartLoadingSkeleton />
+                    ) : (
+                      <CleanChartContainer
+                        ticker={ticker}
+                        tickerName={tickerName}
+                        stockData={stockData}
+                        onShowNews={handleShowNews}
+                        key={`chart-${ticker}-${stockData.length}`}
+                      />
+                    )}
+                  </ErrorBoundary>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">DB 테이블</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      stock_price, news, ticker
-                    </span>
+
+                {/* 뉴스 패널 (1/3) */}
+                <div className="lg:col-span-1">
+                  <ErrorBoundary
+                    name="NewsPanel"
+                    fallback={(error, retry) => (
+                      <NewsErrorFallback error={error} onRetry={retry} />
+                    )}
+                  >
+                    <NewsPanel
+                      news={selectedNews}
+                      date={selectedDate}
+                      loading={isLoadingStock}
+                      newsData={newsData}
+                      key={
+                        selectedNews ? `news-${selectedNews.date}` : "news-empty"
+                      }
+                    />
+                  </ErrorBoundary>
+                </div>
+              </div>
+
+              {/* 차트 상태 표시 */}
+              {isLoadingStock && (
+                <div className="mt-4 flex items-center justify-center">
+                  <LoadingSpinner
+                    size="sm"
+                    message="PostgreSQL에서 차트 데이터 로딩 중..."
+                  />
+                </div>
+              )}
+
+              {!isLoadingStock && stockData.length > 0 && (
+                <div className="mt-4 text-center">
+                  <div className="text-xs text-green-500 bg-green-50 px-3 py-2 rounded-lg inline-block">
+                    🐘 PostgreSQL 연동 | 📊 주식 데이터: {stockData.length}개 | 📰
+                    뉴스: {newsData.length}개 | 🎯 실시간 DB 연결
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">API 상태</span>
+                </div>
+              )}
+
+              {/* 데이터베이스 정보 섹션 */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* DB 연결 상태 */}
+                <ErrorBoundary name="DatabaseStatus">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        데이터베이스
+                      </h3>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          apiHealthy
+                            ? "bg-green-100 text-green-600"
+                            : "bg-red-100 text-red-600"
+                        }`}
+                      >
+                        {apiHealthy ? "PostgreSQL 연결됨" : "연결 실패"}
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">DB 테이블</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          stock_price, news, ticker
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">API 상태</span>
+                        <span
+                          className={`text-sm font-medium ${
+                            apiHealthy ? "text-green-500" : "text-red-500"
+                          }`}
+                        >
+                          {apiHealthy ? "정상" : "오류"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">
+                          마지막 업데이트
+                        </span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {lastUpdateTime
+                            ? lastUpdateTime.toLocaleTimeString("ko-KR")
+                            : "없음"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </ErrorBoundary>
+
+                {/* 거래량 정보 */}
+                <ErrorBoundary name="TradingInfo">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        거래 정보
+                      </h3>
+                      <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                        {tickerName || "종목"}
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      {currentData ? (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">현재가</span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {currentData.latest.close.toLocaleString()}원
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">전일대비</span>
+                            <span
+                              className={`text-sm font-medium ${
+                                currentData.change >= 0
+                                  ? "text-green-500"
+                                  : "text-red-500"
+                              }`}
+                            >
+                              {currentData.change >= 0 ? "+" : ""}
+                              {currentData.change.toLocaleString()}원
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">등락률</span>
+                            <span
+                              className={`text-sm font-medium ${
+                                currentData.changePercent >= 0
+                                  ? "text-green-500"
+                                  : "text-red-500"
+                              }`}
+                            >
+                              {currentData.changePercent >= 0 ? "+" : ""}
+                              {currentData.changePercent.toFixed(2)}%
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <DataLoading message="PostgreSQL에서 거래 정보 로딩 중..." />
+                      )}
+                    </div>
+                  </div>
+                </ErrorBoundary>
+
+                {/* 뉴스 통계 */}
+                <ErrorBoundary name="NewsStats">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        뉴스 통계
+                      </h3>
+                      <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">
+                        실시간
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">총 뉴스</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {newsData.length}개
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">기업 뉴스</span>
+                        <span className="text-sm font-medium text-blue-500">
+                          {stockData.reduce(
+                            (sum, item) => sum + (item.companyNews?.length || 0),
+                            0
+                          )}
+                          개
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">거시경제</span>
+                        <span className="text-sm font-medium text-orange-500">
+                          {stockData.reduce(
+                            (sum, item) => sum + (item.macroNews?.length || 0),
+                            0
+                          )}
+                          개
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </ErrorBoundary>
+              </div>
+
+              {/* 시스템 상태 정보 */}
+              <div className="mt-6 bg-gray-100 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">
+                  🔧 시스템 상태 (PostgreSQL 연동)
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-600">
+                  <div>
+                    <span className="font-medium">DB 상태:</span>
                     <span
-                      className={`text-sm font-medium ${
-                        apiHealthy ? "text-green-500" : "text-red-500"
+                      className={`ml-1 ${
+                        apiHealthy ? "text-green-600" : "text-red-600"
                       }`}
                     >
-                      {apiHealthy ? "정상" : "오류"}
+                      {apiHealthy ? "PostgreSQL 연결됨" : "연결 실패"}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">
-                      마지막 업데이트
+                  <div>
+                    <span className="font-medium">종목:</span>
+                    <span className="ml-1">
+                      {ticker} ({tickerName || "로딩중"})
                     </span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {lastUpdateTime
-                        ? lastUpdateTime.toLocaleTimeString("ko-KR")
-                        : "없음"}
+                  </div>
+                  <div>
+                    <span className="font-medium">주식 데이터:</span>
+                    <span className="ml-1">
+                      {stockData.length}개 (DB에서 실시간)
                     </span>
+                  </div>
+                  <div>
+                    <span className="font-medium">뉴스 데이터:</span>
+                    <span className="ml-1">{newsData.length}개</span>
                   </div>
                 </div>
-              </div>
-            </ErrorBoundary>
 
-            {/* 거래량 정보 */}
-            <ErrorBoundary name="TradingInfo">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center space-x-2 mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    거래 정보
-                  </h3>
-                  <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
-                    {tickerName || "종목"}
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  {currentData ? (
-                    <>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">현재가</span>
-                        <span className="text-sm font-medium text-gray-900">
-                          {currentData.latest.close.toLocaleString()}원
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">전일대비</span>
-                        <span
-                          className={`text-sm font-medium ${
-                            currentData.change >= 0
-                              ? "text-green-500"
-                              : "text-red-500"
-                          }`}
-                        >
-                          {currentData.change >= 0 ? "+" : ""}
-                          {currentData.change.toLocaleString()}원
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">등락률</span>
-                        <span
-                          className={`text-sm font-medium ${
-                            currentData.changePercent >= 0
-                              ? "text-green-500"
-                              : "text-red-500"
-                          }`}
-                        >
-                          {currentData.changePercent >= 0 ? "+" : ""}
-                          {currentData.changePercent.toFixed(2)}%
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <DataLoading message="PostgreSQL에서 거래 정보 로딩 중..." />
-                  )}
-                </div>
-              </div>
-            </ErrorBoundary>
-
-            {/* 뉴스 통계 */}
-            <ErrorBoundary name="NewsStats">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center space-x-2 mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    뉴스 통계
-                  </h3>
-                  <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">
-                    실시간
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">총 뉴스</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {newsData.length}개
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">기업 뉴스</span>
-                    <span className="text-sm font-medium text-blue-500">
-                      {stockData.reduce(
-                        (sum, item) => sum + (item.companyNews?.length || 0),
-                        0
-                      )}
-                      개
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">거시경제</span>
-                    <span className="text-sm font-medium text-orange-500">
-                      {stockData.reduce(
-                        (sum, item) => sum + (item.macroNews?.length || 0),
-                        0
-                      )}
-                      개
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </ErrorBoundary>
-          </div>
-
-          {/* 시스템 상태 정보 */}
-          <div className="mt-6 bg-gray-100 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">
-              🔧 시스템 상태 (PostgreSQL 연동)
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-600">
-              <div>
-                <span className="font-medium">DB 상태:</span>
-                <span
-                  className={`ml-1 ${
-                    apiHealthy ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {apiHealthy ? "PostgreSQL 연결됨" : "연결 실패"}
-                </span>
-              </div>
-              <div>
-                <span className="font-medium">종목:</span>
-                <span className="ml-1">
-                  {ticker} ({tickerName || "로딩중"})
-                </span>
-              </div>
-              <div>
-                <span className="font-medium">주식 데이터:</span>
-                <span className="ml-1">
-                  {stockData.length}개 (DB에서 실시간)
-                </span>
-              </div>
-              <div>
-                <span className="font-medium">뉴스 데이터:</span>
-                <span className="ml-1">{newsData.length}개</span>
-              </div>
-            </div>
-
-            {/* 에러 상태 표시 */}
-            {(errors.stock || errors.api) && (
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <p className="text-xs font-medium text-red-600 mb-1">
-                  ⚠️ 현재 오류:
-                </p>
-                <div className="space-y-1">
-                  {errors.stock && (
-                    <p className="text-xs text-red-500">
-                      • 주식 데이터: {errors.stock}
+                {/* 에러 상태 표시 */}
+                {(errors.stock || errors.api) && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <p className="text-xs font-medium text-red-600 mb-1">
+                      ⚠️ 현재 오류:
                     </p>
-                  )}
-                  {errors.api && (
-                    <p className="text-xs text-red-500">
-                      • API 연결: {errors.api}
-                    </p>
-                  )}
-                </div>
+                    <div className="space-y-1">
+                      {errors.stock && (
+                        <p className="text-xs text-red-500">
+                          • 주식 데이터: {errors.stock}
+                        </p>
+                      )}
+                      {errors.api && (
+                        <p className="text-xs text-red-500">
+                          • API 연결: {errors.api}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* 개발 환경에서만 보이는 디버깅 정보 */}
-          {process.env.NODE_ENV === "development" && (
-            <div className="mt-6 bg-blue-50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-blue-700 mb-2">
-                🔧 개발 정보 (PostgreSQL)
-              </h4>
-              <div className="text-xs text-blue-600 space-y-1">
-                <div>
-                  현재 종목: {ticker} ({tickerName})
+              {/* 개발 환경에서만 보이는 디버깅 정보 */}
+              {process.env.NODE_ENV === "development" && (
+                <div className="mt-6 bg-blue-50 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-blue-700 mb-2">
+                    🔧 개발 정보 (PostgreSQL)
+                  </h4>
+                  <div className="text-xs text-blue-600 space-y-1">
+                    <div>
+                      현재 종목: {ticker} ({tickerName})
+                    </div>
+                    <div>
+                      DB 테이블: stock_price ({stockData.length}행), news (
+                      {newsData.length}행)
+                    </div>
+                    <div>
+                      선택된 뉴스:{" "}
+                      {selectedNews ? selectedNews.date || "있음" : "없음"}
+                    </div>
+                    <div>API 베이스: {getApiDebugInfo().apiBase}</div>
+                    <div>
+                      캐시 키: {getApiDebugInfo().cachedKeys.join(", ") || "없음"}
+                    </div>
+                    <div className="text-green-600 font-medium">
+                      ✅ PostgreSQL + FastAPI 연동 완료
+                    </div>
+                    <div className="text-blue-600 font-medium">
+                      🚀 실시간 데이터베이스 연결
+                    </div>
+                    <div className="text-purple-600 font-medium">
+                      🛡️ 전체 에러 처리 시스템 적용
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  DB 테이블: stock_price ({stockData.length}행), news (
-                  {newsData.length}행)
-                </div>
-                <div>
-                  선택된 뉴스:{" "}
-                  {selectedNews ? selectedNews.date || "있음" : "없음"}
-                </div>
-                <div>API 베이스: {getApiDebugInfo().apiBase}</div>
-                <div>
-                  캐시 키: {getApiDebugInfo().cachedKeys.join(", ") || "없음"}
-                </div>
-                <div className="text-green-600 font-medium">
-                  ✅ PostgreSQL + FastAPI 연동 완료
-                </div>
-                <div className="text-blue-600 font-medium">
-                  🚀 실시간 데이터베이스 연결
-                </div>
-                <div className="text-purple-600 font-medium">
-                  🛡️ 전체 에러 처리 시스템 적용
-                </div>
-              </div>
-            </div>
+              )}
+            </>
           )}
         </main>
       </div>
