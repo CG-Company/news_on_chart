@@ -410,3 +410,34 @@ export function getApiDebugInfo() {
     environment: process.env.NODE_ENV,
   };
 }
+
+// 거시경제 뉴스만 가져오기
+export async function fetchMacroNews() {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE}/api/macro_news`);
+    const data = await response.json();
+    if (!Array.isArray(data)) {
+      throw new Error('서버에서 유효하지 않은 거시경제 뉴스 데이터를 반환했습니다.');
+    }
+    return data;
+  } catch (error) {
+    console.error('거시경제 뉴스 조회 실패:', error);
+    throw error;
+  }
+}
+
+// 기업 메인뉴스만 가져오기
+export async function fetchMainNews(ticker) {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE}/api/news_is_selected?ticker=${encodeURIComponent(ticker)}`);
+    const data = await response.json();
+    if (!data || !Array.isArray(data.news)) {
+      throw new Error('서버에서 유효하지 않은 메인뉴스 데이터를 반환했습니다.');
+    }
+    // news: [{title, summary, keyword, url, ...}]
+    return data.news;
+  } catch (error) {
+    console.error('메인뉴스 조회 실패:', error);
+    throw error;
+  }
+}

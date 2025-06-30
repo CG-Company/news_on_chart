@@ -1,12 +1,12 @@
 // components/Sidebar.js
 import React from "react";
 
-const Sidebar = ({ currentPage = "dashboard" }) => {
+const Sidebar = ({ currentPage = "dashboard", onMenuSelect }) => {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: "📊", active: true },
-    { id: "analysis", label: "Stock Analysis", icon: "📈", active: false },
-    { id: "news", label: "News", icon: "📰", active: false },
-    { id: "settings", label: "Settings", icon: "⚙️", active: false },
+    { id: "analysis", label: "Stock Analysis", icon: "📈", active: true },
+    { id: "news", label: "News", icon: "📰", active: true },
+    { id: "settings", label: "Settings", icon: "⚙️", active: true },
   ];
 
   return (
@@ -23,6 +23,7 @@ const Sidebar = ({ currentPage = "dashboard" }) => {
             <li key={item.id}>
               <a
                 href="#"
+                onClick={() => onMenuSelect && onMenuSelect(item.id)}
                 className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                   item.id === currentPage
                     ? "bg-blue-600 text-white"

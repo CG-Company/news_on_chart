@@ -1,7 +1,43 @@
 // components/NewsTooltip.js (더블클릭 지원 버전)
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { fetchMacroNews, fetchMainNews } from "../utils/api";
 
-const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
+const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker }) => {
+  const [macroNewsForDate, setMacroNewsForDate] = useState([]);
+  const [mainNewsForDate, setMainNewsForDate] = useState(null);
+
+  useEffect(() => {
+    if ((!macroNews || macroNews.length === 0) && date) {
+      fetchMacroNews()
+        .then((macroList) => {
+          // 날짜별로 필터링
+          const filtered = macroList.filter((item) => item.published_at === date || item.date === date);
+          setMacroNewsForDate(filtered);
+        })
+        .catch(() => setMacroNewsForDate([]));
+    } else {
+      setMacroNewsForDate(macroNews || []);
+    }
+  }, [macroNews, date]);
+
+  useEffect(() => {
+    if (ticker && date) {
+      fetchMainNews(ticker)
+        .then((mainList) => {
+          if (mainList && mainList.length > 0) {
+            // 날짜까지 매칭
+            const matched = mainList.find(item => item.published_at === date || item.date === date);
+            setMainNewsForDate(matched || null);
+          } else {
+            setMainNewsForDate(null);
+          }
+        })
+        .catch(() => setMainNewsForDate(null));
+    } else {
+      setMainNewsForDate(null);
+    }
+  }, [ticker, date]);
+
   // 더블클릭 핸들러
   const handleDoubleClick = (e) => {
     e.stopPropagation();
@@ -63,6 +99,22 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
     }
   };
 
+  // 키워드 pill 렌더링 함수
+  function renderKeywordPills(keyword, color = 'blue') {
+    if (!keyword) return null;
+    // 특수문자 제거 (한글, 영문, 숫자, 공백, 쉼표만 허용)
+    const cleaned = keyword.replace(/[{}\[\]"'`]/g, '');
+    const keywords = cleaned.split(',').map(k => k.trim()).filter(Boolean);
+    const colorClass = color === 'blue' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700';
+    return (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {keywords.map((k, i) => (
+          <span key={i} className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${colorClass}`}>{k}</span>
+        ))}
+      </div>
+    );
+  }
+
   // macroNews는 항상 빈 배열로 처리
   const macroNewsList = [];
   // companyNews는 기존 companyNews와 macroNews를 합쳐서 전달받았다고 가정
@@ -92,45 +144,50 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
 
       {/* 뉴스 섹션 */}
       <div className="space-y-3">
-        {/* 기업 뉴스 */}
+        {/* 기업 메인뉴스 */}
         <div>
           <div className="flex items-center mb-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
             <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-              기업 뉴스
+              기업 메인뉴스
             </span>
-            {companyNews && companyNews.length > 0 && (
-              <span className="ml-auto text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">
-                {companyNews.length}
-              </span>
-            )}
           </div>
-          {companyNews && companyNews.length > 0 ? (
+          {mainNewsForDate ? (
             <div className="space-y-1">
-              {companyNews.slice(0, 2).map((news, i) => renderNewsItem(news, i))}
-              {companyNews.length > 2 && (
-                <div className="text-xs text-blue-600 font-medium">
-                  +{companyNews.length - 2}개 더
-                </div>
-              )}
+              <div className="text-xs text-black">
+                {mainNewsForDate.title}
+              </div>
+              {renderKeywordPills(mainNewsForDate.keyword, 'blue')}
+            </div>
+          ) : companyNews && companyNews.length > 0 ? (
+            <div className="space-y-1">
+              <div className="text-xs text-black">
+                {companyNews[0].title}
+              </div>
+              {renderKeywordPills(companyNews[0].keyword, 'blue')}
             </div>
           ) : (
             <div className="text-xs text-gray-400 italic">뉴스 없음</div>
           )}
         </div>
-
-        {/* 거시 뉴스 */}
+        {/* 거시경제 뉴스 */}
         <div>
           <div className="flex items-center mb-2">
             <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
             <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
               거시경제
             </span>
-            <span className="ml-auto text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">
-              0
-            </span>
           </div>
-          <div className="text-xs text-gray-400 italic">뉴스 없음</div>
+          {macroNewsForDate && macroNewsForDate.length > 0 ? (
+            <div className="space-y-1">
+              <div className="text-xs text-black">
+                {macroNewsForDate[0].title}
+              </div>
+              {renderKeywordPills(macroNewsForDate[0].keyword, 'orange')}
+            </div>
+          ) : (
+            <div className="text-xs text-gray-400 italic">뉴스 없음</div>
+          )}
         </div>
       </div>
 

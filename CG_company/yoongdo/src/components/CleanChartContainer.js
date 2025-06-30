@@ -239,13 +239,13 @@ function CleanChartContainer({
 
   function externalTooltipHandler(context) {
     const { chart, tooltip } = context;
-    let tooltipEl = chart.canvas.parentNode.querySelector(".custom-tooltip");
+    let tooltipEl = chart.canvas.parentNode.querySelector('.custom-tooltip');
     if (!tooltipEl) {
-      tooltipEl = document.createElement("div");
-      tooltipEl.className = "custom-tooltip";
-      tooltipEl.style.position = "absolute";
-      tooltipEl.style.pointerEvents = "auto";
-      tooltipEl.style.zIndex = "1000";
+      tooltipEl = document.createElement('div');
+      tooltipEl.className = 'custom-tooltip';
+      tooltipEl.style.position = 'absolute';
+      tooltipEl.style.pointerEvents = 'auto';
+      tooltipEl.style.zIndex = '1000';
       chart.canvas.parentNode.appendChild(tooltipEl);
     }
 
@@ -256,15 +256,18 @@ function CleanChartContainer({
       if (!tooltipEl._root) {
         tooltipEl._root = ReactDOM.createRoot(tooltipEl);
       }
+      // 날짜별 메인뉴스/거시뉴스 추출
+      const date = lockedTooltipData.date;
+      const mainCompanyNews = (lockedTooltipData.companyNews && lockedTooltipData.companyNews[0]) || null;
+      const macroNews = macroNewsByDate[date] || null;
       tooltipEl._root.render(
         <NewsTooltip
           data={lockedTooltipData.data}
-          companyNews={[
-            ...(lockedTooltipData.companyNews || []),
-            ...(lockedTooltipData.macroNews || []),
-          ]}
+          companyNews={mainCompanyNews ? [mainCompanyNews] : []}
+          macroNews={macroNews ? [macroNews] : []}
           onShowNews={lockedTooltipData.onShowNews}
           date={lockedTooltipData.date}
+          ticker={ticker}
         />
       );
       return;
@@ -277,8 +280,8 @@ function CleanChartContainer({
     }
 
     tooltipEl.style.opacity = 1;
-    tooltipEl.style.left = chart.canvas.offsetLeft + tooltip.caretX + "px";
-    tooltipEl.style.top = chart.canvas.offsetTop + tooltip.caretY + "px";
+    tooltipEl.style.left = chart.canvas.offsetLeft + tooltip.caretX + 'px';
+    tooltipEl.style.top = chart.canvas.offsetTop + tooltip.caretY + 'px';
 
     if (!tooltipEl._root) {
       tooltipEl._root = ReactDOM.createRoot(tooltipEl);
@@ -288,7 +291,9 @@ function CleanChartContainer({
     const companyNews = dataItem?.companyNews || [];
     const macroNews = dataItem?.macroNews || [];
     const date = tooltip.dataPoints[0]?.label;
-
+    // 메인뉴스/거시뉴스 추출
+    const mainCompanyNews = companyNews[0] || null;
+    const macroNewsItem = macroNewsByDate[date] || null;
     lastTooltipRef.current = {
       data: tooltip.dataPoints,
       companyNews,
@@ -296,15 +301,17 @@ function CleanChartContainer({
       date,
       left: tooltipEl.style.left,
       top: tooltipEl.style.top,
-      onShowNews: () => onShowNews(dataItem),
+      onShowNews: () => onShowNews(dataItem)
     };
 
     tooltipEl._root.render(
       <NewsTooltip
         data={tooltip.dataPoints}
-        companyNews={[...(companyNews || []), ...(macroNews || [])]}
+        companyNews={mainCompanyNews ? [mainCompanyNews] : []}
+        macroNews={macroNewsItem ? [macroNewsItem] : []}
         onShowNews={() => onShowNews(dataItem)}
         date={date}
+        ticker={ticker}
       />
     );
   }
@@ -708,11 +715,38 @@ function CleanChartContainer({
               }
             }}
             date={tvTooltipData.date}
+            ticker={ticker}
           />
         </div>,
         document.body
       )
     : null;
+
+  // 거시경제 뉴스 상태
+  const [macroNewsByDate, setMacroNewsByDate] = useState({});
+
+  // 마운트 시 거시경제 뉴스 fetch
+  useEffect(() => {
+    async function fetchMacroNews() {
+      try {
+        const res = await fetch('/api/macro_news');
+        const data = await res.json();
+        // 날짜별로 매핑
+        const byDate = {};
+        if (Array.isArray(data)) {
+          data.forEach(item => {
+            if (item.published_at) {
+              byDate[item.published_at] = item;
+            }
+          });
+        }
+        setMacroNewsByDate(byDate);
+      } catch (e) {
+        setMacroNewsByDate({});
+      }
+    }
+    fetchMacroNews();
+  }, []);
 
   return (
     <div
