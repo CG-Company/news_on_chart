@@ -23,6 +23,7 @@ def get_stock_data(ticker: str):
         close_price AS close
     FROM stock_price
     WHERE ticker = :ticker
+      AND close_price != 0
     ORDER BY price_date
     """
     df = pd.read_sql(text(sql), engine, params={"ticker": ticker})
@@ -50,7 +51,7 @@ def get_news_data(ticker: str):
         published_at,
         title,
         summary,
-        content,
+        keyword,
         url
     FROM news
     WHERE ticker = :ticker

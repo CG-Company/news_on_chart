@@ -92,12 +92,8 @@ const NewsPanel = ({ date, news, loading }) => {
   if (Array.isArray(news)) {
     newsList = news;
   } else if (news && (news.companyNews || news.macroNews)) {
-    const companyNews = news.companyNews || [];
-    const macroNews = news.macroNews || [];
-    newsList = [
-      ...companyNews.map((n) => ({ title: n, source: "Company News" })),
-      ...macroNews.map((n) => ({ title: n, source: "Economic News" })),
-    ];
+    const allNews = [...(news.companyNews || []), ...(news.macroNews || [])];
+    newsList = allNews.map((n) => ({ title: n, source: "Company News" }));
   }
 
   return (

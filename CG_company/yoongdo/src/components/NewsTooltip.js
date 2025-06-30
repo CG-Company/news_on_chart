@@ -5,14 +5,18 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
   // 더블클릭 핸들러
   const handleDoubleClick = (e) => {
     e.stopPropagation();
-    console.log('🎯 NewsTooltip에서 더블클릭 감지!', { date, companyNews, macroNews });
+    console.log("🎯 NewsTooltip에서 더블클릭 감지!", {
+      date,
+      companyNews,
+      macroNews,
+    });
     if (onShowNews) {
       onShowNews();
     }
   };
 
   return (
-    <div 
+    <div
       className="bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-72 max-w-sm cursor-pointer hover:shadow-2xl transition-shadow duration-200"
       onDoubleClick={handleDoubleClick}
       title="더블클릭하여 전체 뉴스 보기"
@@ -103,13 +107,31 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date }) => {
       {(companyNews?.length > 0 || macroNews?.length > 0) && (
         <div className="mt-4 pt-3 border-t border-gray-100">
           <div className="flex items-center justify-center space-x-2 text-xs text-gray-500">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.122 2.122" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.122 2.122"
+              />
             </svg>
             <span className="font-medium">더블클릭하여 전체 뉴스 보기</span>
             <div className="animate-pulse">
-              <svg className="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd" />
+              <svg
+                className="w-3 h-3 text-blue-500"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
           </div>
