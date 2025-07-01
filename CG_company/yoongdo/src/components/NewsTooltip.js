@@ -11,7 +11,7 @@ function useDebouncedEffect(effect, deps, delay) {
   }, [...deps, delay]);
 }
 
-const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker, change_rate }) => {
+const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker, change_rate, price }) => {
   const [macroNewsForDate, setMacroNewsForDate] = useState([]);
   const [mainNewsForDate, setMainNewsForDate] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -154,7 +154,24 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker, c
       title="더블클릭하여 전체 뉴스 보기"
     >
       {/* 가격 정보 */}
-      {data && data[0] && (
+      {(price !== undefined && price !== null) ? (
+        <div className="mb-3 pb-3 border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="text-lg font-bold text-gray-900">
+              {price.toLocaleString()}원
+            </div>
+            <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+              {date}
+            </div>
+          </div>
+          <div className={`text-xs font-medium mt-1 ${
+            change_rate > 0 ? "text-green-600" : change_rate < 0 ? "text-red-600" : "text-gray-600"
+          }`}>
+            {change_rate > 0 ? "+" : ""}
+            {change_rate !== null && change_rate !== undefined ? change_rate.toFixed(2) + "%" : "-"}
+          </div>
+        </div>
+      ) : data && data[0] && (
         <div className="mb-3 pb-3 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div className="text-lg font-bold text-gray-900">
