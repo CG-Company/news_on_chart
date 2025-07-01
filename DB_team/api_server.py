@@ -8,7 +8,6 @@ try:
     import redis
 except ImportError:
     redis = None
-import openai
 
 app = FastAPI()
 
@@ -92,23 +91,14 @@ def get_news_panel_data(ticker: str, date: str):
     from utils import get_panel_news_data
     return get_panel_news_data(ticker, date)
 
-# LLM 요약 함수 (OpenAI 실제 연동)
+# LLM 요약 함수 예시 (실제 구현 필요)
 def get_llm_summary(summaries, period, ticker):
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    joined = '\n'.join(summaries[:30])  # 너무 많으면 30개만 사용
+    joined = '\n'.join(summaries)
     prompt = f"""
 아래는 최근 {period}간 {ticker} 뉴스 요약문입니다.\n이 내용을 바탕으로 전체 흐름을 5줄 이내로 요약해줘.\n---\n{joined}
 """
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "너는 금융 뉴스 요약 전문가야."},
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=500,
-        temperature=0.7,
-    )
-    return response.choices[0].message.content.strip()
+    # 실제 LLM API 호출 코드로 대체
+    return f"[LLM 요약 결과: {len(summaries)}건 뉴스 기반 요약문 예시]"
 
 @app.get("/api/news_summary")
 def news_summary(ticker: str, period: str = '1m'):

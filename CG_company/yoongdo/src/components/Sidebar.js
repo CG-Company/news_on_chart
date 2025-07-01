@@ -5,9 +5,9 @@ import Link from "next/link";
 const Sidebar = ({ currentPage = "dashboard" }) => {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: "📊", href: "/", active: true },
-    { id: "analysis", label: "Stock Analysis", icon: "📈", href: "/analysis", active: true },
-    { id: "keyword", label: "keywords", icon: "📰", href: "/keyword", active:  true },
-    { id: "settings", label: "Settings", icon: "⚙️", href: "/settings", active: true },
+    { id: "analysis", label: "Keywords", icon: "📈", href: "/analysis", active: true },
+    { id: "keyword", label: "Community", icon: "📰", href: "/keyword", active:  true },
+    // { id: "settings", label: "Settings", icon: "⚙️", href: "/settings", active: true },
   ];
 
   return (
