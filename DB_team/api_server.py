@@ -1,63 +1,28 @@
-# DB_team/api_server.py - 완전 수정 버전
+# DB_team/api_server.py
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from utils import get_stock_data, get_ticker_map, get_news_data, get_news_by_ticker_and_day, get_selected_news_by_ticker
-import os
-from datetime import datetime, timedelta
-import logging
-
-# 로깅 설정
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-try:
-    import redis
-except ImportError:
-    redis = None
-
-# OpenAI 설정 - 더 상세한 디버깅
-openai_available = False
-client = None
-
-try:
-    from openai import OpenAI
-    
-    api_key = os.getenv("OPENAI_API_KEY")
-    logger.info(f"🔑 API 키 확인: {bool(api_key)}")
-    
-    if api_key:
-        logger.info(f"🔑 API 키 길이: {len(api_key)}")
-        logger.info(f"🔑 API 키 시작: {api_key[:7]}...")
-        
-        client = OpenAI(api_key=api_key)
-        openai_available = True
-        logger.info("✅ OpenAI 클라이언트 초기화 성공")
-        
-        # 간단한 테스트 호출
-        try:
-            test_response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": "안녕하세요"}],
-                max_tokens=10
-            )
-            logger.info("✅ OpenAI API 테스트 호출 성공")
-        except Exception as test_error:
-            logger.error(f"❌ OpenAI API 테스트 실패: {test_error}")
-            openai_available = False
-    else:
-        logger.error("❌ OPENAI_API_KEY 환경변수가 설정되지 않음")
-        
-except ImportError as e:
-    logger.error(f"❌ OpenAI 라이브러리 import 실패: {e}")
-except Exception as e:
-    logger.error(f"❌ OpenAI 초기화 실패: {e}")
+from utils import (
+    get_stock_data, 
+    get_ticker_map, 
+    get_news_data, 
+    get_news_by_ticker_and_day, 
+    get_selected_news_by_ticker,
+    get_sector_stocks,
+    get_panel_news_data,
+    get_popular_keywords,
+    get_news_by_keyword,
+    get_keyword_statistics
+)
+import re
+from sqlalchemy import text
+from utils import engine
 
 app = FastAPI()
 
-# CORS 설정
+# CORS 설정: Next.js 개발 서버 (3000) 허용
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # 또는 ["http://localhost:3000"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -83,6 +48,10 @@ def read_news(ticker: str = Query(..., min_length=6, max_length=6)):
 
 @app.get("/api/news_is_selected")
 def get_news_is_selected(ticker: str):
+    """
+    ticker: 종목코드 (예: '005930')
+    is_selected가 True인 뉴스만 반환
+    """
     try:
         news = get_selected_news_by_ticker(ticker)
         return {"ticker": ticker, "news": news}
@@ -91,6 +60,10 @@ def get_news_is_selected(ticker: str):
 
 @app.get("/api/news_day")
 def get_news_day(ticker: str, day: str):
+    """
+    ticker: 종목코드 (예: '005930')
+    day: 'yymmdd' 또는 'yyyymmdd' 형식의 날짜 문자열
+    """
     try:
         news = get_news_by_ticker_and_day(ticker, day)
         return {"ticker": ticker, "day": day, "news": news}
@@ -104,233 +77,169 @@ def get_macro_news():
         raise HTTPException(404, detail="No macro news found")
     return data
 
+@app.get("/api/sector_stocks")
+def get_sector_stocks_api(ticker: str):
+    """
+    ticker: 종목코드 (예: '005930')
+    같은 섹터에 속한 종목 리스트 반환
+    """
+    try:
+        stocks = get_sector_stocks(ticker)
+        return {"ticker": ticker, "sectorStocks": stocks}
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.get("/api/news_panel_data")
-def get_news_panel_data(ticker: str, date: str):
-    from utils import get_panel_news_data
+def get_news_panel_data_api(ticker: str, date: str):
+    """
+    ticker: 종목코드 (예: '005930')
+    date: 'YYYY-MM-DD' 형식의 날짜 문자열
+    기업뉴스, 메인뉴스, 거시경제뉴스를 한 번에 반환
+    """
     return get_panel_news_data(ticker, date)
 
-# 완전히 새로운 LLM 요약 함수
-def get_llm_summary(summaries, period, ticker):
-    """OpenAI GPT를 사용하여 뉴스 요약문들을 재요약"""
-    
-    # OpenAI 사용 불가능한 경우
-    if not openai_available or not client:
-        logger.error("❌ OpenAI를 사용할 수 없음")
-        return "OpenAI API를 사용할 수 없습니다. API 키를 확인해주세요."
-    
-    # 요약문이 없는 경우
-    if not summaries or len(summaries) == 0:
-        logger.warning("⚠️ 요약할 뉴스가 없음")
-        return "해당 기간에 뉴스가 없습니다."
-    
+@app.get("/api/popular_keywords")
+def get_popular_keywords_api(
+    days: int = Query(7, ge=1, le=30, description="최근 며칠간의 데이터를 분석할지"),
+    limit: int = Query(20, ge=5, le=100, description="반환할 키워드 개수")
+):
+    """
+    최근 N일간의 뉴스에서 인기 키워드 추출
+    """
     try:
-        # 요약문 전처리
-        cleaned_summaries = []
-        total_length = 0
-        max_length = 6000  # 토큰 제한을 고려해 줄임
-        
-        logger.info(f"📝 전체 요약문 개수: {len(summaries)}")
-        
-        for i, summary in enumerate(summaries[:30]):  # 최대 30개만
-            if summary and summary.strip():
-                summary_clean = summary.strip()
-                if total_length + len(summary_clean) < max_length:
-                    cleaned_summaries.append(summary_clean)
-                    total_length += len(summary_clean)
-                else:
-                    logger.info(f"📝 길이 제한으로 {i}번째에서 중단")
-                    break
-        
-        if not cleaned_summaries:
-            return "유효한 뉴스 요약문이 없습니다."
-        
-        logger.info(f"📝 사용할 요약문: {len(cleaned_summaries)}개, 총 길이: {total_length}")
-        
-        # 한국어 기간 매핑
-        period_map = {
-            "1m": "1개월",
-            "3m": "3개월", 
-            "1y": "1년"
+        keywords = get_popular_keywords(days, limit)
+        return {
+            "period": f"{days}일",
+            "total_keywords": len(keywords),
+            "keywords": keywords
         }
-        period_kr = period_map.get(period, period)
-        
-        # 요약문들 결합
-        joined_summaries = '\n'.join(cleaned_summaries)
-        
-        # 프롬프트 구성
-        prompt = f"""다음은 최근 {period_kr}간 종목코드 {ticker}의 뉴스 요약문들입니다.
-
-이 내용들을 바탕으로 다음 조건에 맞춰 전체적인 흐름을 요약해주세요:
-1. 4-6문장으로 간결하게 요약
-2. 주요 이슈나 변화점을 중심으로 정리
-3. 투자자 관점에서 중요한 내용 위주로 구성
-4. 긍정적/부정적 요소를 균형있게 반영
-
-뉴스 요약문들:
----
-{joined_summaries}
----
-
-위 내용을 바탕으로 한 전체 요약:"""
-
-        logger.info("🤖 OpenAI API 호출 시작")
-        
-        # OpenAI API 호출
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system", 
-                    "content": "당신은 금융 뉴스 분석 전문가입니다. 주어진 뉴스 요약문들을 바탕으로 핵심 내용을 간결하고 정확하게 요약해주세요."
-                },
-                {
-                    "role": "user", 
-                    "content": prompt
-                }
-            ],
-            max_tokens=500,
-            temperature=0.3,
-            top_p=0.9
-        )
-        
-        summary_result = response.choices[0].message.content.strip()
-        logger.info(f"✅ OpenAI API 호출 성공 - 응답 길이: {len(summary_result)}")
-        
-        return summary_result
-        
     except Exception as e:
-        logger.error(f"❌ LLM 요약 중 오류: {str(e)}")
-        # 구체적인 오류 메시지 반환
-        if "rate limit" in str(e).lower():
-            return "OpenAI API 사용량 한도를 초과했습니다. 잠시 후 다시 시도해주세요."
-        elif "insufficient_quota" in str(e).lower():
-            return "OpenAI API 크레딧이 부족합니다. 계정을 확인해주세요."
-        elif "invalid_api_key" in str(e).lower():
-            return "OpenAI API 키가 유효하지 않습니다. API 키를 확인해주세요."
-        else:
-            return f"요약 생성 중 오류가 발생했습니다: {str(e)}"
+        raise HTTPException(500, detail=f"키워드 조회 중 오류가 발생했습니다: {str(e)}")
 
-@app.get("/api/news_summary")
-def news_summary(ticker: str, period: str = '3m'):
-    """개선된 뉴스 요약 엔드포인트"""
+@app.get("/api/keyword_news")
+def get_keyword_news_api(
+    keyword: str = Query(..., min_length=1, description="검색할 키워드"),
+    days: int = Query(7, ge=1, le=30, description="검색할 기간(일)"),
+    limit: int = Query(50, ge=1, le=200, description="최대 뉴스 개수")
+):
+    """
+    특정 키워드가 포함된 뉴스 조회
+    """
     try:
-        logger.info(f"📊 뉴스 요약 요청: ticker={ticker}, period={period}")
+        news_list = get_news_by_keyword(keyword, days, limit)
+        return {
+            "keyword": keyword,
+            "period": f"{days}일",
+            "total_news": len(news_list),
+            "news": news_list
+        }
+    except Exception as e:
+        raise HTTPException(500, detail=f"키워드 뉴스 조회 중 오류가 발생했습니다: {str(e)}")
+
+@app.get("/api/keyword_stats")
+def get_keyword_stats_api(
+    keyword: str = Query(..., min_length=1, description="분석할 키워드"),
+    days: int = Query(30, ge=7, le=90, description="분석할 기간(일)")
+):
+    """
+    키워드의 시간별 언급 통계 및 트렌드 분석
+    """
+    try:
+        stats = get_keyword_statistics(keyword, days)
+        return stats
+    except Exception as e:
+        raise HTTPException(500, detail=f"키워드 통계 조회 중 오류가 발생했습니다: {str(e)}")
+
+@app.get("/api/related_keywords")
+def get_related_keywords_api(
+    keyword: str = Query(..., min_length=1, description="기준 키워드"),
+    days: int = Query(7, ge=1, le=30, description="분석할 기간(일)"),
+    limit: int = Query(10, ge=5, le=50, description="관련 키워드 개수")
+):
+    """
+    특정 키워드와 함께 언급되는 관련 키워드 찾기
+    """
+    try:
+        sql = """
+        SELECT 
+            keyword,
+            COUNT(*) as co_occurrence,
+            COUNT(DISTINCT ticker) as ticker_count
+        FROM news
+        WHERE (keyword ILIKE :keyword OR title ILIKE :keyword_title OR summary ILIKE :keyword_summary)
+          AND published_at >= CURRENT_DATE - INTERVAL '%s days'
+          AND ticker != '000000'
+          AND keyword IS NOT NULL
+          AND keyword != ''
+          AND keyword != 'None'
+          AND keyword != 'null'
+        GROUP BY keyword
+        HAVING COUNT(*) >= 2
+        ORDER BY co_occurrence DESC
+        LIMIT :limit
+        """ % days
         
-        # Redis 연결 시도 (선택사항)
-        r = None
-        if redis:
-            try:
-                r = redis.Redis(
-                    host=os.getenv('REDIS_HOST', 'localhost'), 
-                    port=int(os.getenv('REDIS_PORT', 6379)), 
-                    db=0,
-                    socket_timeout=5,
-                    socket_connect_timeout=5
-                )
-                r.ping()
-            except Exception as e:
-                logger.warning(f"Redis 연결 실패: {e}")
-                r = None
+        keyword_pattern = f"%{keyword}%"
+        import pandas as pd
+        df = pd.read_sql(text(sql), engine, params={
+            "keyword": keyword_pattern,
+            "keyword_title": keyword_pattern,
+            "keyword_summary": keyword_pattern,
+            "limit": limit * 3  # 더 많이 가져와서 필터링
+        })
         
-        # 캐시 확인
-        today = datetime.today().strftime('%Y-%m-%d')
-        cache_key = f"summary:{ticker}:{period}:{today}"
+        # 키워드 파싱 및 관련 키워드 추출
+        related_keywords = []
+        for _, row in df.iterrows():
+            keywords_str = row['keyword']
+            if keywords_str:
+                # 키워드 분리
+                separators = [',', ';', '/', '\\', '|']
+                keywords = [keywords_str]
+                
+                for sep in separators:
+                    temp_keywords = []
+                    for kw in keywords:
+                        temp_keywords.extend(kw.split(sep))
+                    keywords = temp_keywords
+                
+                for kw in keywords:
+                    kw = kw.strip()
+                    # 중괄호, 따옴표 제거
+                    kw = re.sub(r'^[\{\[\(\'\"]+|[\}\]\)\'\"]+$', '', kw).strip()
+                    
+                    if (kw and len(kw) > 1 and 
+                        kw.lower() != keyword.lower() and
+                        not re.fullmatch(r'^[^\w가-힣]+$', kw) and
+                        kw.lower() not in ['none', 'null', 'nan']):
+                        
+                        related_keywords.append({
+                            "keyword": kw,
+                            "relevance": row['co_occurrence'],
+                            "ticker_count": row['ticker_count']
+                        })
         
-        if r:
-            try:
-                cached = r.get(cache_key)
-                if cached:
-                    logger.info(f"📋 캐시에서 요약 반환: {cache_key}")
-                    return {
-                        "summary": cached.decode(),
-                        "cached": True,
-                        "period": period,
-                        "news_count": 0
-                    }
-            except Exception as e:
-                logger.warning(f"캐시 읽기 실패: {e}")
+        # 중복 제거 및 정렬
+        unique_keywords = {}
+        for item in related_keywords:
+            kw = item["keyword"]
+            if kw in unique_keywords:
+                unique_keywords[kw]["relevance"] += item["relevance"]
+            else:
+                unique_keywords[kw] = item
         
-        # 기간 계산
-        end = datetime.today()
-        if period == "1m":
-            start = end - timedelta(days=30)
-        elif period == "3m":
-            start = end - timedelta(days=90)
-        elif period == "1y":
-            start = end - timedelta(days=365)
-        else:
-            start = end - timedelta(days=90)
-        
-        start_str = start.strftime('%Y-%m-%d')
-        end_str = end.strftime('%Y-%m-%d')
-        
-        logger.info(f"📅 조회 기간: {start_str} ~ {end_str}")
-        
-        # DB에서 뉴스 데이터 조회
-        news_list = get_news_data(ticker)
-        logger.info(f"📰 전체 뉴스 개수: {len(news_list)}")
-        
-        if not news_list:
-            return {
-                "summary": "해당 종목의 뉴스 데이터가 없습니다.",
-                "period": period,
-                "news_count": 0,
-                "cached": False
-            }
-        
-        # 기간 필터링 및 요약문 추출
-        summaries = []
-        for news in news_list:
-            if news.get('published_at') and news.get('summary'):
-                news_date = news['published_at']
-                if start_str <= news_date <= end_str:
-                    summaries.append(news['summary'])
-        
-        logger.info(f"📰 기간 내 뉴스: {len(summaries)}개")
-        
-        if not summaries:
-            return {
-                "summary": f"최근 {period}간 뉴스가 없습니다.",
-                "period": period,
-                "news_count": 0,
-                "cached": False
-            }
-        
-        # LLM 요약 생성
-        summary = get_llm_summary(summaries, period, ticker)
-        
-        # Redis에 캐싱 (성공적인 요약만)
-        if r and not any(error_word in summary for error_word in ["오류", "실패", "없습니다", "확인해주세요"]):
-            try:
-                r.setex(cache_key, 60*60*6, summary)  # 6시간 캐싱
-                logger.info(f"💾 캐시에 저장: {cache_key}")
-            except Exception as e:
-                logger.warning(f"캐시 저장 실패: {e}")
+        sorted_keywords = sorted(unique_keywords.values(), 
+                               key=lambda x: x["relevance"], reverse=True)[:limit]
         
         return {
-            "summary": summary,
-            "period": period,
-            "news_count": len(summaries),
-            "cached": False
+            "base_keyword": keyword,
+            "period": f"{days}일",
+            "related_keywords": sorted_keywords
         }
         
     except Exception as e:
-        logger.error(f"❌ 뉴스 요약 API 오류: {str(e)}")
-        return {
-            "summary": f"요약 서비스에 일시적인 문제가 발생했습니다: {str(e)}",
-            "period": period,
-            "news_count": 0,
-            "cached": False
-        }
+        raise HTTPException(500, detail=f"관련 키워드 조회 중 오류가 발생했습니다: {str(e)}")
 
-# 헬스체크 엔드포인트
-@app.get("/api/health")
-def health_check():
-    """API 상태 확인"""
-    return {
-        "status": "healthy",
-        "openai_configured": bool(os.getenv("OPENAI_API_KEY")),
-        "openai_available": openai_available,
-        "redis_available": redis is not None,
-        "timestamp": datetime.now().isoformat()
-    }
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
