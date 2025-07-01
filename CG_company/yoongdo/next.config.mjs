@@ -13,11 +13,10 @@ const nextConfig = {
   },
   transpilePackages: ['lightweight-charts'],
   async rewrites() {
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE || '/api';
     return [
       {
         source: '/api/:path*',
-        destination: `${apiBase}/:path*`
+        destination: 'http://192.168.1.153:8000/api/:path*'
       }
     ];
   }
