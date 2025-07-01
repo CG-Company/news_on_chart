@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 # —————————————————————————————
 # ① 날짜 범위 설정 (오늘 기준 1개월 전 ~ 오늘)
 # —————————————————————————————
-end_date   = date.today()
-start_date = end_date - timedelta(days=2*365)
+end_date   = date.today() - timedelta(days=2*365)
+start_date = end_date - timedelta(days=4*365)
 
 start_str = start_date.strftime("%Y%m%d")
 end_str   = end_date.strftime("%Y%m%d")
@@ -115,4 +115,26 @@ with engine.begin() as conn:
     """
     conn.execute(text(fix_sql))
 
+    # NaN 값을 0으로 바꾸는 쿼리 추가
+    nan_fix_sql = """
+    UPDATE stock_price
+    SET
+        open_price  = CASE WHEN open_price::text = 'NaN' THEN 0 ELSE open_price END,
+        high_price  = CASE WHEN high_price::text = 'NaN' THEN 0 ELSE high_price END,
+        low_price   = CASE WHEN low_price::text = 'NaN' THEN 0 ELSE low_price END,
+        close_price = CASE WHEN close_price::text = 'NaN' THEN 0 ELSE close_price END,
+        adj_close   = CASE WHEN adj_close::text = 'NaN' THEN 0 ELSE adj_close END,
+        change_rate = CASE WHEN change_rate::text = 'NaN' THEN 0 ELSE change_rate END
+    WHERE
+        open_price::text = 'NaN'
+        OR high_price::text = 'NaN'
+        OR low_price::text = 'NaN'
+        OR close_price::text = 'NaN'
+        OR adj_close::text = 'NaN'
+        OR change_rate::text = 'NaN';
+    """
+    conn.execute(text(nan_fix_sql))
+
 print("✅ 중복 방지 upsert를 이용해 stock_price 테이블에 데이터 반영 완료")
+
+
