@@ -153,4 +153,3 @@ def get_panel_news_data(ticker: str, date: str):
         "mainNews": df_main.to_dict(orient="records")[0] if not df_main.empty else None,
         "macroNews": df_macro.to_dict(orient="records"),
     }
-
