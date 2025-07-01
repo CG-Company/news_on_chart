@@ -1,42 +1,70 @@
 // components/NewsTooltip.js (더블클릭 지원 버전)
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { fetchMacroNews, fetchMainNews } from "../utils/api";
+
+function useDebouncedEffect(effect, deps, delay) {
+  const callback = useRef();
+  useEffect(() => { callback.current = effect; }, [effect]);
+  useEffect(() => {
+    const handler = setTimeout(() => { callback.current && callback.current(); }, delay);
+    return () => clearTimeout(handler);
+  }, [...deps, delay]);
+}
 
 const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker, change_rate }) => {
   const [macroNewsForDate, setMacroNewsForDate] = useState([]);
   const [mainNewsForDate, setMainNewsForDate] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const macroAbortRef = useRef();
+  const mainAbortRef = useRef();
 
-  useEffect(() => {
+  // 거시경제 뉴스 fetch (debounce + abort)
+  useDebouncedEffect(() => {
     if ((!macroNews || macroNews.length === 0) && date) {
-      fetchMacroNews()
+      setLoading(true);
+      if (macroAbortRef.current) macroAbortRef.current.abort();
+      const controller = new AbortController();
+      macroAbortRef.current = controller;
+      fetchMacroNews({ signal: controller.signal })
         .then((macroList) => {
-          // 날짜별로 필터링
           const filtered = macroList.filter((item) => item.published_at === date || item.date === date);
           setMacroNewsForDate(filtered);
+          setLoading(false);
         })
-        .catch(() => setMacroNewsForDate([]));
+        .catch((e) => {
+          if (e.name !== "AbortError") setLoading(false);
+          setMacroNewsForDate([]);
+        });
     } else {
       setMacroNewsForDate(macroNews || []);
     }
-  }, [macroNews, date]);
+  }, [macroNews, date], 150);
 
-  useEffect(() => {
+  // 메인뉴스 fetch (debounce + abort)
+  useDebouncedEffect(() => {
     if (ticker && date) {
-      fetchMainNews(ticker)
+      setLoading(true);
+      if (mainAbortRef.current) mainAbortRef.current.abort();
+      const controller = new AbortController();
+      mainAbortRef.current = controller;
+      fetchMainNews(ticker, { signal: controller.signal })
         .then((mainList) => {
           if (mainList && mainList.length > 0) {
-            // 날짜까지 매칭
             const matched = mainList.find(item => item.published_at === date || item.date === date);
             setMainNewsForDate(matched || null);
           } else {
             setMainNewsForDate(null);
           }
+          setLoading(false);
         })
-        .catch(() => setMainNewsForDate(null));
+        .catch((e) => {
+          if (e.name !== "AbortError") setLoading(false);
+          setMainNewsForDate(null);
+        });
     } else {
       setMainNewsForDate(null);
     }
-  }, [ticker, date]);
+  }, [ticker, date], 150);
 
   // 더블클릭 핸들러
   const handleDoubleClick = (e) => {
@@ -145,54 +173,61 @@ const NewsTooltip = ({ data, companyNews, macroNews, onShowNews, date, ticker, c
         </div>
       )}
 
-      {/* 뉴스 섹션 */}
-      <div className="space-y-3">
-        {/* 기업 메인뉴스 */}
-        <div>
-          <div className="flex items-center mb-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-            <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-              기업 메인뉴스
-            </span>
-          </div>
-          {mainNewsForDate ? (
-            <div className="space-y-1">
-              <div className="text-xs text-black">
-                {mainNewsForDate.title}
-              </div>
-              {renderKeywordPills(mainNewsForDate.keyword, 'blue')}
-            </div>
-          ) : companyNews && companyNews.length > 0 ? (
-            <div className="space-y-1">
-              <div className="text-xs text-black">
-                {companyNews[0].title}
-              </div>
-              {renderKeywordPills(companyNews[0].keyword, 'blue')}
-            </div>
-          ) : (
-            <div className="text-xs text-gray-400 italic">뉴스 없음</div>
-          )}
+      {/* 로딩 스피너 */}
+      {loading ? (
+        <div className="flex items-center justify-center h-24">
+          <span className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mr-2"></span>
+          <span className="text-xs text-gray-500">뉴스 데이터를 불러오는 중...</span>
         </div>
-        {/* 거시경제 뉴스 */}
-        <div>
-          <div className="flex items-center mb-2">
-            <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
-            <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-              거시경제
-            </span>
-          </div>
-          {macroNewsForDate && macroNewsForDate.length > 0 ? (
-            <div className="space-y-1">
-              <div className="text-xs text-black">
-                {macroNewsForDate[0].title}
-              </div>
-              {renderKeywordPills(macroNewsForDate[0].keyword, 'orange')}
+      ) : (
+        <div className="space-y-3">
+          {/* 기업 메인뉴스 */}
+          <div>
+            <div className="flex items-center mb-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+              <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                기업 메인뉴스
+              </span>
             </div>
-          ) : (
-            <div className="text-xs text-gray-400 italic">뉴스 없음</div>
-          )}
+            {mainNewsForDate ? (
+              <div className="space-y-1">
+                <div className="text-xs text-black">
+                  {mainNewsForDate.title}
+                </div>
+                {renderKeywordPills(mainNewsForDate.keyword, 'blue')}
+              </div>
+            ) : companyNews && companyNews.length > 0 ? (
+              <div className="space-y-1">
+                <div className="text-xs text-black">
+                  {companyNews[0].title}
+                </div>
+                {renderKeywordPills(companyNews[0].keyword, 'blue')}
+              </div>
+            ) : (
+              <div className="text-xs text-gray-400 italic">뉴스 없음</div>
+            )}
+          </div>
+          {/* 거시경제 뉴스 */}
+          <div>
+            <div className="flex items-center mb-2">
+              <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+              <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                거시경제
+              </span>
+            </div>
+            {macroNewsForDate && macroNewsForDate.length > 0 ? (
+              <div className="space-y-1">
+                <div className="text-xs text-black">
+                  {macroNewsForDate[0].title}
+                </div>
+                {renderKeywordPills(macroNewsForDate[0].keyword, 'orange')}
+              </div>
+            ) : (
+              <div className="text-xs text-gray-400 italic">뉴스 없음</div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 더블클릭 안내 */}
       {(companyNews?.length > 0 || macroNews?.length > 0) && (

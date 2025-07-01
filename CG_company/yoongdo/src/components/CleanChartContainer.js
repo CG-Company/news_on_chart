@@ -60,7 +60,7 @@ function CleanChartContainer({
   const tradingViewChart = useRef(null); // TradingView 차트 인스턴스
 
   const [chartType, setChartType] = useState("line");
-  const [timeRange, setTimeRange] = useState("1M");
+  const [timeRange, setTimeRange] = useState("1D");
 
   // Line Chart 상태
   const [tooltipLocked, setTooltipLocked] = useState(false);

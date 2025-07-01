@@ -115,3 +115,42 @@ def get_news_by_ticker_and_day(ticker: str, day: str):
     df['published_at'] = pd.to_datetime(df['published_at']).dt.strftime('%Y-%m-%d')
     return df.to_dict(orient="records")
 
+def get_panel_news_data(ticker: str, date: str):
+    """
+    ticker: 종목코드 (예: '005930')
+    date: 'YYYY-MM-DD' 형식의 날짜 문자열
+    기업뉴스, 메인뉴스, 거시경제뉴스를 한 번에 반환
+    """
+    # 기업뉴스
+    sql_company = """
+    SELECT title, summary, url, published_at, sentiment_score
+    FROM news
+    WHERE ticker = :ticker AND TO_CHAR(published_at, 'YYYY-MM-DD') = :date
+    ORDER BY published_at DESC
+    """
+    df_company = pd.read_sql(text(sql_company), engine, params={"ticker": ticker, "date": date})
+
+    # 메인뉴스 (is_selected = true)
+    sql_main = """
+    SELECT title, summary, url, published_at, sentiment_score
+    FROM news
+    WHERE ticker = :ticker AND TO_CHAR(published_at, 'YYYY-MM-DD') = :date AND is_selected = true
+    ORDER BY published_at DESC LIMIT 1
+    """
+    df_main = pd.read_sql(text(sql_main), engine, params={"ticker": ticker, "date": date})
+
+    # 거시경제뉴스 (ticker = '000000')
+    sql_macro = """
+    SELECT title, summary, url, published_at
+    FROM news
+    WHERE ticker = '000000' AND TO_CHAR(published_at, 'YYYY-MM-DD') = :date
+    ORDER BY published_at DESC
+    """
+    df_macro = pd.read_sql(text(sql_macro), engine, params={"date": date})
+
+    return {
+        "companyNews": df_company.to_dict(orient="records"),
+        "mainNews": df_main.to_dict(orient="records")[0] if not df_main.empty else None,
+        "macroNews": df_macro.to_dict(orient="records"),
+    }
+

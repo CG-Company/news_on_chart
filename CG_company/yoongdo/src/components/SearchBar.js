@@ -1,3 +1,4 @@
+'use client';
 // components/SearchBar.js - 개선된 버전
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { fetchTickerMap } from "../utils/api";
@@ -57,9 +58,9 @@ const SearchBar = ({ ticker, setTicker }) => {
 
   // 검색 제안 필터링 (메모이제이션)
   const suggestions = useMemo(() => {
-    if (!input.trim() || tickerMap.length === 0) return [];
+    if (!(input || '').trim() || tickerMap.length === 0) return [];
     
-    const query = input.toLowerCase().trim();
+    const query = (input || '').toLowerCase().trim();
     
     return tickerMap
       .filter(item => {
@@ -317,7 +318,7 @@ const SearchBar = ({ ticker, setTicker }) => {
         <button
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-r-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => handleSearch()}
-          disabled={isLoading || !input.trim()}
+          disabled={isLoading || !(input || '').trim()}
         >
           {isLoading ? "검색중..." : "검색"}
         </button>
