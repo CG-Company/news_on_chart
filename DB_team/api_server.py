@@ -74,3 +74,13 @@ def get_sector_stocks_api(ticker: str):
         return {"ticker": ticker, "sectorStocks": stocks}
     except Exception as e:
         return {"error": str(e)}
+
+@app.get("/api/news_panel_data")
+def get_news_panel_data(ticker: str, date: str):
+    """
+    ticker: 종목코드 (예: '005930')
+    date: 'YYYY-MM-DD' 형식의 날짜 문자열
+    기업뉴스, 메인뉴스, 거시경제뉴스를 한 번에 반환
+    """
+    from utils import get_panel_news_data
+    return get_panel_news_data(ticker, date)

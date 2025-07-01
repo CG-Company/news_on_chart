@@ -441,3 +441,13 @@ export async function fetchMainNews(ticker) {
     throw error;
   }
 }
+
+// 뉴스 패널/툴팁용: 한 번에 기업뉴스, 메인뉴스, 거시경제뉴스를 가져옴
+export async function fetchNewsPanelData(ticker, date) {
+  if (!ticker || !date) throw new Error("ticker와 date는 필수입니다.");
+  const url = `${API_BASE}/api/news_panel_data?ticker=${encodeURIComponent(ticker)}&date=${encodeURIComponent(date)}`;
+  const response = await fetchWithRetry(url);
+  const data = await response.json();
+  // companyNews, mainNews, macroNews 구조로 반환됨
+  return data;
+}
