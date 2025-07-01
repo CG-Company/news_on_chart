@@ -4,10 +4,10 @@ import Link from "next/link";
 
 const Sidebar = ({ currentPage = "dashboard" }) => {
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: "📊", href: "/" },
-    { id: "analysis", label: "Stock Analysis", icon: "📈", href: "/analysis" },
-    { id: "news", label: "News", icon: "📰", href: "/news" },
-    { id: "settings", label: "Settings", icon: "⚙️", href: "/settings" },
+    { id: "dashboard", label: "Dashboard", icon: "📊", href: "/", active: true },
+    { id: "analysis", label: "Stock Analysis", icon: "📈", href: "/analysis", active: true },
+    { id: "news", label: "News", icon: "📰", href: "/news", active:  true },
+    { id: "settings", label: "Settings", icon: "⚙️", href: "/settings", active: true },
   ];
 
   return (
