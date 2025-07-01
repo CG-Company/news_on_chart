@@ -37,6 +37,7 @@ import {
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import StockCards from "../components/StockCards";
+import NewsSummaryPanel from "../components/NewsSummaryPanel";
 
 // 동적 import로 차트 컴포넌트들 불러오기
 const CleanChartContainer = dynamic(
@@ -455,7 +456,6 @@ export default function Page() {
         <Header ticker={ticker} setTicker={setTicker} tickerName={tickerName} />
 
         <main className="p-6">
-          {/* News 탭 클릭 시 NewsPanel만 보여주기 */}
           {selectedPage === "news" ? (
             <NewsPanel
               news={newsData}
@@ -635,25 +635,6 @@ export default function Page() {
                   </ErrorBoundary>
                 </div>
               </div>
-
-              {/* 차트 상태 표시 */}
-              {isLoadingStock && (
-                <div className="mt-4 flex items-center justify-center">
-                  <LoadingSpinner
-                    size="sm"
-                    message="PostgreSQL에서 차트 데이터 로딩 중..."
-                  />
-                </div>
-              )}
-
-              {!isLoadingStock && stockData.length > 0 && (
-                <div className="mt-4 text-center">
-                  <div className="text-xs text-green-500 bg-green-50 px-3 py-2 rounded-lg inline-block">
-                    �� PostgreSQL 연동 | 📊 주식 데이터: {stockData.length}개 | 📰
-                    뉴스: {newsData.length}개 | 🎯 실시간 DB 연결
-                  </div>
-                </div>
-              )}
 
               {/* 데이터베이스 정보 섹션 */}
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

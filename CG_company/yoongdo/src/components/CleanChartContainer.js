@@ -1,4 +1,4 @@
-// components/CleanChartContainer.js - 무한루프 해결
+// components/CleanChartContainer.js - 뉴스 요약 부분만 수정
 "use client";
 import { useRef, useEffect, useMemo, useState } from "react";
 import { Line } from "react-chartjs-2";
@@ -786,6 +786,100 @@ function CleanChartContainer({
     fetchMacroNews();
   }, []);
 
+  // === 뉴스 요약 박스 상태 (개선된 버전) ===
+  const [summaryPeriod, setSummaryPeriod] = useState("3m"); // 기본 3개월
+  const [summaryText, setSummaryText] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState(null);
+  const [debugInfo, setDebugInfo] = useState(null); // 디버깅 정보 추가
+
+  // 개선된 뉴스 요약 useEffect
+  useEffect(() => {
+    if (!ticker) return;
+    
+    console.log(`🤖 뉴스 요약 요청 시작: ticker=${ticker}, period=${summaryPeriod}`);
+    
+    setSummaryLoading(true);
+    setSummaryError(null);
+    setSummaryText("");
+    setDebugInfo(null);
+    
+    const startTime = Date.now();
+    
+    fetch(`/api/news_summary?ticker=${ticker}&period=${summaryPeriod}`)
+      .then((res) => {
+        console.log(`📡 응답 받음: status=${res.status}, ok=${res.ok}`);
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
+        return res.json();
+      })
+      .then((data) => {
+        const responseTime = Date.now() - startTime;
+        console.log('📊 응답 데이터:', {
+          data,
+          responseTime: `${responseTime}ms`,
+          hasSummary: !!data.summary,
+          summaryLength: data.summary?.length || 0
+        });
+        
+        // 디버깅 정보 저장
+        setDebugInfo({
+          newsCount: data.news_count || 0,
+          cached: data.cached || false,
+          responseTime,
+          period: data.period || summaryPeriod
+        });
+        
+        if (data.summary) {
+          // 문제가 있는 요약문 체크
+          const problematicTexts = [
+            "LLM 요약 결과",
+            "973건 뉴스 기반",
+            "예시",
+            "요약 생성 중 오류",
+            "API 키가 설정되지",
+            "OpenAI"
+          ];
+          
+          const hasProblems = problematicTexts.some(text => 
+            data.summary.includes(text)
+          );
+          
+          if (hasProblems) {
+            console.warn('⚠️ 문제가 있는 요약문 감지:', data.summary);
+            setSummaryError("요약 생성에 실패했습니다. 다시 시도해주세요.");
+          } else {
+            setSummaryText(data.summary);
+          }
+        } else {
+          setSummaryError("요약 결과를 받을 수 없습니다.");
+        }
+        
+        setSummaryLoading(false);
+      })
+      .catch((err) => {
+        const responseTime = Date.now() - startTime;
+        console.error('❌ 요약 요청 실패:', {
+          error: err.message,
+          responseTime: `${responseTime}ms`,
+          ticker,
+          period: summaryPeriod
+        });
+        
+        setSummaryError(`요약을 불러오는 중 오류가 발생했습니다: ${err.message}`);
+        setSummaryLoading(false);
+      });
+  }, [ticker, summaryPeriod]);
+
+  // 요약 재시도 함수
+  const retrySummary = () => {
+    console.log('🔄 요약 재시도');
+    setSummaryPeriod(prev => prev); // useEffect 트리거
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6" ref={wrapperRef}>
       {/* 차트 상단 컨트롤 바: 차트 타입 선택 + 키워드 검색 */}
@@ -820,6 +914,7 @@ function CleanChartContainer({
           )}
         </div>
       </div>
+
       {/* 차트 헤더 */}
       <div className="flex items-center justify-between mb-6">
         {/* 종목 정보 */}
@@ -939,6 +1034,254 @@ function CleanChartContainer({
           )}
         </div>
       </div>
+
+      {/* 차트 하단 뉴스 요약 박스 - 개선된 버전 */}
+      <div style={{
+        marginTop: 24,
+        maxWidth: 700,
+        background: "#f9fafb",
+        border: "1.5px solid #e5e7eb",
+        borderRadius: 16,
+        boxShadow: "0 2px 8px 0 rgba(0,0,0,0.04)",
+        padding: 0,
+        overflow: "hidden"
+      }}>
+        {/* 상단 강조 바 */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          background: "#ede9fe",
+          padding: "10px 20px 8px 20px",
+          borderBottom: "1px solid #e5e7eb"
+        }}>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <span style={{ fontSize: 20, marginRight: 10 }}>🤖</span>
+            <span style={{ fontWeight: 700, color: "#7c3aed", fontSize: 15 }}>
+              AI가 최근 뉴스를 요약했어요
+            </span>
+          </div>
+          
+          {/* 디버깅 정보 (개발 환경에서만 표시) */}
+          {process.env.NODE_ENV === 'development' && debugInfo && (
+            <div style={{ 
+              fontSize: 10, 
+              color: "#666",
+              background: "#fff",
+              padding: "2px 6px",
+              borderRadius: 4,
+              border: "1px solid #ddd"
+            }}>
+              뉴스: {debugInfo.newsCount}건 | 
+              {debugInfo.cached ? ' 캐시됨' : ' 실시간'} | 
+              {debugInfo.responseTime}ms
+            </div>
+          )}
+        </div>
+        
+        {/* 타이틀 */}
+        <div style={{
+          padding: "12px 20px 0 20px",
+          fontWeight: 600,
+          fontSize: 15,
+          color: "#22223b"
+        }}>
+          지난 {summaryPeriod === "1m" ? "1개월" : summaryPeriod === "3m" ? "3개월" : "1년"} 뉴스 요약
+        </div>
+        
+        {/* 기간 버튼 */}
+        <div style={{ 
+          padding: "6px 20px 0 20px",
+          display: "flex",
+          alignItems: "center",
+          gap: 8
+        }}>
+          <button 
+            onClick={() => setSummaryPeriod("1m")}
+            disabled={summaryLoading}
+            style={{
+              fontWeight: summaryPeriod === "1m" ? 700 : 400,
+              fontStyle: summaryPeriod === "1m" ? "italic" : "normal",
+              color: summaryPeriod === "1m" ? "#7c3aed" : "#666",
+              background: "none", 
+              border: "none", 
+              cursor: summaryLoading ? "not-allowed" : "pointer",
+              opacity: summaryLoading ? 0.5 : 1
+            }}
+          >
+            1개월
+          </button>
+          <button 
+            onClick={() => setSummaryPeriod("3m")}
+            disabled={summaryLoading}
+            style={{
+              fontWeight: summaryPeriod === "3m" ? 700 : 400,
+              fontStyle: summaryPeriod === "3m" ? "italic" : "normal",
+              color: summaryPeriod === "3m" ? "#7c3aed" : "#666",
+              background: "none", 
+              border: "none", 
+              cursor: summaryLoading ? "not-allowed" : "pointer",
+              opacity: summaryLoading ? 0.5 : 1
+            }}
+          >
+            3개월
+          </button>
+          <button 
+            onClick={() => setSummaryPeriod("1y")}
+            disabled={summaryLoading}
+            style={{
+              fontWeight: summaryPeriod === "1y" ? 700 : 400,
+              fontStyle: summaryPeriod === "1y" ? "italic" : "normal",
+              color: summaryPeriod === "1y" ? "#7c3aed" : "#666",
+              background: "none", 
+              border: "none", 
+              cursor: summaryLoading ? "not-allowed" : "pointer",
+              opacity: summaryLoading ? 0.5 : 1
+            }}
+          >
+            1년
+          </button>
+          
+          {/* 에러 시 재시도 버튼 */}
+          {summaryError && (
+            <button
+              onClick={retrySummary}
+              style={{
+                marginLeft: 16,
+                padding: "2px 8px",
+                fontSize: 11,
+                background: "#ef4444",
+                color: "white",
+                border: "none",
+                borderRadius: 4,
+                cursor: "pointer"
+              }}
+            >
+              재시도
+            </button>
+          )}
+        </div>
+        
+        {/* 요약문 카드 */}
+        <div style={{
+          margin: "12px 20px 14px 20px",
+          background: "#fff",
+          border: "1.5px solid #e5e7eb",
+          borderRadius: 10,
+          minHeight: 48,
+          padding: 14,
+          fontSize: 14,
+          fontStyle: "italic",
+          color: "#22223b",
+          boxShadow: "0 1px 4px 0 rgba(0,0,0,0.03)",
+          position: "relative"
+        }}>
+          {summaryLoading && (
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              color: "#888"
+            }}>
+              <div style={{
+                width: 16,
+                height: 16,
+                border: "2px solid #e5e7eb",
+                borderTop: "2px solid #7c3aed",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite"
+              }}></div>
+              요약을 생성하고 있습니다...
+            </div>
+          )}
+          
+          {summaryError && (
+            <div style={{ 
+              color: "#ef4444",
+              display: "flex",
+              alignItems: "center",
+              gap: 8
+            }}>
+              <span>⚠️</span>
+              {summaryError}
+            </div>
+          )}
+          
+          {!summaryLoading && !summaryError && summaryText && (
+            <div>
+              {summaryText}
+              {debugInfo && debugInfo.newsCount > 0 && (
+                <div style={{ 
+                  marginTop: 8, 
+                  fontSize: 11, 
+                  color: "#666",
+                  fontStyle: "normal"
+                }}>
+                  📊 {debugInfo.newsCount}건의 뉴스를 분석했습니다
+                </div>
+              )}
+            </div>
+          )}
+          
+          {!summaryLoading && !summaryError && !summaryText && (
+            <div style={{ color: "#888" }}>
+              요약할 뉴스가 없습니다.
+            </div>
+          )}
+        </div>
+        
+        {/* 하단 안내 */}
+        <div style={{
+          borderTop: "1px solid #f3f4f6",
+          background: "#f4f3ff",
+          color: "#7c3aed",
+          fontSize: 12,
+          padding: "7px 20px",
+          borderBottomLeftRadius: 16,
+          borderBottomRightRadius: 16,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}>
+          <span>※ AI가 제공하는 요약 정보는 참고용입니다.</span>
+          {/* API 상태 체크 버튼 (개발 환경) */}
+          {process.env.NODE_ENV === 'development' && (
+            <button
+              onClick={() => {
+                fetch('/api/health')
+                  .then(res => res.json())
+                  .then(data => {
+                    console.log('🏥 API Health Check:', data);
+                    alert(`API 상태:\n- OpenAI 설정: ${data.openai_configured ? '✅' : '❌'}\n- Redis 사용 가능: ${data.redis_available ? '✅' : '❌'}`);
+                  })
+                  .catch(err => {
+                    console.error('Health check 실패:', err);
+                    alert('Health check 실패');
+                  });
+              }}
+              style={{
+                fontSize: 10,
+                padding: "2px 6px",
+                background: "#7c3aed",
+                color: "white",
+                border: "none",
+                borderRadius: 3,
+                cursor: "pointer"
+              }}
+            >
+              API 상태
+            </button>
+          )}
+        </div>
+      </div>
+      
+      {/* CSS 애니메이션 추가 */}
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
