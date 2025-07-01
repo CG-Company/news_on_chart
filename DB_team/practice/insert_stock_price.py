@@ -21,12 +21,10 @@ end_str   = end_date.strftime("%Y%m%d")
 # —————————————————————————————
 kospi200_tickers = stock.get_index_portfolio_deposit_file("1028")
 # 예시: 특정 티커만 가져오고 싶을 때 (예: 삼성전자 '005930'만)
-kospi200_tickers = ["278470"]
+# kospi200_tickers = ["278470"]
 
 # 여러 티커를 직접 지정하고 싶을 때:
 # kospi200_tickers = ["005930", "000660", "035420"]
-
-# 위의 두 줄 중 하나를 주석 해제해서 사용하세요.
 
 
 print("✅ 주가 가져오기 완료")
@@ -59,7 +57,7 @@ print("✅ 종목별 OHLCV 수집 & DataFrame 결합")
 # —————————————————————————————
 # ④ .env 로드 & DB 연결
 # —————————————————————————————
-load_dotenv(".env", override=True)  # 프로젝트 루트의 .env 파일을 읽어옵니다.
+load_dotenv(".env.supabase", override=True)  # 프로젝트 루트의 .env 파일을 읽어옵니다.
 
 DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
@@ -67,7 +65,7 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 
-db_url = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+db_url = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
 engine = create_engine(db_url, echo=False)
 
 # —————————————————————————————
