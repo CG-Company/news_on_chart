@@ -126,7 +126,7 @@ export default function NewsPage() {
       <div className="flex-1 ml-52">
         <Header />
         <main className="p-8 bg-gray-50 min-h-screen">
-          <h1 className="text-2xl font-bold mb-6">커뮤니티</h1>
+          <h1 className="text-2xl font-bold mb-6">리포트</h1>
           {/* 상단 뉴스 카드 슬라이드 */}
           <div className="flex space-x-4 overflow-x-auto pb-4 mb-8">
             {newsList.map((news) => (
@@ -145,7 +145,7 @@ export default function NewsPage() {
 
           {/* 하단 추천 종목 카드 리스트 */}
           <div>
-            <h2 className="text-lg font-semibold mb-4">탱고픽 선정, 심층 분석글 📝</h2>
+            <h2 className="text-lg font-semibold mb-4">키워드 분석글 📝</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {stockCards.map((card) => (
                 <div key={card.id} className="bg-white rounded-xl shadow-md p-5 flex flex-col">
