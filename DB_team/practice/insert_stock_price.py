@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 # —————————————————————————————
 # ① 날짜 범위 설정 (오늘 기준 1개월 전 ~ 오늘)
 # —————————————————————————————
-end_date   = date.today()
-start_date = end_date - timedelta(days=2*365)
+end_date   = date.today() - timedelta(days=2*365)
+start_date = end_date - timedelta(days=4*365)
 
 start_str = start_date.strftime("%Y%m%d")
 end_str   = end_date.strftime("%Y%m%d")
@@ -21,12 +21,10 @@ end_str   = end_date.strftime("%Y%m%d")
 # —————————————————————————————
 kospi200_tickers = stock.get_index_portfolio_deposit_file("1028")
 # 예시: 특정 티커만 가져오고 싶을 때 (예: 삼성전자 '005930'만)
-kospi200_tickers = ["278470"]
+# kospi200_tickers = ["278470"]
 
 # 여러 티커를 직접 지정하고 싶을 때:
 # kospi200_tickers = ["005930", "000660", "035420"]
-
-# 위의 두 줄 중 하나를 주석 해제해서 사용하세요.
 
 
 print("✅ 주가 가져오기 완료")
@@ -59,7 +57,7 @@ print("✅ 종목별 OHLCV 수집 & DataFrame 결합")
 # —————————————————————————————
 # ④ .env 로드 & DB 연결
 # —————————————————————————————
-load_dotenv(".env", override=True)  # 프로젝트 루트의 .env 파일을 읽어옵니다.
+load_dotenv(".env.supabase", override=True)  # 프로젝트 루트의 .env 파일을 읽어옵니다.
 
 DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
@@ -67,7 +65,7 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 
-db_url = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+db_url = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
 engine = create_engine(db_url, echo=False)
 
 # —————————————————————————————
@@ -115,4 +113,26 @@ with engine.begin() as conn:
     """
     conn.execute(text(fix_sql))
 
+    # NaN 값을 0으로 바꾸는 쿼리 추가
+    nan_fix_sql = """
+    UPDATE stock_price
+    SET
+        open_price  = CASE WHEN open_price::text = 'NaN' THEN 0 ELSE open_price END,
+        high_price  = CASE WHEN high_price::text = 'NaN' THEN 0 ELSE high_price END,
+        low_price   = CASE WHEN low_price::text = 'NaN' THEN 0 ELSE low_price END,
+        close_price = CASE WHEN close_price::text = 'NaN' THEN 0 ELSE close_price END,
+        adj_close   = CASE WHEN adj_close::text = 'NaN' THEN 0 ELSE adj_close END,
+        change_rate = CASE WHEN change_rate::text = 'NaN' THEN 0 ELSE change_rate END
+    WHERE
+        open_price::text = 'NaN'
+        OR high_price::text = 'NaN'
+        OR low_price::text = 'NaN'
+        OR close_price::text = 'NaN'
+        OR adj_close::text = 'NaN'
+        OR change_rate::text = 'NaN';
+    """
+    conn.execute(text(nan_fix_sql))
+
 print("✅ 중복 방지 upsert를 이용해 stock_price 테이블에 데이터 반영 완료")
+
+

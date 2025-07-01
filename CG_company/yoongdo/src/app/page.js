@@ -60,6 +60,7 @@ export default function Page() {
   const [selectedNews, setSelectedNews] = useState(null);
   const [selectedPage, setSelectedPage] = useState("dashboard");
   const [mainNews, setMainNews] = useState(null);
+  const [keywordMarker, setKeywordMarker] = useState("");
 
   // 데이터 상태
   const [stockData, setStockData] = useState([]);
@@ -77,6 +78,14 @@ export default function Page() {
     ticker: null,
     api: null,
   });
+
+  // 입력한 키워드가 포함된 뉴스 날짜 추출
+  const keywordMarkerDates = useMemo(() => {
+    if (!keywordMarker.trim()) return [];
+    return newsData
+      .filter(news => news.keyword && news.keyword.includes(keywordMarker))
+      .map(news => news.published_at || news.date);
+  }, [newsData, keywordMarker]);
 
   // API 상태 확인
   useEffect(() => {
@@ -598,6 +607,9 @@ export default function Page() {
                         tickerName={tickerName}
                         stockData={stockData}
                         onShowNews={handleShowNews}
+                        keywordMarker={keywordMarker}
+                        setKeywordMarker={setKeywordMarker}
+                        keywordMarkerDates={keywordMarkerDates}
                         key={`chart-${ticker}-${stockData.length}`}
                       />
                     )}

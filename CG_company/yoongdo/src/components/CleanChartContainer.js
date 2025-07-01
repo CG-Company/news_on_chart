@@ -53,6 +53,9 @@ function CleanChartContainer({
   tickerName,
   stockData = [],
   onShowNews,
+  keywordMarkerDates = [],
+  keywordMarker = "",
+  setKeywordMarker,
 }) {
   const wrapperRef = useRef();
   const chartRef = useRef();
@@ -197,46 +200,47 @@ function CleanChartContainer({
     if (!aggregatedData || aggregatedData.length === 0) {
       return {
         labels: [],
-        datasets: [
-          {
-            label: "종가",
-            data: [],
-            borderColor: "#06b6d4",
-            backgroundColor: "rgba(6, 182, 212, 0.1)",
-            borderWidth: 2,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointBackgroundColor: "#06b6d4",
-            tension: 0.1,
-            fill: false,
-          },
-        ],
+        datasets: [],
       };
     }
+    const labels = aggregatedData.map((d) => d.date);
+    const lineData = aggregatedData.map((d) => d.close);
+    // 키워드 마커 데이터
+    const markerPoints = labels.map((date, i) =>
+      keywordMarkerDates.includes(date)
+        ? { x: date, y: lineData[i] }
+        : null
+    ).filter(Boolean);
     return {
-      labels: aggregatedData.map((d) => d.date),
+      labels,
       datasets: [
         {
-          label: "종가",
-          data: aggregatedData.map((d) => ({
-            x: d.date,
-            y: d.close,
-            companyNews: d.companyNews || [],
-            macroNews: d.macroNews || [],
-            change_rate: d.change_rate,
-          })),
-          borderColor: "#06b6d4",
-          backgroundColor: "rgba(6, 182, 212, 0.1)",
-          borderWidth: 2,
-          pointRadius: 0,
+          label: tickerName || ticker,
+          data: lineData,
+          borderColor: "#06b6d4", // 파란색 선
+          backgroundColor: "rgba(6,182,212,0.1)",
+          pointRadius: 0, // 선차트 점 안 보이게
           pointHoverRadius: 6,
-          pointBackgroundColor: "#06b6d4",
-          tension: 0.1,
-          fill: false,
+          tension: 0.2,
+          borderWidth: 1.5, // 선 두께 살짝 두껍게
         },
-      ],
+        // 키워드 마커용 scatter dataset (검색어 있을 때만)
+        keywordMarker && markerPoints.length > 0
+          ? {
+              type: "scatter",
+              label: `${keywordMarker} 키워드 등장`,
+              data: markerPoints,
+              pointBackgroundColor: "#a855f7",
+              pointBorderColor: "#a855f7",
+              pointRadius: 2.5, // 마커 더 작게
+              pointStyle: "arrowDown",
+              showLine: false,
+              order: 10,
+            }
+          : null,
+      ].filter(Boolean),
     };
-  }, [aggregatedData]);
+  }, [aggregatedData, ticker, tickerName, keywordMarkerDates, keywordMarker]);
 
   function externalTooltipHandler(context) {
     const { chart, tooltip } = context;
@@ -295,6 +299,11 @@ function CleanChartContainer({
     // 메인뉴스/거시뉴스 추출
     const mainCompanyNews = companyNews[0] || null;
     const macroNewsItem = macroNewsByDate[date] || null;
+    // 가격/변동률 계산
+    const price = aggregatedData[dataIndex]?.close;
+    const prevPrice = aggregatedData[dataIndex - 1]?.close;
+    const diff = price && prevPrice ? price - prevPrice : 0;
+    const rate = price && prevPrice ? (diff / prevPrice) * 100 : 0;
     lastTooltipRef.current = {
       data: tooltip.dataPoints,
       companyNews,
@@ -313,7 +322,8 @@ function CleanChartContainer({
         onShowNews={() => onShowNews(dataItem)}
         date={date}
         ticker={ticker}
-        change_rate={dataItem?.change_rate}
+        price={price}
+        change_rate={rate}
       />
     );
   }
@@ -336,6 +346,7 @@ function CleanChartContainer({
             wheel: { enabled: true },
             pinch: { enabled: true },
             mode: "x",
+            onDblClick: false,
           },
           limits: { x: { minRange: 1 } },
         },
@@ -416,7 +427,7 @@ function CleanChartContainer({
       Array.isArray(aggregatedData) &&
       aggregatedData.length > 0
     ) {
-      // 기존 차트 정리
+      // 기존 차트 
       if (tradingViewChart.current) {
         tradingViewChart.current.remove();
       }
@@ -526,6 +537,22 @@ function CleanChartContainer({
       });
 
       candlestickSeries.setData(candleData);
+
+      // === 키워드 마커 표시 ===
+      if (keywordMarker && keywordMarkerDates && keywordMarkerDates.length > 0) {
+        const markerData = candleData
+          .filter(d => keywordMarkerDates.includes(d.originalDate))
+          .map(d => ({
+            time: d.time,
+            position: 'aboveBar',
+            color: '#a855f7',
+            shape: 'circle',
+            size: 1, // lightweight-charts v4: 1=작음, 2=중간, 3=큼
+            text: '📰', // 이모티콘 표시
+          }));
+        candlestickSeries.setMarkers(markerData);
+      }
+      // === // ===
 
       // 무한 루프를 방지하기 위한 플래그
       let isUpdatingHighlight = false;
@@ -760,10 +787,39 @@ function CleanChartContainer({
   }, []);
 
   return (
-    <div
-      ref={wrapperRef}
-      className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-    >
+    <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6" ref={wrapperRef}>
+      {/* 차트 상단 컨트롤 바: 차트 타입 선택 + 키워드 검색 */}
+      <div className="flex items-center justify-between mb-4">
+        {/* 차트 타입 선택 (왼쪽) */}
+        <div className="flex items-center gap-2">
+          <button
+            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${chartType === "line" ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+            onClick={() => setChartType("line")}
+          >
+            Line
+          </button>
+          <button
+            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${chartType === "candle" ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+            onClick={() => setChartType("candle")}
+          >
+            Candle
+          </button>
+        </div>
+        {/* 키워드 검색창 (오른쪽) */}
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={keywordMarker}
+            onChange={e => setKeywordMarker && setKeywordMarker(e.target.value)}
+            placeholder="키워드 입력 (예: 반도체)"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
+            style={{ width: 180 }}
+          />
+          {keywordMarker && (
+            <button onClick={() => setKeywordMarker && setKeywordMarker("")} className="text-xs text-gray-400 hover:text-gray-700">지우기</button>
+          )}
+        </div>
+      </div>
       {/* 차트 헤더 */}
       <div className="flex items-center justify-between mb-6">
         {/* 종목 정보 */}
@@ -791,32 +847,6 @@ function CleanChartContainer({
               </span>
             </div>
           )}
-        </div>
-
-        {/* 차트 타입 토글 */}
-        <div className="flex items-center space-x-2">
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setChartType("line")}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                chartType === "line"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              📈 Line
-            </button>
-            <button
-              onClick={() => setChartType("candle")}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                chartType === "candle"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              🕯️ Candle
-            </button>
-          </div>
         </div>
       </div>
 
