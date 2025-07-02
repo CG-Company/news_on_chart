@@ -5,6 +5,7 @@ import { Line } from "react-chartjs-2";
 import { createChart } from "lightweight-charts";
 import { createPortal } from "react-dom";
 import NewsTooltip from "./NewsTooltip";
+
 import {
   subDays,
   subWeeks,
@@ -197,7 +198,74 @@ function CleanChartContainer({
 
   // === LINE CHART 로직 (안전성 강화) ===
   const chartData = useMemo(() => {
-    if (!aggregatedData || aggregatedData.length === 0) {
+    try {
+      if (
+        !aggregatedData ||
+        !Array.isArray(aggregatedData) ||
+        aggregatedData.length === 0
+      ) {
+        return {
+          labels: [],
+          datasets: [],
+        };
+      }
+
+      const labels = aggregatedData.map((d) => d?.date || "").filter(Boolean);
+      const lineData = aggregatedData
+        .map((d) => {
+          const close = d?.close;
+          return typeof close === "number" && !isNaN(close) ? close : null;
+        })
+        .filter((val) => val !== null);
+
+      // 데이터가 유효하지 않으면 빈 차트 반환
+      if (labels.length === 0 || lineData.length === 0) {
+        return {
+          labels: [],
+          datasets: [],
+        };
+      }
+
+      // 키워드 마커 데이터
+      const markerPoints = labels
+        .map((date, i) =>
+          keywordMarkerDates.includes(date) && lineData[i] !== null
+            ? { x: date, y: lineData[i] }
+            : null
+        )
+        .filter(Boolean);
+
+      return {
+        labels,
+        datasets: [
+          {
+            label: tickerName || ticker || "주가",
+            data: lineData,
+            borderColor: "#06b6d4", // 파란색 선
+            backgroundColor: "rgba(6,182,212,0.1)",
+            pointRadius: 0, // 선차트 점 안 보이게
+            pointHoverRadius: 6,
+            tension: 0.2,
+            borderWidth: 1.5, // 선 두께 살짝 두껍게
+          },
+          // 키워드 마커용 scatter dataset (검색어 있을 때만)
+          keywordMarker && markerPoints.length > 0
+            ? {
+                type: "scatter",
+                label: `${keywordMarker} 키워드 등장`,
+                data: markerPoints,
+                pointBackgroundColor: "#a855f7",
+                pointBorderColor: "#a855f7",
+                pointRadius: 2.5, // 마커 더 작게
+                pointStyle: "arrowDown",
+                showLine: false,
+                order: 10,
+              }
+            : null,
+        ].filter(Boolean),
+      };
+    } catch (error) {
+      console.error("차트 데이터 처리 중 오류:", error);
       return {
         labels: [],
         datasets: [],
@@ -352,6 +420,12 @@ function CleanChartContainer({
           },
           limits: { x: { minRange: 1 } },
         },
+      },
+      onHover: (event, activeElements) => {
+        // 호버 이벤트 처리
+      },
+      onClick: (event, activeElements) => {
+        // 클릭 이벤트 처리
       },
       scales: {
         x: {
@@ -774,7 +848,9 @@ function CleanChartContainer({
   useEffect(() => {
     async function fetchMacroNews() {
       try {
-        const res = await fetch("/api/macro_news");
+        const API_BASE =
+          process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.105:8000";
+        const res = await fetch(`${API_BASE}/api/macro_news`);
         const data = await res.json();
         // 날짜별로 매핑
         const byDate = {};
@@ -860,7 +936,6 @@ function CleanChartContainer({
     console.log("🔄 요약 재시도");
     setSummaryPeriod((prev) => prev); // useEffect 트리거
   };
-
   return (
     <div
       className="bg-white border border-gray-200 rounded-xl p-6 mb-6"
@@ -946,12 +1021,64 @@ function CleanChartContainer({
 
       {/* 차트 영역 */}
       <div className="relative" style={{ height: "400px" }}>
-        {aggregatedData &&
-        Array.isArray(aggregatedData) &&
-        aggregatedData.length > 0 ? (
+        {!ticker ? (
+          <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <div className="text-4xl mb-4">🔍</div>
+              <div className="text-gray-600 font-medium">
+                종목을 선택해주세요
+              </div>
+              <div className="text-xs text-gray-400 mt-2">
+                검색창에서 종목명 또는 코드를 입력하세요
+              </div>
+            </div>
+          </div>
+        ) : !stockData ||
+          !Array.isArray(stockData) ||
+          stockData.length === 0 ? (
+          <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <div className="text-4xl mb-4">📊</div>
+              <div className="text-gray-600 font-medium">
+                차트 데이터를 로딩 중입니다...
+              </div>
+              <div className="text-xs text-gray-400 mt-2">
+                {ticker} ({tickerName}) 데이터를 가져오는 중
+              </div>
+            </div>
+          </div>
+        ) : !aggregatedData ||
+          !Array.isArray(aggregatedData) ||
+          aggregatedData.length === 0 ? (
+          <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <div className="text-4xl mb-4">⚠️</div>
+              <div className="text-gray-600 font-medium">
+                차트 데이터가 없습니다
+              </div>
+              <div className="text-xs text-gray-400 mt-2">
+                {ticker} ({tickerName})의 데이터를 찾을 수 없습니다
+              </div>
+            </div>
+          </div>
+        ) : (
           <>
             {chartType === "line" ? (
-              <Line ref={chartRef} data={chartData} options={lineOptions} />
+              chartData && chartData.labels && chartData.labels.length > 0 ? (
+                <Line ref={chartRef} data={chartData} options={lineOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-4xl mb-4">📊</div>
+                    <div className="text-gray-600 font-medium">
+                      차트 데이터를 처리 중입니다...
+                    </div>
+                    <div className="text-xs text-gray-400 mt-2">
+                      유효한 데이터를 찾는 중
+                    </div>
+                  </div>
+                </div>
+              )
             ) : (
               <div
                 ref={tradingViewRef}
@@ -961,18 +1088,6 @@ function CleanChartContainer({
             )}
             {chartType === "candle" && tradingViewTooltipPortal}
           </>
-        ) : (
-          <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
-            <div className="text-center">
-              <div className="text-4xl mb-4">📊</div>
-              <div className="text-gray-600 font-medium">
-                차트 데이터를 로딩 중입니다...
-              </div>
-              <div className="text-xs text-gray-400 mt-2">
-                데이터가 준비되면 차트가 표시됩니다
-              </div>
-            </div>
-          </div>
         )}
 
         {/* 사용법 안내 */}
@@ -1026,6 +1141,7 @@ function CleanChartContainer({
               : 0}
             개
           </div>
+          <div className="text-xs text-blue-500">종목: {ticker || "없음"}</div>
           {chartType === "candle" && (
             <div className="text-xs text-blue-600 font-medium">
               🚀 무한루프 해결됨
