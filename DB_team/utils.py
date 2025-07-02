@@ -293,27 +293,32 @@ def is_valid_keyword(keyword):
 
 def get_popular_keywords(days: int = 7, limit: int = 20):
     """
-    최근 N일간의 뉴스에서 인기 키워드 추출 (개선된 필터링 적용)
+    최근 N일간의 메인뉴스에서 인기 키워드 추출 (키워드별 관련 종목 티커 리스트 포함, is_selected=True만)
     """
-    sql = f'''
-    SELECT keyword, published_at, ticker
-    FROM news
-    WHERE keyword IS NOT NULL 
-      AND keyword != ''
-      AND keyword != 'None'
-      AND keyword != 'null'
-      AND keyword NOT LIKE '%{{}}%'
-      AND keyword NOT LIKE '%[]%'
-      AND keyword NOT LIKE '%()%' 
-      AND published_at >= CURRENT_DATE - INTERVAL '{days} days'
-      AND ticker != '000000'  -- 거시경제뉴스 제외
-    ORDER BY published_at DESC
-    '''
+    # 1. 메인뉴스에서 키워드별 count 집계
+    sql = (
+        "SELECT keyword, published_at "
+        "FROM news "
+        "WHERE is_selected = true "
+        "  AND keyword IS NOT NULL "
+        "  AND keyword != '' "
+        "  AND keyword != 'None' "
+        "  AND keyword != 'null' "
+        "  AND keyword NOT LIKE '%{{}}%' "
+        "  AND keyword NOT LIKE '%[]%' "
+        "  AND keyword NOT LIKE '%()%' "
+        f"  AND published_at >= CURRENT_DATE - INTERVAL '{days} days' "
+        "  AND ticker IS NOT NULL "
+        "  AND ticker != '' "
+        "  AND ticker != '000000' "
+        "ORDER BY published_at DESC"
+    )
     df = pd.read_sql(text(sql), engine)
     if df.empty:
         return []
     all_keywords = []
-    for keywords_str in df['keyword'].dropna():
+    for _, row in df.iterrows():
+        keywords_str = row['keyword']
         if not keywords_str or keywords_str.strip() == '':
             continue
         separators = [',', ';', '/', '\\', '|', '\n', '\t']
@@ -337,12 +342,28 @@ def get_popular_keywords(days: int = 7, limit: int = 20):
     for keyword, count in keyword_counts.items():
         if count >= 2 or (count == 1 and len(keyword) >= 3 and not re.search(r'[^\w가-힣\s]', keyword)):
             filtered_counts[keyword] = count
+
+    # 2. 각 키워드별로 메인뉴스에서만 LIKE 검색으로 ticker 집계 (is_selected=True)
     popular_keywords = []
     for i, (keyword, count) in enumerate(Counter(filtered_counts).most_common(limit), 1):
+        ticker_sql = (
+            "SELECT DISTINCT ticker "
+            "FROM news "
+            "WHERE is_selected = true "
+            "  AND (keyword ILIKE :kw OR title ILIKE :kw OR summary ILIKE :kw) "
+            f"  AND published_at >= CURRENT_DATE - INTERVAL '{days} days' "
+            "  AND ticker IS NOT NULL "
+            "  AND ticker != '' "
+            "  AND ticker != '000000' "
+        )
+        kw_pattern = f"%{keyword}%"
+        ticker_df = pd.read_sql(text(ticker_sql), engine, params={"kw": kw_pattern})
+        tickers = sorted([t for t in set(ticker_df['ticker'].tolist()) if t != '000000'])
         popular_keywords.append({
             "rank": i,
             "keyword": keyword,
-            "count": count
+            "count": count,
+            "tickers": tickers
         })
     return popular_keywords
 

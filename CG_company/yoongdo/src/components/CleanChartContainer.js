@@ -5,6 +5,7 @@ import { Line } from "react-chartjs-2";
 import { createChart } from "lightweight-charts";
 import { createPortal } from "react-dom";
 import NewsTooltip from "./NewsTooltip";
+
 import {
   subDays,
   subWeeks,
@@ -197,7 +198,74 @@ function CleanChartContainer({
 
   // === LINE CHART 로직 (안전성 강화) ===
   const chartData = useMemo(() => {
-    if (!aggregatedData || aggregatedData.length === 0) {
+    try {
+      if (
+        !aggregatedData ||
+        !Array.isArray(aggregatedData) ||
+        aggregatedData.length === 0
+      ) {
+        return {
+          labels: [],
+          datasets: [],
+        };
+      }
+
+      const labels = aggregatedData.map((d) => d?.date || "").filter(Boolean);
+      const lineData = aggregatedData
+        .map((d) => {
+          const close = d?.close;
+          return typeof close === "number" && !isNaN(close) ? close : null;
+        })
+        .filter((val) => val !== null);
+
+      // 데이터가 유효하지 않으면 빈 차트 반환
+      if (labels.length === 0 || lineData.length === 0) {
+        return {
+          labels: [],
+          datasets: [],
+        };
+      }
+
+      // 키워드 마커 데이터
+      const markerPoints = labels
+        .map((date, i) =>
+          keywordMarkerDates.includes(date) && lineData[i] !== null
+            ? { x: date, y: lineData[i] }
+            : null
+        )
+        .filter(Boolean);
+
+      return {
+        labels,
+        datasets: [
+          {
+            label: tickerName || ticker || "주가",
+            data: lineData,
+            borderColor: "#06b6d4", // 파란색 선
+            backgroundColor: "rgba(6,182,212,0.1)",
+            pointRadius: 0, // 선차트 점 안 보이게
+            pointHoverRadius: 6,
+            tension: 0.2,
+            borderWidth: 1.5, // 선 두께 살짝 두껍게
+          },
+          // 키워드 마커용 scatter dataset (검색어 있을 때만)
+          keywordMarker && markerPoints.length > 0
+            ? {
+                type: "scatter",
+                label: `${keywordMarker} 키워드 등장`,
+                data: markerPoints,
+                pointBackgroundColor: "#a855f7",
+                pointBorderColor: "#a855f7",
+                pointRadius: 2.5, // 마커 더 작게
+                pointStyle: "arrowDown",
+                showLine: false,
+                order: 10,
+              }
+            : null,
+        ].filter(Boolean),
+      };
+    } catch (error) {
+      console.error("차트 데이터 처리 중 오류:", error);
       return {
         labels: [],
         datasets: [],
@@ -352,6 +420,12 @@ function CleanChartContainer({
           },
           limits: { x: { minRange: 1 } },
         },
+      },
+      onHover: (event, activeElements) => {
+        // 호버 이벤트 처리
+      },
+      onClick: (event, activeElements) => {
+        // 클릭 이벤트 처리
       },
       scales: {
         x: {
@@ -774,7 +848,9 @@ function CleanChartContainer({
   useEffect(() => {
     async function fetchMacroNews() {
       try {
-        const res = await fetch("/api/macro_news");
+        const API_BASE =
+          process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.105:8000";
+        const res = await fetch(`${API_BASE}/api/macro_news`);
         const data = await res.json();
         // 날짜별로 매핑
         const byDate = {};
@@ -860,7 +936,6 @@ function CleanChartContainer({
     console.log("🔄 요약 재시도");
     setSummaryPeriod((prev) => prev); // useEffect 트리거
   };
-
   return (
     <div
       className="bg-white border border-gray-200 rounded-xl p-6 mb-6"
@@ -945,13 +1020,65 @@ function CleanChartContainer({
       </div>
 
       {/* 차트 영역 */}
-      <div className="relative" style={{ height: "400px" }}>
-        {aggregatedData &&
-        Array.isArray(aggregatedData) &&
-        aggregatedData.length > 0 ? (
+      <div className="relative" style={{ height: "500px" }}>
+        {!ticker ? (
+          <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <div className="text-4xl mb-4">🔍</div>
+              <div className="text-gray-600 font-medium">
+                종목을 선택해주세요
+              </div>
+              <div className="text-xs text-gray-400 mt-2">
+                검색창에서 종목명 또는 코드를 입력하세요
+              </div>
+            </div>
+          </div>
+        ) : !stockData ||
+          !Array.isArray(stockData) ||
+          stockData.length === 0 ? (
+          <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <div className="text-4xl mb-4">📊</div>
+              <div className="text-gray-600 font-medium">
+                차트 데이터를 로딩 중입니다...
+              </div>
+              <div className="text-xs text-gray-400 mt-2">
+                {ticker} ({tickerName}) 데이터를 가져오는 중
+              </div>
+            </div>
+          </div>
+        ) : !aggregatedData ||
+          !Array.isArray(aggregatedData) ||
+          aggregatedData.length === 0 ? (
+          <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <div className="text-4xl mb-4">⚠️</div>
+              <div className="text-gray-600 font-medium">
+                차트 데이터가 없습니다
+              </div>
+              <div className="text-xs text-gray-400 mt-2">
+                {ticker} ({tickerName})의 데이터를 찾을 수 없습니다
+              </div>
+            </div>
+          </div>
+        ) : (
           <>
             {chartType === "line" ? (
-              <Line ref={chartRef} data={chartData} options={lineOptions} />
+              chartData && chartData.labels && chartData.labels.length > 0 ? (
+                <Line ref={chartRef} data={chartData} options={lineOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-4xl mb-4">📊</div>
+                    <div className="text-gray-600 font-medium">
+                      차트 데이터를 처리 중입니다...
+                    </div>
+                    <div className="text-xs text-gray-400 mt-2">
+                      유효한 데이터를 찾는 중
+                    </div>
+                  </div>
+                </div>
+              )
             ) : (
               <div
                 ref={tradingViewRef}
@@ -961,18 +1088,6 @@ function CleanChartContainer({
             )}
             {chartType === "candle" && tradingViewTooltipPortal}
           </>
-        ) : (
-          <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
-            <div className="text-center">
-              <div className="text-4xl mb-4">📊</div>
-              <div className="text-gray-600 font-medium">
-                차트 데이터를 로딩 중입니다...
-              </div>
-              <div className="text-xs text-gray-400 mt-2">
-                데이터가 준비되면 차트가 표시됩니다
-              </div>
-            </div>
-          </div>
         )}
 
         {/* 사용법 안내 */}
@@ -1026,6 +1141,7 @@ function CleanChartContainer({
               : 0}
             개
           </div>
+          <div className="text-xs text-blue-500">종목: {ticker || "없음"}</div>
           {chartType === "candle" && (
             <div className="text-xs text-blue-600 font-medium">
               🚀 무한루프 해결됨
@@ -1033,290 +1149,6 @@ function CleanChartContainer({
           )}
         </div>
       </div>
-
-      {/* 차트 하단 뉴스 요약 박스 - 개선된 버전 */}
-      <div
-        style={{
-          marginTop: 24,
-          maxWidth: 700,
-          background: "#f9fafb",
-          border: "1.5px solid #e5e7eb",
-          borderRadius: 16,
-          boxShadow: "0 2px 8px 0 rgba(0,0,0,0.04)",
-          padding: 0,
-          overflow: "hidden",
-        }}
-      >
-        {/* 상단 강조 바 */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            background: "#ede9fe",
-            padding: "10px 20px 8px 20px",
-            borderBottom: "1px solid #e5e7eb",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <span style={{ fontSize: 20, marginRight: 10 }}>🤖</span>
-            <span style={{ fontWeight: 700, color: "#7c3aed", fontSize: 15 }}>
-              AI가 최근 뉴스를 요약했어요
-            </span>
-          </div>
-
-          {/* 디버깅 정보 (개발 환경에서만 표시) */}
-          {process.env.NODE_ENV === "development" && debugInfo && (
-            <div
-              style={{
-                fontSize: 10,
-                color: "#666",
-                background: "#fff",
-                padding: "2px 6px",
-                borderRadius: 4,
-                border: "1px solid #ddd",
-              }}
-            >
-              뉴스: {debugInfo.newsCount}건 |
-              {debugInfo.cached ? " 캐시됨" : " 실시간"} |
-              {debugInfo.responseTime}ms
-            </div>
-          )}
-        </div>
-
-        {/* 타이틀 */}
-        <div
-          style={{
-            padding: "12px 20px 0 20px",
-            fontWeight: 600,
-            fontSize: 15,
-            color: "#22223b",
-          }}
-        >
-          지난{" "}
-          {summaryPeriod === "1m"
-            ? "1개월"
-            : summaryPeriod === "3m"
-            ? "3개월"
-            : "1년"}{" "}
-          뉴스 요약
-        </div>
-
-        {/* 기간 버튼 */}
-        <div
-          style={{
-            padding: "6px 20px 0 20px",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <button
-            onClick={() => setSummaryPeriod("1m")}
-            disabled={summaryLoading}
-            style={{
-              fontWeight: summaryPeriod === "1m" ? 700 : 400,
-              fontStyle: summaryPeriod === "1m" ? "italic" : "normal",
-              color: summaryPeriod === "1m" ? "#7c3aed" : "#666",
-              background: "none",
-              border: "none",
-              cursor: summaryLoading ? "not-allowed" : "pointer",
-              opacity: summaryLoading ? 0.5 : 1,
-            }}
-          >
-            1개월
-          </button>
-          <button
-            onClick={() => setSummaryPeriod("3m")}
-            disabled={summaryLoading}
-            style={{
-              fontWeight: summaryPeriod === "3m" ? 700 : 400,
-              fontStyle: summaryPeriod === "3m" ? "italic" : "normal",
-              color: summaryPeriod === "3m" ? "#7c3aed" : "#666",
-              background: "none",
-              border: "none",
-              cursor: summaryLoading ? "not-allowed" : "pointer",
-              opacity: summaryLoading ? 0.5 : 1,
-            }}
-          >
-            3개월
-          </button>
-          <button
-            onClick={() => setSummaryPeriod("1y")}
-            disabled={summaryLoading}
-            style={{
-              fontWeight: summaryPeriod === "1y" ? 700 : 400,
-              fontStyle: summaryPeriod === "1y" ? "italic" : "normal",
-              color: summaryPeriod === "1y" ? "#7c3aed" : "#666",
-              background: "none",
-              border: "none",
-              cursor: summaryLoading ? "not-allowed" : "pointer",
-              opacity: summaryLoading ? 0.5 : 1,
-            }}
-          >
-            1년
-          </button>
-
-          {/* 에러 시 재시도 버튼 */}
-          {summaryError && (
-            <button
-              onClick={retrySummary}
-              style={{
-                marginLeft: 16,
-                padding: "2px 8px",
-                fontSize: 11,
-                background: "#ef4444",
-                color: "white",
-                border: "none",
-                borderRadius: 4,
-                cursor: "pointer",
-              }}
-            >
-              재시도
-            </button>
-          )}
-        </div>
-
-        {/* 요약문 카드 */}
-        <div
-          style={{
-            margin: "12px 20px 14px 20px",
-            background: "#fff",
-            border: "1.5px solid #e5e7eb",
-            borderRadius: 10,
-            minHeight: 48,
-            padding: 14,
-            fontSize: 14,
-            fontStyle: "italic",
-            color: "#22223b",
-            boxShadow: "0 1px 4px 0 rgba(0,0,0,0.03)",
-            position: "relative",
-          }}
-        >
-          {summaryLoading && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                color: "#888",
-              }}
-            >
-              <div
-                style={{
-                  width: 16,
-                  height: 16,
-                  border: "2px solid #e5e7eb",
-                  borderTop: "2px solid #7c3aed",
-                  borderRadius: "50%",
-                  animation: "spin 1s linear infinite",
-                }}
-              ></div>
-              요약을 생성하고 있습니다...
-            </div>
-          )}
-
-          {summaryError && (
-            <div
-              style={{
-                color: "#ef4444",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <span>⚠️</span>
-              {summaryError}
-            </div>
-          )}
-
-          {!summaryLoading && !summaryError && summaryText && (
-            <div>
-              {summaryText}
-              {debugInfo && debugInfo.newsCount > 0 && (
-                <div
-                  style={{
-                    marginTop: 8,
-                    fontSize: 11,
-                    color: "#666",
-                    fontStyle: "normal",
-                  }}
-                >
-                  📊 {debugInfo.newsCount}건의 뉴스를 분석했습니다
-                </div>
-              )}
-            </div>
-          )}
-
-          {!summaryLoading && !summaryError && !summaryText && (
-            <div style={{ color: "#888" }}>요약할 뉴스가 없습니다.</div>
-          )}
-        </div>
-
-        {/* 하단 안내 */}
-        <div
-          style={{
-            borderTop: "1px solid #f3f4f6",
-            background: "#f4f3ff",
-            color: "#7c3aed",
-            fontSize: 12,
-            padding: "7px 20px",
-            borderBottomLeftRadius: 16,
-            borderBottomRightRadius: 16,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <span>※ AI가 제공하는 요약 정보는 참고용입니다.</span>
-          {/* API 상태 체크 버튼 (개발 환경) */}
-          {process.env.NODE_ENV === "development" && (
-            <button
-              onClick={() => {
-                fetch("/api/health")
-                  .then((res) => res.json())
-                  .then((data) => {
-                    console.log("🏥 API Health Check:", data);
-                    alert(
-                      `API 상태:\n- OpenAI 설정: ${
-                        data.openai_configured ? "✅" : "❌"
-                      }\n- Redis 사용 가능: ${
-                        data.redis_available ? "✅" : "❌"
-                      }`
-                    );
-                  })
-                  .catch((err) => {
-                    console.error("Health check 실패:", err);
-                    alert("Health check 실패");
-                  });
-              }}
-              style={{
-                fontSize: 10,
-                padding: "2px 6px",
-                background: "#7c3aed",
-                color: "white",
-                border: "none",
-                borderRadius: 3,
-                cursor: "pointer",
-              }}
-            >
-              API 상태
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* CSS 애니메이션 추가 */}
-      <style jsx>{`
-        @keyframes spin {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
     </div>
   );
 }

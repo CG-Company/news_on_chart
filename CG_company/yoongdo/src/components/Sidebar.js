@@ -4,14 +4,32 @@ import Link from "next/link";
 
 const Sidebar = ({ currentPage = "dashboard" }) => {
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: "📊", href: "/", active: true },
-    { id: "analysis", label: "Keywords", icon: "📈", href: "/analysis", active: true },
-    { id: "keyword", label: "Community", icon: "📰", href: "/keyword", active:  true },
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: "📊",
+      href: "/",
+      active: true,
+    },
+    {
+      id: "analysis",
+      label: "Keywords",
+      icon: "📈",
+      href: "/analysis",
+      active: true,
+    },
+    {
+      id: "keyword",
+      label: "Community",
+      icon: "📰",
+      href: "/keyword",
+      active: true,
+    },
     // { id: "settings", label: "Settings", icon: "⚙️", href: "/settings", active: true },
   ];
 
   return (
-    <div className="w-52 bg-gray-900 h-screen fixed left-0 top-0 flex flex-col">
+    <div className="w-52 bg-gray-900 h-screen fixed left-0 top-0 flex flex-col z-20">
       {/* 로고 영역 */}
       <div className="p-6 border-b border-gray-700">
         <h1 className="text-white text-xl font-bold">CG finance</h1>
