@@ -10,37 +10,84 @@ const KOSPI200Grid = ({ search = '' }) => {
     const [showAll, setShowAll] = useState(false);
 
     useEffect(() => {
-        const fetchStocks = async () => {
+        const fetchStocksWithPrices = async () => {
             setLoading(true);
             setError(null);
             
             try {
-                const response = await fetch('http://192.168.1.105:8000/api/ticker_map');
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                // 1. 종목 리스트 가져오기
+                const tickerResponse = await fetch('http://192.168.1.105:8000/api/ticker_map');
+                if (!tickerResponse.ok) {
+                    throw new Error(`Ticker API error! status: ${tickerResponse.status}`);
                 }
                 
-                const data = await response.json();
-                console.log('Stocks API Response:', data); // 디버깅용
+                const tickerData = await tickerResponse.json();
+                console.log('Ticker Map Response:', tickerData);
                 
-                // 데이터가 배열인지 확인
-                const stocksArray = Array.isArray(data) ? data : (data.stocks || []);
+                const rawTickerList = Array.isArray(tickerData) ? tickerData : (tickerData.stocks || []);
                 
-                // 실제 데이터에 모의 주가 정보 추가
-                const stocksWithPrices = stocksArray.map((stock, index) => ({
-                    ...stock,
-                    ticker: stock.ticker || `000${index.toString().padStart(3, '0')}`,
-                    name: stock.name || stock.company_name || `종목 ${stock.ticker}`,
-                    sector: stock.sector || '기타',
-                    price: Math.floor(Math.random() * 200000) + 50000,
-                    change: (Math.random() - 0.5) * 10,
-                    marketCap: Math.floor(Math.random() * 50) + 10,
-                    volume: Math.floor(Math.random() * 1000000),
-                    trend: Math.random() > 0.5 ? 'up' : 'down'
-                }));
+                // 000000 티커(거시뉴스) 제외
+                const tickerList = rawTickerList.filter(ticker => ticker.ticker !== '000000');
                 
-                setStocks(stocksWithPrices);
+                // 2. 각 종목의 주식 데이터 가져오기 (병렬로 처리, 최대 50개만)
+                const limitedTickers = tickerList.slice(0, 50); // 너무 많으면 로딩이 오래걸리므로 제한
+                
+                const stockPromises = limitedTickers.map(async (ticker) => {
+                    try {
+                        const stockResponse = await fetch(`http://192.168.1.105:8000/api/stock?ticker=${ticker.ticker}`);
+                        if (!stockResponse.ok) {
+                            throw new Error(`Stock API error for ${ticker.ticker}`);
+                        }
+                        
+                        const stockData = await stockResponse.json();
+                        const stockArray = stockData.stockData || [];
+                        
+                        // 최신 데이터 (배열의 마지막 요소)
+                        const latestStock = stockArray.length > 0 ? stockArray[stockArray.length - 1] : null;
+                        
+                        return {
+                            ticker: ticker.ticker,
+                            name: ticker.name || ticker.company_name,
+                            sector: ticker.sector || '기타',
+                            price: latestStock ? latestStock.close : null,
+                            change: latestStock ? latestStock.change_rate : null,
+                            date: latestStock ? latestStock.date : null,
+                            // 거래량과 시총은 실제 데이터가 없으므로 모의 데이터
+                            volume: Math.floor(Math.random() * 1000000) + 100000,
+                            marketCap: latestStock ? Math.floor(latestStock.close * (Math.random() * 1000 + 100) / 1000000) : Math.floor(Math.random() * 50) + 10,
+                            trend: latestStock && latestStock.change_rate >= 0 ? 'up' : 'down'
+                        };
+                    } catch (error) {
+                        console.warn(`Error fetching stock data for ${ticker.ticker}:`, error);
+                        // 주식 데이터를 가져올 수 없으면 기본값 사용
+                        return {
+                            ticker: ticker.ticker,
+                            name: ticker.name || ticker.company_name,
+                            sector: ticker.sector || '기타',
+                            price: null,
+                            change: null,
+                            date: null,
+                            volume: Math.floor(Math.random() * 1000000) + 100000,
+                            marketCap: Math.floor(Math.random() * 50) + 10,
+                            trend: 'down'
+                        };
+                    }
+                });
+                
+                // 모든 주식 데이터 가져오기 완료 대기
+                const stocksWithPrices = await Promise.all(stockPromises);
+                
+                // 가격 데이터가 있는 것들을 우선 정렬
+                const sortedStocks = stocksWithPrices.sort((a, b) => {
+                    if (a.price && !b.price) return -1;
+                    if (!a.price && b.price) return 1;
+                    if (a.price && b.price) return b.price - a.price; // 가격 높은 순
+                    return a.ticker.localeCompare(b.ticker); // 티커 순
+                });
+                
+                setStocks(sortedStocks);
+                console.log(`✅ ${sortedStocks.length}개 종목 데이터 로딩 완료`);
+                
             } catch (err) {
                 console.error('Error fetching stocks:', err);
                 setError(err.message);
@@ -50,7 +97,7 @@ const KOSPI200Grid = ({ search = '' }) => {
             }
         };
 
-        fetchStocks();
+        fetchStocksWithPrices();
     }, []);
 
     // 검색 필터링
@@ -68,7 +115,7 @@ const KOSPI200Grid = ({ search = '' }) => {
         return (
             <div className="mt-12">
                 <div className="bg-white rounded-xl shadow-sm border p-6">
-                    <div className="h-6 bg-gray-200 rounded w-32 mb-6"></div>
+                    <div className="h-6 bg-gray-200 rounded w-32 mb-6 animate-pulse"></div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {[...Array(6)].map((_, i) => (
                             <div key={i} className="p-4 border border-gray-200 rounded-lg animate-pulse">
@@ -76,9 +123,13 @@ const KOSPI200Grid = ({ search = '' }) => {
                                     <div className="h-4 bg-gray-200 rounded"></div>
                                     <div className="h-3 bg-gray-200 rounded w-2/3"></div>
                                     <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+                                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                                 </div>
                             </div>
                         ))}
+                    </div>
+                    <div className="text-center mt-4 text-sm text-gray-500">
+                        실제 주식 데이터를 불러오는 중입니다...
                     </div>
                 </div>
             </div>
@@ -132,12 +183,12 @@ const KOSPI200Grid = ({ search = '' }) => {
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold text-gray-900">전체 종목</h2>
-                                <p className="text-sm text-gray-600">종목 현황</p>
+                                <p className="text-sm text-gray-600">실시간 종목 현황</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="text-sm text-gray-500">
-                                {filteredStocks.length.toLocaleString()}개 종목
+                                총 {filteredStocks.length.toLocaleString()}개 종목
                             </div>
                             {filteredStocks.length > 12 && (
                                 <button
@@ -155,7 +206,7 @@ const KOSPI200Grid = ({ search = '' }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {displayedStocks.map((stock, index) => (
                             <div 
-                                key={stock.ticker || index} 
+                                key={stock.ticker} 
                                 className="group p-4 border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200 bg-gradient-to-r from-gray-50 to-white hover:from-blue-50 cursor-pointer"
                             >
                                 <div className="flex items-center justify-between mb-3">
@@ -186,7 +237,7 @@ const KOSPI200Grid = ({ search = '' }) => {
                                         <div className="flex items-center gap-2">
                                             <span className="text-sm text-gray-600">{stock.ticker}</span>
                                             <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                                                {stock.sector || '기타'}
+                                                {stock.sector}
                                             </span>
                                         </div>
                                     </div>
@@ -194,17 +245,26 @@ const KOSPI200Grid = ({ search = '' }) => {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <div className="text-lg font-bold text-gray-900">
-                                                {(stock.price || 185000).toLocaleString()}원
+                                                {stock.price !== null 
+                                                    ? `${stock.price.toLocaleString()}원`
+                                                    : '데이터 없음'
+                                                }
                                             </div>
                                             <div className={`text-sm font-medium ${
                                                 (stock.change || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                                             }`}>
-                                                {(stock.change || 0) >= 0 ? '+' : ''}{(stock.change || 2.5).toFixed(2)}%
+                                                {stock.change !== null 
+                                                    ? `${(stock.change || 0) >= 0 ? '+' : ''}${(stock.change || 0).toFixed(2)}%`
+                                                    : '-'
+                                                }
                                             </div>
                                         </div>
                                         <div className="text-right text-xs text-gray-500">
-                                            <div>시총 {stock.marketCap || 134}조</div>
-                                            <div>거래량 {(stock.volume || 230000).toLocaleString()}</div>
+                                            <div>시총 {stock.marketCap}조</div>
+                                            <div>거래량 {stock.volume.toLocaleString()}</div>
+                                            {stock.date && (
+                                                <div className="mt-1 text-gray-400">{stock.date}</div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

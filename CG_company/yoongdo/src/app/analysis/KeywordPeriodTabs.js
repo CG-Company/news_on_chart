@@ -5,11 +5,11 @@ import React from 'react';
 // Enhanced KeywordPeriodTabs Component
 const KeywordPeriodTabs = ({ selectedPeriod, setSelectedPeriod }) => {
     const periods = [
-    { label: '1일', value: '1', desc: '실시간' },
-    { label: '3일', value: '3', desc: '단기' },
-    { label: '7일', value: '7', desc: '주간' },
-    { label: '14일', value: '14', desc: '격주' },
-    { label: '30일', value: '30', desc: '월간' }
+    { label: '1일', value: '1' },
+    { label: '3일', value: '3'},
+    { label: '7일', value: '7'},
+    { label: '14일', value: '14'},
+    { label: '30일', value: '30'}
 ];
 
 return (

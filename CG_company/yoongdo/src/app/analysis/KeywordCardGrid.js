@@ -1,12 +1,53 @@
 // KeywordCardGrid.js
 "use client";
 import React, { useEffect, useState } from 'react';
-import { Star, Hash, Activity, Users, AlertCircle } from 'lucide-react';
+import { Star, Hash, Activity, Users, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react';
 
 const KeywordCardGrid = ({ selectedPeriod, onSelectKeyword, search = '' }) => {
     const [keywords, setKeywords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [tickerMap, setTickerMap] = useState([]);
+
+    // 티커맵 가져오기
+    useEffect(() => {
+        const fetchTickerMap = async () => {
+            try {
+                const response = await fetch('http://192.168.1.105:8000/api/ticker_map');
+                if (response.ok) {
+                    const data = await response.json();
+                    setTickerMap(data);
+                    console.log('TickerMap loaded:', data.length, '종목');
+                }
+            } catch (error) {
+                console.warn('Failed to load ticker map:', error);
+            }
+        };
+        fetchTickerMap();
+    }, []);
+
+    // 주식 데이터 가져오기 함수
+    const fetchStockData = async (ticker) => {
+        try {
+            const response = await fetch(`http://192.168.1.105:8000/api/stock?ticker=${ticker}`);
+            if (!response.ok) {
+                return null;
+            }
+            const data = await response.json();
+            const stockArray = data.stockData || [];
+            // 최신 데이터 (배열의 마지막 요소)
+            return stockArray.length > 0 ? stockArray[stockArray.length - 1] : null;
+        } catch (error) {
+            console.warn(`Error fetching stock data for ${ticker}:`, error);
+            return null;
+        }
+    };
+
+    // 종목명 찾기 함수
+    const getCompanyName = (ticker) => {
+        const found = tickerMap.find(item => item.ticker === ticker);
+        return found ? (found.name || found.company_name) : ticker;
+    };
 
     useEffect(() => {
         const fetchKeywords = async () => {
@@ -23,35 +64,78 @@ const KeywordCardGrid = ({ selectedPeriod, onSelectKeyword, search = '' }) => {
                 }
                 
                 const data = await response.json();
-                console.log('API Response:', data); // 디버깅용
+                console.log('Popular Keywords API Response:', data);
                 
                 // API 응답 구조에 맞게 데이터 추출
                 const keywordsData = data.keywords || [];
                 
-                // 각 키워드에 필요한 기본값들 설정
-                const processedKeywords = keywordsData.map((keyword, index) => ({
-                    ...keyword,
-                    rank: keyword.rank || index + 1,
-                    keyword: keyword.keyword || '',
-                    count: keyword.count || 0,
-                    tickers: keyword.tickers || [],
-                    sentiment: keyword.sentiment || 'neutral',
-                    is_hot: keyword.count > 10 || false, // count가 10 이상이면 HOT
-                    change_rate: Math.floor(Math.random() * 20) - 5 // 임시 변화율
-                }));
+                // 각 키워드의 관련 종목들에 대해 실제 주식 데이터 가져오기
+                const processedKeywords = await Promise.all(
+                    keywordsData.map(async (keyword, index) => {
+                        console.log(`Processing keyword: ${keyword.keyword}`, keyword.tickers);
+                        
+                        const tickers = keyword.tickers || [];
+                        
+                        // 각 티커에 대해 실제 주식 데이터 가져오기 (최대 5개만)
+                        const tickersWithPrices = await Promise.all(
+                            tickers.slice(0, 5).map(async (tickerInfo) => {
+                                // tickerInfo가 객체인지 확인하고 ticker 추출
+                                const ticker = typeof tickerInfo === 'object' ? tickerInfo.ticker : tickerInfo;
+                                
+                                if (!ticker) {
+                                    console.warn('Invalid ticker info:', tickerInfo);
+                                    return null;
+                                }
+                                
+                                console.log(`Fetching data for ticker: ${ticker}`);
+                                
+                                const stockData = await fetchStockData(ticker);
+                                const companyName = getCompanyName(ticker);
+                                
+                                return {
+                                    ticker: ticker,
+                                    name: companyName,
+                                    price: stockData ? stockData.close : (typeof tickerInfo === 'object' ? tickerInfo.price : null),
+                                    change_rate: stockData ? stockData.change_rate : (typeof tickerInfo === 'object' ? tickerInfo.change_rate : null),
+                                    date: stockData ? stockData.date : null,
+                                    hasRealData: !!stockData,
+                                    sector: typeof tickerInfo === 'object' ? tickerInfo.sector : null
+                                };
+                            })
+                        );
+
+                        // null 값 제거
+                        const validTickers = tickersWithPrices.filter(ticker => ticker !== null);
+
+                        return {
+                            ...keyword,
+                            rank: keyword.rank || index + 1,
+                            keyword: keyword.keyword || '',
+                            count: keyword.count || 0,
+                            tickers: validTickers,
+                            sentiment: keyword.sentiment || 'neutral',
+                            is_hot: keyword.count > 10 || false,
+                            change_rate: Math.floor(Math.random() * 20) - 5
+                        };
+                    })
+                );
                 
+                console.log('Processed keywords with stock data:', processedKeywords);
                 setKeywords(processedKeywords);
             } catch (err) {
                 console.error('Error fetching keywords:', err);
                 setError(err.message);
-                setKeywords([]); // 에러 시 빈 배열로 설정
+                setKeywords([]);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchKeywords();
-    }, [selectedPeriod]);
+        // 티커맵이 로드된 후에만 키워드 데이터 가져오기
+        if (tickerMap.length > 0) {
+            fetchKeywords();
+        }
+    }, [selectedPeriod, tickerMap]);
 
     // 검색 필터링
     const filteredKeywords = keywords.filter(keyword => 
@@ -72,8 +156,15 @@ const KeywordCardGrid = ({ selectedPeriod, onSelectKeyword, search = '' }) => {
                             <div className="h-3 bg-gray-200 rounded"></div>
                             <div className="h-2 bg-gray-200 rounded"></div>
                         </div>
+                        <div className="mt-4 space-y-2">
+                            <div className="h-3 bg-gray-200 rounded"></div>
+                            <div className="h-3 bg-gray-200 rounded"></div>
+                        </div>
                     </div>
                 ))}
+                <div className="col-span-full text-center text-sm text-gray-500">
+                    키워드별 실제 주식 데이터를 불러오는 중입니다...
+                </div>
             </div>
         );
     }
@@ -183,12 +274,64 @@ const KeywordCardGrid = ({ selectedPeriod, onSelectKeyword, search = '' }) => {
                                     {(keyword.count || 0).toLocaleString()}건
                                 </span>
                             </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-gray-600">관련 종목</span>
-                                <span className="font-semibold text-gray-900">
-                                    {keyword.tickers?.length || 0}개
-                                </span>
+                            
+                            {/* 관련 종목 실제 데이터 표시 */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600">관련 종목</span>
+                                    <span className="font-semibold text-gray-900">
+                                        {keyword.tickers?.length || 0}개
+                                    </span>
+                                </div>
+                                
+                                {/* 주요 종목 3개 표시 */}
+                                {keyword.tickers && keyword.tickers.length > 0 && (
+                                    <div className="space-y-1 max-h-24 overflow-y-auto">
+                                        {keyword.tickers.slice(0, 3).map((ticker, idx) => (
+                                            <div key={`${ticker.ticker}-${idx}`} className="flex items-center justify-between text-xs bg-gray-50 rounded p-2">
+                                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                    <span className="font-medium text-gray-700 truncate">
+                                                        {ticker.name || ticker.ticker}
+                                                    </span>
+                                                    <span className="text-gray-500 text-xs">
+                                                        {ticker.ticker}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {ticker.price && (
+                                                        <span className="font-semibold text-gray-900 text-xs">
+                                                            {ticker.price.toLocaleString()}원
+                                                        </span>
+                                                    )}
+                                                    {ticker.change_rate !== null && ticker.change_rate !== undefined && (
+                                                        <div className={`flex items-center gap-0.5 ${
+                                                            ticker.change_rate >= 0 ? 'text-green-600' : 'text-red-600'
+                                                        }`}>
+                                                            {ticker.change_rate >= 0 ? (
+                                                                <TrendingUp className="w-3 h-3" />
+                                                            ) : (
+                                                                <TrendingDown className="w-3 h-3" />
+                                                            )}
+                                                            <span className="font-medium text-xs">
+                                                                {ticker.change_rate >= 0 ? '+' : ''}{ticker.change_rate?.toFixed(2)}%
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {ticker.hasRealData && (
+                                                        <span className="inline-block w-2 h-2 bg-green-500 rounded-full" title="실시간 데이터"></span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {keyword.tickers.length > 3 && (
+                                            <div className="text-xs text-gray-500 text-center py-1">
+                                                +{keyword.tickers.length - 3}개 더
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
+                            
                             <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                 <div 
                                     className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-1000 ease-out"
