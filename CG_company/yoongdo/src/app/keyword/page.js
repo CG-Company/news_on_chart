@@ -1,10 +1,10 @@
 "use client";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 
 // 더미 데이터
-const newsList = [
+const dummyNewsList = [
   {
     id: 1,
     image: "https://imgnews.pstatic.net/image/011/2025/06/29/0004502698_001_20250629230900740.jpg?type=w860",
@@ -132,6 +132,8 @@ const stockCards = [
 
 export default function NewsPage() {
   const scrollRef = useRef(null);
+  const [ticker, setTicker] = useState("");
+  const [newsList, setNewsList] = useState(dummyNewsList);
 
   const scroll = (direction) => {
     if (scrollRef.current) {
@@ -143,13 +145,61 @@ export default function NewsPage() {
     }
   };
 
+  // 리포트트 가져오기 버튼 클릭 핸들러
+  const handleFetchReport = async () => {
+    if (!ticker) {
+      alert("종목 코드를 입력하세요.");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/report?ticker=${ticker}`);
+      const data = await res.json();
+      if (data.reports && Array.isArray(data.reports) && data.reports.length > 0) {
+        const mapped = data.reports.slice(0, 6).map((item, idx) => ({
+          id: idx + 1,
+          image: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80",
+          title: item["제목"],
+          author: item["증권사"],
+          tag: item["종목명"],
+          url: item["PDF링크"],
+          date: item["날짜"],
+        }));
+        setNewsList(mapped);
+      } else {
+        setNewsList([]);
+        alert("해당 종목의 리포트가 없습니다.");
+      }
+    } catch (e) {
+      alert("리포트를 불러오는 중 오류가 발생했습니다.");
+    }
+  };
+
   return (
     <div className="flex overflow-x-hidden">
       <Sidebar currentPage="news" />
       <div className="flex-1 ml-52">
-        <Header />
+        <Header ticker={ticker} setTicker={setTicker} />
         <main className="p-8 bg-gray-50 min-h-screen overflow-x-auto">
-          <h1 className="text-2xl font-bold mb-6">중요뉴스</h1>
+          <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            중요 리포트
+            {/* 리포트 가져오기 버튼 */}
+            <button
+              className="ml-2 px-3 py-1 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 transition"
+              type="button"
+              onClick={handleFetchReport}
+            >
+              리포트 가져오기
+            </button>
+            {/* 설명 버튼 (툴팁) */}
+            <div className="relative group ml-1">
+              <button type="button" className="w-5 h-5 flex items-center justify-center">
+                <img src="/icons/warning.svg" alt="설명" className="w-4 h-4" />
+              </button>
+              <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-max bg-gray-800 text-white text-xs rounded px-3 py-2 opacity-0 group-hover:opacity-100 pointer-events-none z-20 whitespace-nowrap transition-opacity duration-200">
+                종목 코드를 상단에서 입력하고, '뉴스 가져오기' 버튼을 클릭하세요.
+              </div>
+            </div>
+          </h1>
           {/* 상단 뉴스 카드 슬라이드 */}
           <div className="relative max-w-[1600px] mx-auto w-full">
             {/* 왼쪽 화살표 */}
