@@ -109,10 +109,11 @@ export default function AINewsSummaryBanner({ ticker }) {
         border: "1px solid #e2e8f0",
         borderRadius: "8px",
         padding: "12px",
-        marginTop: "12px",
         fontSize: "12px",
         color: "#475569",
         position: "relative",
+        height: "100%",
+        overflow: "auto",
       }}
     >
       {/* 개발자 배너 스타일 */}

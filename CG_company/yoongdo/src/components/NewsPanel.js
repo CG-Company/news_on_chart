@@ -1,10 +1,9 @@
 // components/NewsPanel.js (업데이트됨)
 import React, { useState, useMemo, useEffect } from "react";
 import { fetchMacroNews } from "../utils/api";
-import AINewsSummaryBanner from "./AINewsSummaryBanner";
 
-const PAGE_SIZE_COMPANY = 3;
-const PAGE_SIZE_MACRO = 3;
+const PAGE_SIZE_COMPANY = 5;
+const PAGE_SIZE_MACRO = 5;
 
 const TABS = [
   { key: "company", label: "기업뉴스" },
@@ -192,7 +191,23 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
   }
 
   // 탭별 뉴스 데이터
-  const companyNewsList = newsList;
+  const companyNewsList = useMemo(() => {
+    if (!newsList || newsList.length === 0) return [];
+    if (!date) {
+      // 최신순 정렬 (published_at 또는 date)
+      const sorted = [...newsList].sort((a, b) => {
+        const dateA = new Date(a.published_at || a.date || 0);
+        const dateB = new Date(b.published_at || b.date || 0);
+        return dateB - dateA;
+      });
+      return sorted.slice(0, PAGE_SIZE_COMPANY);
+    } else {
+      // 날짜가 있으면 해당 날짜만 필터
+      return newsList.filter(
+        (item) => item.published_at === date || item.date === date
+      );
+    }
+  }, [newsList, date]);
   const filteredMacroNews = useMemo(() => {
     if (!date) return macroNewsList;
     return macroNewsList.filter(
@@ -222,7 +237,7 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
   return (
     <div
       className="bg-white rounded-lg shadow-lg p-4 w-full max-w-xl mx-auto h-full relative"
-      style={{ height: "600px" }}
+      style={{ height: "100%" }}
     >
       {/* 탭 */}
       <div className="flex border-b mb-4">
@@ -242,7 +257,10 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
       </div>
 
       {/* 메인뉴스 강조 card 완전 제거, 리스트 내에서만 메인 pill+title+summary+날짜로 통일 */}
-      <ul className="divide-y divide-gray-100 mb-4">
+      <ul
+        className="divide-y divide-gray-100 mb-4 overflow-y-auto"
+        style={{ maxHeight: "calc(100% - 80px)" }}
+      >
         {activeTab === "company" && mainNews && page === 1 && (
           <li className="py-3">
             <a
@@ -367,11 +385,6 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
           </button>
         </div>
       )}
-
-      {/* AI 뉴스 요약 배너 - 개발자 배너 형태 */}
-      <div className="mt-4">
-        <AINewsSummaryBanner ticker={ticker} />
-      </div>
     </div>
   );
 };

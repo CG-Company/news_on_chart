@@ -1020,7 +1020,7 @@ function CleanChartContainer({
       </div>
 
       {/* 차트 영역 */}
-      <div className="relative" style={{ height: "500px" }}>
+      <div className="relative" style={{ height: "400px" }}>
         {!ticker ? (
           <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
             <div className="text-center">
@@ -1083,7 +1083,7 @@ function CleanChartContainer({
               <div
                 ref={tradingViewRef}
                 className="w-full h-full"
-                style={{ height: "400px" }}
+                style={{ height: "300px" }}
               />
             )}
             {chartType === "candle" && tradingViewTooltipPortal}

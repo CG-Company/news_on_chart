@@ -39,6 +39,7 @@ import Header from "../components/Header";
 import StockCards from "../components/StockCards";
 import NewsSummaryPanel from "../components/NewsSummaryPanel";
 import DeveloperStats from "../components/DeveloperStats";
+import AINewsSummaryBanner from "../components/AINewsSummaryBanner";
 
 // 동적 import로 차트 컴포넌트들 불러오기
 const CleanChartContainer = dynamic(
@@ -527,7 +528,7 @@ export default function Page() {
                 style={{ minHeight: "600px" }}
               >
                 {/* 차트 영역 (2/3) */}
-                <div className="lg:col-span-2" style={{ height: "600px" }}>
+                <div className="lg:col-span-2" style={{ height: "450px" }}>
                   <ErrorBoundary
                     name="ChartContainer"
                     fallback={(error, retry) => (
@@ -613,27 +614,38 @@ export default function Page() {
                   </ErrorBoundary>
                 </div>
 
-                {/* 뉴스 패널 (1/3) */}
-                <div className="lg:col-span-1" style={{ height: "600px" }}>
-                  <ErrorBoundary
-                    name="NewsPanel"
-                    fallback={(error, retry) => (
-                      <NewsErrorFallback error={error} onRetry={retry} />
-                    )}
-                  >
-                    <NewsPanel
-                      news={selectedNews}
-                      date={selectedDate}
-                      loading={isLoadingStock}
-                      mainNews={mainNews}
-                      ticker={ticker}
-                      key={
-                        selectedNews
-                          ? `news-${selectedNews.date}`
-                          : "news-empty"
-                      }
-                    />
-                  </ErrorBoundary>
+                {/* 뉴스 패널 + AI 요약 배너 영역 (1/3) */}
+                <div
+                  className="lg:col-span-1 flex flex-col"
+                  style={{ height: "600px" }}
+                >
+                  {/* 뉴스 패널 */}
+                  <div className="flex-1" style={{ height: "500px" }}>
+                    <ErrorBoundary
+                      name="NewsPanel"
+                      fallback={(error, retry) => (
+                        <NewsErrorFallback error={error} onRetry={retry} />
+                      )}
+                    >
+                      <NewsPanel
+                        news={selectedNews}
+                        date={selectedDate}
+                        loading={isLoadingStock}
+                        mainNews={mainNews}
+                        ticker={ticker}
+                        key={
+                          selectedNews
+                            ? `news-${selectedNews.date}`
+                            : "news-empty"
+                        }
+                      />
+                    </ErrorBoundary>
+                  </div>
+
+                  {/* AI 뉴스 요약 배너 - 뉴스패널 바로 아래 */}
+                  <div className="mt-6" style={{ height: "100px" }}>
+                    <AINewsSummaryBanner ticker={ticker} />
+                  </div>
                 </div>
               </div>
 
