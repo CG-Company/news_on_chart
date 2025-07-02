@@ -10,4 +10,8 @@ module.exports = {
     extend: {},
   },
   plugins: [],
+  safelist: [
+    'border-red-500',
+    'border-2',
+  ],
 };
