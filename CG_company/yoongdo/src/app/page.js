@@ -296,7 +296,6 @@ export default function Page() {
           selectedPage !== "news" &&
           window?.__activeTab === "macro"
         ) {
-          // macroNewsList는 NewsPanel 내부에서 관리되므로, selectedNews에서 macroNews 추출
           let macroMain = null;
           if (
             newsData &&
@@ -346,10 +345,12 @@ export default function Page() {
         } else {
           setSelectedNews(newsData);
         }
-        if (newsData) setSelectedDate(null);
+        // 반드시 선택한 날짜를 저장
+        setSelectedDate(date);
       } catch (error) {
         setMainNews(null);
         setSelectedNews(null);
+        setSelectedDate(null);
       }
     },
     [stockData, ticker, selectedPage]
@@ -462,7 +463,7 @@ export default function Page() {
               loading={isLoadingStock}
               mainNews={mainNews}
               ticker={ticker}
-              key={selectedNews ? `news-${selectedNews.date}` : "news-empty"}
+              key={selectedDate ? `news-${selectedDate}` : "news-empty"}
             />
           ) : (
             // 기졸 메인 컨텐츠 영역 (차트, 카드 등)
@@ -633,11 +634,7 @@ export default function Page() {
                         loading={isLoadingStock}
                         mainNews={mainNews}
                         ticker={ticker}
-                        key={
-                          selectedNews
-                            ? `news-${selectedNews.date}`
-                            : "news-empty"
-                        }
+                        key={selectedDate ? `news-${selectedDate}` : "news-empty"}
                       />
                     </ErrorBoundary>
                   </div>
