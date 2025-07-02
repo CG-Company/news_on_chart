@@ -1,6 +1,7 @@
 # DB_team/api_server.py
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+<<<<<<< HEAD
 from utils import (
     get_stock_data, 
     get_ticker_map, 
@@ -16,6 +17,15 @@ from utils import (
 import re
 from sqlalchemy import text
 from utils import engine
+=======
+from utils import get_stock_data, get_ticker_map, get_news_data, get_news_by_ticker_and_day, get_selected_news_by_ticker, summarize_news_for_period, get_popular_keywords
+import logging
+
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+>>>>>>> f44095b8aa4b251d1fea24c36c34c34ae01f41b3
 
 app = FastAPI()
 
@@ -98,6 +108,7 @@ def get_news_panel_data_api(ticker: str, date: str):
     """
     return get_panel_news_data(ticker, date)
 
+<<<<<<< HEAD
 @app.get("/api/popular_keywords")
 def get_popular_keywords_api(
     days: int = Query(7, ge=1, le=30, description="최근 며칠간의 데이터를 분석할지"),
@@ -243,3 +254,40 @@ def get_related_keywords_api(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+=======
+@app.get("/api/news_summary")
+def news_summary(
+    ticker: str = Query(..., min_length=6, max_length=6, description="종목 코드"),
+    period: str = Query("3m", regex="^(1d|1m|3m|1y)$", description="기간 (1d, 1m, 3m, 1y)")
+):
+    """
+    ticker와 period를 받아 해당 기간 동안의 뉴스 요약을 반환합니다.
+    요청 예시: GET /api/news_summary?ticker=000660&period=3m
+    """
+    try:
+        result = summarize_news_for_period(ticker, period)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/popular_keywords")
+def get_popular_keywords_api(
+    days: int = Query(7, ge=1, le=30, description="최근 며칠간의 데이터를 분석할지"),
+    limit: int = Query(20, ge=5, le=100, description="반환할 키워드 개수")
+):
+    """
+    최근 N일간의 뉴스에서 인기 키워드 추출
+    """
+    try:
+        keywords = get_popular_keywords(days, limit)
+        return {
+            "period": f"{days}일",
+            "total_keywords": len(keywords),
+            "keywords": keywords
+        }
+    except Exception as e:
+        raise HTTPException(500, detail=f"키워드 조회 중 오류가 발생했습니다: {str(e)}")
+>>>>>>> f44095b8aa4b251d1fea24c36c34c34ae01f41b3

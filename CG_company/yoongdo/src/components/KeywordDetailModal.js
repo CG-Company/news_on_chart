@@ -12,20 +12,23 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
     if (isOpen && keyword) {
       fetchKeywordData();
     }
-    // eslint-disable-next-line
   }, [isOpen, keyword]);
 
   const fetchKeywordData = async () => {
     try {
       setLoading(true);
+      
+      // 병렬로 데이터 요청 (API URL에 localhost:8000 추가)
       const [newsResponse, statsResponse, relatedResponse] = await Promise.all([
-        fetch(`/api/keyword_news?keyword=${encodeURIComponent(keyword)}&days=7&limit=20`),
-        fetch(`/api/keyword_stats?keyword=${encodeURIComponent(keyword)}&days=30`),
-        fetch(`/api/related_keywords?keyword=${encodeURIComponent(keyword)}&days=7&limit=10`)
+        fetch(`http://192.168.1.105:8000/api/keyword_news?keyword=${encodeURIComponent(keyword)}&days=7&limit=20`),
+        fetch(`http://192.168.1.105:8000/api/keyword_stats?keyword=${encodeURIComponent(keyword)}&days=30`),
+        fetch(`http://192.168.1.105:8000/api/related_keywords?keyword=${encodeURIComponent(keyword)}&days=7&limit=10`)
       ]);
+
       const newsData = await newsResponse.json();
       const statsData = await statsResponse.json();
       const relatedData = await relatedResponse.json();
+
       setKeywordNews(newsData.news || []);
       setKeywordStats(statsData);
       setRelatedKeywords(relatedData.related_keywords || []);
@@ -35,6 +38,16 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
       setLoading(false);
     }
   };
+
+  // 키워드 정제 함수 (특수문자, None 등 제거)
+  function cleanKeywords(raw) {
+    if (!raw) return [];
+    const cleaned = raw.replace(/[{}\[\]"'`]/g, '');
+    return cleaned
+      .split(',')
+      .map(k => k.trim())
+      .filter(k => k && k.length > 1 && !['none', 'null', 'nan', '{}', '[]', '""', "''", 'None'].includes(k.toLowerCase()));
+  }
 
   if (!isOpen) return null;
 
@@ -69,9 +82,11 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
                 </a>
               )}
             </div>
+            
             <p className="text-gray-600 text-sm mb-3 line-clamp-3">
               {news.summary}
             </p>
+            
             <div className="flex items-center justify-between text-xs text-gray-500">
               <div className="flex items-center space-x-4">
                 <span className="flex items-center">
@@ -82,6 +97,7 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
                   {news.ticker}
                 </span>
               </div>
+              
               {news.sentiment_score && (
                 <div className={`px-2 py-1 rounded text-xs font-medium ${
                   news.sentiment_score > 0 
@@ -104,6 +120,7 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
     <div className="space-y-6">
       {keywordStats ? (
         <>
+          {/* 통계 요약 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-blue-50 p-4 rounded-lg text-center">
               <div className="text-2xl font-bold text-blue-600">
@@ -130,6 +147,8 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
               <div className="text-sm text-gray-600">분석 기간</div>
             </div>
           </div>
+
+          {/* 일별 통계 */}
           <div>
             <h4 className="font-semibold text-gray-800 mb-3">일별 언급 추이</h4>
             <div className="space-y-2">
@@ -176,20 +195,24 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {relatedKeywords.map((related, index) => (
-            <div key={index} className="p-3 border border-gray-200 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-800">
-                  {related.keyword}
-                </span>
-                <div className="flex items-center space-x-2 text-xs text-gray-500">
-                  <span>{related.relevance}회</span>
-                  <span>•</span>
-                  <span>{related.ticker_count}개 종목</span>
+          {relatedKeywords.map((related, index) => {
+            const cleaned = cleanKeywords(related.keyword);
+            if (cleaned.length === 0) return null;
+            return (
+              <div key={index} className="p-3 border border-gray-200 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-800">
+                    {cleaned[0]}
+                  </span>
+                  <div className="flex items-center space-x-2 text-xs text-gray-500">
+                    <span>{related.relevance}회</span>
+                    <span>•</span>
+                    <span>{related.ticker_count}개 종목</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -198,11 +221,12 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        {/* 헤더 */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center space-x-2">
             <TrendingUp className="w-6 h-6 text-blue-600" />
             <h2 className="text-xl font-bold text-gray-800">
-              키워드 상세 분석: &quot;{keyword}&quot;
+              키워드 상세 분석: &quot;{cleanKeywords(keyword)[0] || ''}&quot;
             </h2>
           </div>
           <button
@@ -212,6 +236,8 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* 탭 */}
         <div className="border-b">
           <nav className="flex space-x-8 px-6">
             {tabs.map((tab) => {
@@ -219,7 +245,6 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
@@ -233,6 +258,8 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
             })}
           </nav>
         </div>
+
+        {/* 콘텐츠 */}
         <div className="p-6 overflow-y-auto max-h-[70vh]">
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -252,4 +279,4 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
   );
 };
 
-export default KeywordDetailModal; 
+export default KeywordDetailModal;

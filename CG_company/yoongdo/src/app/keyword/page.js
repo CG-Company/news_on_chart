@@ -1,4 +1,5 @@
-import React from "react";
+"use client";
+import React, { useRef } from "react";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 
@@ -6,31 +7,39 @@ import Header from "@/components/Header";
 const newsList = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80",
-    title: "AI 데이터센터 두고 벌어지는 '쩐의 전쟁'…메타 데이터센터 구…",
-    author: "파닥거리기",
-    tag: "에디초이",
+    image: "https://imgnews.pstatic.net/image/011/2025/06/29/0004502698_001_20250629230900740.jpg?type=w860",
+    title: "트럼프, 중동 눈 돌린 사이…우크라전 요지에 11만 병력 모은 푸틴",
+    author: "서울경제",
+    tag: "트럼프, 푸틴, 전쟁, 우크라이나, 러시아",
+    url: "https://n.news.naver.com/mnews/article/011/0004502698",
+    date: "2025.06.29",
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80",
-    title: "채권 동향",
-    author: "에디초이",
-    tag: "에디초이",
+    image: "https://menu.mtn.co.kr/upload/article/2025/07/01/2025070116423231552_00_281.jpg",
+    title: "'연금저축계좌 개설·이전하면 美주식 준다'…키움증권, '미국주식드림' 이벤트 진행",
+    author: "MTN뉴스",
+    tag: "키움증권, 이벤트, 미국주식, 연금",
+    url: "https://news.mtn.co.kr/news-detail/2025070116423231552",
+    date: "2025.07.01",
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80",
-    title: "무역 낙관론에 웃은 증시, 다우 사상 최고치 경신",
-    author: "에디초이",
-    tag: "에디초이",
+    image: "https://imgnews.pstatic.net/image/243/2025/06/28/0000080362_001_20250628112009773.jpg?type=w860",
+    title: "AI 데이터센터 두고 벌어지는 '쩐의 전쟁'…메타 데이터센터 구축에 40조원 조달",
+    author: "이코노미스트",
+    tag: "AI, 데이터센터, 투자발표",
+    url: "https://n.news.naver.com/mnews/article/243/0000080362?sid=105",
+    date: "2025.06.28",
   },
   {
     id: 4,
-    image: "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80",
-    title: "구형 D램 가격 급등세…'공급업체 가격 협상력 제고'",
-    author: "파닥거리기",
-    tag: "에디초이",
+    image: "https://imgnews.pstatic.net/image/018/2025/06/27/0006050456_001_20250627152820407.jpg?type=w860",
+    title: "국정위 '한은, 스테이블코인 관련 전향적 자세 보여야'",
+    author: "이데일리",
+    tag: "스테이블코인, 코인, 한국은행, 국정위",
+    url: "https://n.news.naver.com/mnews/article/018/0006050456?sid=101",
+    date: "2025.06.27",
   },
   {
     id: 5,
@@ -38,6 +47,8 @@ const newsList = [
     title: "7/1 장전 시황",
     author: "에디초이",
     tag: "에디초이",
+    url: "https://news.naver.com/...",
+    date: "2025.06.26",
   },
 ];
 
@@ -120,35 +131,105 @@ const stockCards = [
 ];
 
 export default function NewsPage() {
+  const scrollRef = useRef(null);
+
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = 340; // 카드 한 개 너비 + 여백
+      scrollRef.current.scrollBy({
+        left: direction === "right" ? scrollAmount : -scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
-    <div className="flex">
+    <div className="flex overflow-x-hidden">
       <Sidebar currentPage="news" />
       <div className="flex-1 ml-52">
         <Header />
-        <main className="p-8 bg-gray-50 min-h-screen">
-          <h1 className="text-2xl font-bold mb-6">리포트</h1>
+        <main className="p-8 bg-gray-50 min-h-screen overflow-x-auto">
+          <h1 className="text-2xl font-bold mb-6">중요뉴스</h1>
           {/* 상단 뉴스 카드 슬라이드 */}
-          <div className="flex space-x-4 overflow-x-auto pb-4 mb-8">
-            {newsList.map((news) => (
-              <div
-                key={news.id}
-                className="min-w-[320px] max-w-xs bg-white rounded-xl shadow-md overflow-hidden flex-shrink-0"
-              >
-                <img src={news.image} alt={news.title} className="w-full h-40 object-cover" />
-                <div className="p-4">
-                  <div className="text-sm text-gray-500 mb-1">{news.tag} <span className="ml-2">{news.author}</span></div>
-                  <div className="font-semibold text-base line-clamp-2">{news.title}</div>
+          <div className="relative max-w-[1600px] mx-auto w-full">
+            {/* 왼쪽 화살표 */}
+            <button
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/60 rounded-full shadow p-4"
+              onClick={() => scroll("left")}
+              style={{ display: "block" }}
+            >
+              <svg className="w-10 h-10 text-black-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            {/* 카드 리스트 */}
+            <div
+              ref={scrollRef}
+              className="flex space-x-4 overflow-x-auto scrollbar-hide scroll-smooth w-full pb-2"
+              style={{ scrollSnapType: "x mandatory" }}
+            >
+              {newsList.map((news) => (
+                <div
+                  key={news.id}
+                  className="min-w-[320px] max-w-xs bg-white rounded-xl shadow-md overflow-hidden flex-shrink-0"
+                  style={{ scrollSnapAlign: "start" }}
+                >
+                  <a
+                    href={news.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col"
+                  >
+                    <img src={news.image} alt={news.title} className="w-full h-40 object-cover" />
+                    <div className="p-4 flex flex-col">
+                      <div
+                        className="font-semibold text-base mb-2 line-clamp-2"
+                        style={{ minHeight: '3rem' }}
+                      >
+                        {news.title}
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                        <span>{news.date}</span>
+                        <span>{news.author}</span>
+                      </div>
+                      <div className="mt-2 overflow-hidden whitespace-nowrap truncate">
+                        {(news.tag || '').split(',').map((t, idx, arr) =>
+                          t.trim() && (
+                            <span
+                              key={idx}
+                              className={
+                                "inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded" +
+                                (idx !== arr.length - 1 ? " mr-2" : "")
+                              }
+                            >
+                              #{t.trim()}
+                            </span>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </a>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            {/* 오른쪽 화살표 */}
+            <button
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/60 rounded-full shadow p-4"
+              onClick={() => scroll("right")}
+              style={{ display: "block" }}
+            >
+              <svg className="w-10 h-10 text-black-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
 
           {/* 하단 추천 종목 카드 리스트 */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">키워드 분석글 📝</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="max-w-[1600px] mx-auto w-full mt-10">
+            <h2 className="text-lg font-semibold mb-4">자유 피드 📝</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-w-0">
               {stockCards.map((card) => (
-                <div key={card.id} className="bg-white rounded-xl shadow-md p-5 flex flex-col">
+                <div key={card.id} className="bg-white rounded-xl shadow-md p-5 flex flex-col w-auto">
                   <div className="flex items-center mb-2">
                     <span className="font-bold text-gray-700 mr-2">{card.name}</span>
                     <span className="text-xs text-gray-400">{card.code}</span>
