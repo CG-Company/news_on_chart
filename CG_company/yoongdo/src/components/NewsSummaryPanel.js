@@ -14,18 +14,54 @@ export default function NewsSummaryPanel({ ticker }) {
     setSummaryLoading(true);
     setSummaryError(null);
     setSummaryText("");
-    fetch(
-      `${API_BASE}/api/news_summary?ticker=${ticker}&period=${summaryPeriod}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        setSummaryText(data.summary || "요약 결과가 없습니다.");
-        setSummaryLoading(false);
-      })
-      .catch((err) => {
-        setSummaryError("요약을 불러오는 중 오류가 발생했습니다.");
-        setSummaryLoading(false);
-      });
+    const url = `${API_BASE}/api/news_summary/stream?ticker=${ticker}&period=${summaryPeriod}`;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const stream = res.body;
+        if (!stream) throw new Error("서버 응답에 스트림 바디가 없습니다.");
+        const reader = stream.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let done = false;
+        while (!done && !cancelled) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          if (value) {
+            buffer += decoder.decode(value, { stream: true });
+            let parts = buffer.split("\n\n");
+            buffer = parts.pop();
+            for (const part of parts) {
+              if (part.startsWith("data:")) {
+                const dataStr = part.replace(/^data:\s*/, "");
+                if (dataStr === "[DONE]") {
+                  done = true;
+                  break;
+                }
+                try {
+                  const json = JSON.parse(dataStr);
+                  if (json.content) {
+                    setSummaryText((prev) => prev + json.content);
+                  }
+                } catch (e) {}
+              }
+            }
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          const message = err instanceof Error ? err.message : String(err);
+          setSummaryError(`요약을 불러오는 중 오류가 발생했습니다: ${message}`);
+        }
+      } finally {
+        if (!cancelled) setSummaryLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [ticker, summaryPeriod]);
 
   return (

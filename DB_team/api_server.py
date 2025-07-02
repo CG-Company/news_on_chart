@@ -30,7 +30,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Stock Analysis API", version="1.0.0")
-app = FastAPI(title="Stock Analysis API", version="1.0.0")
 
 # CORS 설정
 app.add_middleware(
@@ -106,7 +105,6 @@ def read_news(ticker: str = Query(..., min_length=6, max_length=6)):
 @app.get("/api/news_is_selected")
 def get_news_is_selected(ticker: str):
     """is_selected가 True인 뉴스만 반환"""
-    """is_selected가 True인 뉴스만 반환"""
     try:
         news = get_selected_news_by_ticker(ticker)
         return safe_json({"ticker": ticker, "news": news})
@@ -116,7 +114,6 @@ def get_news_is_selected(ticker: str):
 
 @app.get("/api/news_day")
 def get_news_day(ticker: str, day: str):
-    """특정 날짜 뉴스 조회"""
     """특정 날짜 뉴스 조회"""
     try:
         news = get_news_by_ticker_and_day(ticker, day)
@@ -137,7 +134,6 @@ def get_macro_news():
 
 @app.get("/api/sector_stocks")
 def get_sector_stocks_api(ticker: str):
-    """같은 섹터 종목 조회"""
     """같은 섹터 종목 조회"""
     try:
         stocks = get_sector_stocks(ticker)

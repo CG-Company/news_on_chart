@@ -192,51 +192,29 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
 
   // 탭별 뉴스 데이터
   const companyNewsList = useMemo(() => {
-<<<<<<< HEAD
-    if (!newsList || newsList.length === 0) return [];
-    
-    // 최신순 정렬 (published_at 또는 date)
-    const sorted = [...newsList].sort((a, b) => {
+    // newsList에서 source가 'Company News'인 것만 추출
+    const companyNews = (newsList || []).filter(
+      (item) => item.source === "Company News"
+    );
+    if (!companyNews.length) return [];
+
+    // 날짜 필터
+    if (date) {
+      const filtered = companyNews.filter(
+        (item) => item.published_at === date || item.date === date
+      );
+      // 해당 날짜에 뉴스가 없으면 최신 뉴스 표시
+      if (filtered.length > 0) return filtered;
+    }
+
+    // 최신순 정렬
+    const sorted = [...companyNews].sort((a, b) => {
       const dateA = new Date(a.published_at || a.date || 0);
       const dateB = new Date(b.published_at || b.date || 0);
       return dateB - dateA;
     });
-    
-    if (!date) {
-      // 날짜 선택이 없으면 최신 뉴스들 표시
-      return sorted.slice(0, PAGE_SIZE_COMPANY);
-    } else {
-      // 날짜가 있으면 해당 날짜만 필터
-      const filtered = sorted.filter(
-        (item) => item.published_at === date || item.date === date
-      );
-      // 해당 날짜에 뉴스가 없으면 최신 뉴스 표시
-      return filtered.length > 0 ? filtered : sorted.slice(0, PAGE_SIZE_COMPANY);
-=======
-    let companyNews = [];
-    if (Array.isArray(news)) {
-      companyNews = news;
-    } else if (news && news.companyNews) {
-      companyNews = news.companyNews;
-    }
-    if (!companyNews || companyNews.length === 0) return [];
-
-    // 날짜가 있으면 해당 날짜만 필터, 없으면 최신순 정렬
-    if (date) {
-      return companyNews.filter(
-        (item) => item.published_at === date || item.date === date
-      );
-    } else {
-      // 최신순 정렬 (published_at, date, 또는 date 필드가 없으면 id 기준)
-      const sorted = [...companyNews].sort((a, b) => {
-        const dateA = new Date(a.published_at || a.date || a.id || 0);
-        const dateB = new Date(b.published_at || b.date || b.id || 0);
-        return dateB - dateA;
-      });
-      return sorted.slice(0, PAGE_SIZE_COMPANY);
->>>>>>> ac6be24c801a480afadc095b81f4a974de6211a0
-    }
-  }, [news, date]);
+    return sorted.slice(0, PAGE_SIZE_COMPANY);
+  }, [newsList, date]);
   const filteredMacroNews = useMemo(() => {
     if (!date) return macroNewsList;
     return macroNewsList.filter(
@@ -327,37 +305,35 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
             </a>
           </li>
         )}
-        {activeTab === "macro" &&
-          mainMacroNews &&
-          page === 1 && (
-            <li className="py-3">
-              <a
-                href={mainMacroNews.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block hover:bg-gray-50 rounded px-2 py-1"
-              >
-                <div className="flex items-center mb-1 gap-2 flex-nowrap">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 shrink-0">
-                    메인
-                  </span>
-                  <div className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">
-                    {mainMacroNews.title}
-                  </div>
+        {activeTab === "macro" && mainMacroNews && page === 1 && (
+          <li className="py-3">
+            <a
+              href={mainMacroNews.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block hover:bg-gray-50 rounded px-2 py-1"
+            >
+              <div className="flex items-center mb-1 gap-2 flex-nowrap">
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 shrink-0">
+                  메인
+                </span>
+                <div className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">
+                  {mainMacroNews.title}
                 </div>
-                {mainMacroNews.summary && (
-                  <div className="text-xs text-gray-600 mt-1">
-                    {mainMacroNews.summary}
-                  </div>
-                )}
-                <div className="flex justify-end">
-                  <span className="text-xs text-gray-400 font-medium mt-1">
-                    {mainMacroNews.published_at || mainMacroNews.date}
-                  </span>
+              </div>
+              {mainMacroNews.summary && (
+                <div className="text-xs text-gray-600 mt-1">
+                  {mainMacroNews.summary}
                 </div>
-              </a>
-            </li>
-          )}
+              )}
+              <div className="flex justify-end">
+                <span className="text-xs text-gray-400 font-medium mt-1">
+                  {mainMacroNews.published_at || mainMacroNews.date}
+                </span>
+              </div>
+            </a>
+          </li>
+        )}
         {/* 일반 뉴스 리스트 (메인뉴스와 중복 제거, summary 없으면 아무것도 표시 X) */}
         {pagedNews
           .filter(
