@@ -114,9 +114,22 @@ def get_popular_keywords_api(
 ):
     """
     최근 N일간의 뉴스에서 인기 키워드 추출
+    반환 예시:
+    {
+        "period": "7일",
+        "total_keywords": 20,
+        "keywords": [
+            {"rank": 1, "keyword": "AI", "count": 123, "tickers": ["005930", "000660"]},
+            ...
+        ]
+    }
     """
     try:
         keywords = get_popular_keywords(days, limit)
+        # tickers가 누락된 경우를 대비해 보장
+        for k in keywords:
+            if 'tickers' not in k:
+                k['tickers'] = []
         return {
             "period": f"{days}일",
             "total_keywords": len(keywords),
