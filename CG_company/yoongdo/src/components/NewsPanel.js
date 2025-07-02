@@ -222,7 +222,7 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
     );
   }, [macroNewsList, date]);
   const newsListByTab =
-    activeTab === "company" ? companyNewsList : filteredMacroNews;
+    activeTab === "company" ? companyNewsList : macroNewsList;
   const pageSize =
     activeTab === "company" ? PAGE_SIZE_COMPANY : PAGE_SIZE_MACRO;
   const totalPages = Math.ceil(newsListByTab.length / pageSize);
@@ -240,6 +240,14 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
     setActiveTab(tab);
     setPage(1);
   };
+
+  // 메인 거시경제 뉴스 선택 로직 수정
+  const mainMacroNews =
+    (date
+      ? macroNewsList.find(
+          (item) => item.published_at === date || item.date === date
+        )
+      : macroNewsList[0]) || null;
 
   return (
     <div
@@ -298,11 +306,11 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
           </li>
         )}
         {activeTab === "macro" &&
-          filteredMacroNews.length > 0 &&
+          mainMacroNews &&
           page === 1 && (
             <li className="py-3">
               <a
-                href={filteredMacroNews[0].url}
+                href={mainMacroNews.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block hover:bg-gray-50 rounded px-2 py-1"
@@ -312,18 +320,17 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
                     메인
                   </span>
                   <div className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">
-                    {filteredMacroNews[0].title}
+                    {mainMacroNews.title}
                   </div>
                 </div>
-                {filteredMacroNews[0].summary && (
+                {mainMacroNews.summary && (
                   <div className="text-xs text-gray-600 mt-1">
-                    {filteredMacroNews[0].summary}
+                    {mainMacroNews.summary}
                   </div>
                 )}
                 <div className="flex justify-end">
                   <span className="text-xs text-gray-400 font-medium mt-1">
-                    {filteredMacroNews[0].published_at ||
-                      filteredMacroNews[0].date}
+                    {mainMacroNews.published_at || mainMacroNews.date}
                   </span>
                 </div>
               </a>
@@ -339,9 +346,9 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
                   page === 1 &&
                   news.title === mainNews.title) ||
                 (activeTab === "macro" &&
-                  filteredMacroNews.length > 0 &&
+                  mainMacroNews &&
                   page === 1 &&
-                  news.title === filteredMacroNews[0].title)
+                  news.title === mainMacroNews.title)
               )
           )
           .map((news, idx) => (

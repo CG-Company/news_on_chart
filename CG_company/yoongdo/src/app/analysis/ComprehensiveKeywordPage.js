@@ -2,7 +2,6 @@
 "use client";
 import React, { useState } from 'react';
 import Sidebar from '../../components/Sidebar';
-import KeywordSummaryStats from './KeywordSummaryStats';
 import KeywordPeriodTabs from './KeywordPeriodTabs';
 import KeywordCardGrid from './KeywordCardGrid';
 import KeywordDetailPanel from './KeywordDetailPanel';
@@ -118,7 +117,6 @@ return (
                 </div>
             </div>
 
-            <KeywordSummaryStats selectedPeriod={selectedPeriod} />
             <KeywordPeriodTabs selectedPeriod={selectedPeriod} setSelectedPeriod={setSelectedPeriod} />
             <KeywordCardGrid 
                 selectedPeriod={selectedPeriod} 

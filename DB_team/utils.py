@@ -9,17 +9,52 @@ import openai
 from fastapi import HTTPException
 from collections import Counter
 import re
+import json
+import requests
+from bs4 import BeautifulSoup
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env.supabase"))
 
-openai.api_key = os.getenv('OPENAI_API_KEY')  # 또는 'YOUR_OPENAI_API_KEY'
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
-engine = create_engine(
-    f"postgresql+psycopg2://"
-    f"{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@"
-    f"{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/"
-    f"{os.getenv('DB_NAME')}?sslmode=require"
-)
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+try:
+    engine = create_engine(
+        f"postgresql+psycopg2://"
+        f"{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@"
+        f"{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/"
+        f"{os.getenv('DB_NAME')}?sslmode=require"
+    )
+    # 연결 테스트
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+    logger.info("Database connection successful")
+except Exception as e:
+    logger.error(f"Database connection failed: {e}")
+    engine = None
+openai.api_key = os.getenv('OPENAI_API_KEY')
+
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+try:
+    engine = create_engine(
+        f"postgresql+psycopg2://"
+        f"{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@"
+        f"{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/"
+        f"{os.getenv('DB_NAME')}?sslmode=require"
+    )
+    # 연결 테스트
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+    logger.info("Database connection successful")
+except Exception as e:
+    logger.error(f"Database connection failed: {e}")
+    engine = None
 
 PERIOD_DAYS = {
     "1d": 1,
@@ -28,42 +63,111 @@ PERIOD_DAYS = {
     "1y": 365,
 }
 
-# period 문자열 → 한글 매핑 (프롬프트용)
 PERIOD_KR = {
     "1d": "1일",
-    "1m": "1개월",
+    "1m": "1개월", 
+    "1m": "1개월", 
     "3m": "3개월",
     "1y": "1년",
 }
 
 def get_stock_data(ticker: str):
-    sql = """
-    SELECT
-        price_date  AS date,
-        open_price  AS open,
-        high_price  AS high,
-        low_price   AS low,
-        close_price AS close,
-        change_rate AS change_rate
-       
-    FROM stock_price
-    WHERE ticker = :ticker
-      AND close_price != 0
-    ORDER BY price_date
-    """
-    df = pd.read_sql(text(sql), engine, params={"ticker": ticker})
-
-    return df.to_dict(orient="records")
+    """주식 데이터 조회"""
+    if not engine:
+        raise HTTPException(500, "Database connection not available")
+    
+    try:
+        sql = """
+        SELECT
+            price_date  AS date,
+            open_price  AS open,
+            high_price  AS high,
+            low_price   AS low,
+            close_price AS close,
+            change_rate AS change_rate
+        FROM stock_price
+        WHERE ticker = :ticker
+          AND close_price != 0
+        ORDER BY price_date
+        """
+        df = pd.read_sql(text(sql), engine, params={"ticker": ticker})
+        return df.to_dict(orient="records")
+    except Exception as e:
+        logger.error(f"Error in get_stock_data: {e}")
+        return []
+    """주식 데이터 조회"""
+    if not engine:
+        raise HTTPException(500, "Database connection not available")
+    
+    try:
+        sql = """
+        SELECT
+            price_date  AS date,
+            open_price  AS open,
+            high_price  AS high,
+            low_price   AS low,
+            close_price AS close,
+            change_rate AS change_rate
+        FROM stock_price
+        WHERE ticker = :ticker
+          AND close_price != 0
+        ORDER BY price_date
+        """
+        df = pd.read_sql(text(sql), engine, params={"ticker": ticker})
+        return df.to_dict(orient="records")
+    except Exception as e:
+        logger.error(f"Error in get_stock_data: {e}")
+        return []
 
 def get_ticker_map():
-    sql = """
-    SELECT ticker, company_name, sector
-    FROM ticker
-    ORDER BY ticker
-    """
-    df = pd.read_sql(text(sql), engine)
-    # { ticker: "005930", name: "삼성전자" } 형태로 내려주려면:
-    return [{"ticker": r["ticker"], "name": r["company_name"], "sector": r["sector"]} for r in df.to_dict(orient="records")]
+    """티커 맵 조회"""
+    if not engine:
+        logger.warning("Database connection not available, returning empty list")
+        return []
+    
+    try:
+        sql = """
+        SELECT ticker, company_name, sector
+        FROM ticker
+        ORDER BY ticker
+        """
+        df = pd.read_sql(text(sql), engine)
+        result = []
+        for _, row in df.iterrows():
+            result.append({
+                "ticker": row["ticker"] or "",
+                "name": row["company_name"] or f"종목 {row['ticker']}",
+                "sector": row["sector"] or "기타"
+            })
+        logger.info(f"Retrieved {len(result)} tickers")
+        return result
+    except Exception as e:
+        logger.error(f"Error in get_ticker_map: {e}")
+        return []
+    """티커 맵 조회"""
+    if not engine:
+        logger.warning("Database connection not available, returning empty list")
+        return []
+    
+    try:
+        sql = """
+        SELECT ticker, company_name, sector
+        FROM ticker
+        ORDER BY ticker
+        """
+        df = pd.read_sql(text(sql), engine)
+        result = []
+        for _, row in df.iterrows():
+            result.append({
+                "ticker": row["ticker"] or "",
+                "name": row["company_name"] or f"종목 {row['ticker']}",
+                "sector": row["sector"] or "기타"
+            })
+        logger.info(f"Retrieved {len(result)} tickers")
+        return result
+    except Exception as e:
+        logger.error(f"Error in get_ticker_map: {e}")
+        return []
 
 def get_news_data(ticker: str):
     sql = """
@@ -204,57 +308,64 @@ def stream_summarize_news_for_period(ticker: str, period: str = "1d"):
     ticker/period 에 맞춰 get_panel_news_data → cleaned 리스트 구성 후,
     OpenAI stream=True 로 떠오는 청크를 바로 yield 해 주는 제너레이터.
     """
-    # 1) 날짜 리스트, raw_summaries 만들기 (기존 summarize_news_for_period 로직과 동일)
+    # 1) 날짜 리스트, raw_summaries 만들기
     days = PERIOD_DAYS.get(period, 1)
+    if days not in [30, 90, 365]:  # 유효한 period 값 검증
+        raise ValueError(f"Invalid period: {period}. Must be one of '1d', '1w', '1m'.")
+
     end_dt = datetime.today()
     start_dt = end_dt - timedelta(days=days - 1)
-    date_list = [(start_dt + timedelta(days=i)).strftime("%Y-%m-%d")
-                 for i in range(days)]
+    date_list = [(start_dt + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(days)]
 
     raw_summaries = []
     for date_str in date_list:
         panel = get_panel_news_data(ticker, date_str)
-        if panel["mainNews"] and panel["mainNews"].get("summary"):
+        if panel.get("mainNews") and panel["mainNews"].get("summary"):
             raw_summaries.append(panel["mainNews"]["summary"])
-        for item in panel["macroNews"]:
+        for item in panel.get("macroNews", []):
             if item.get("summary"):
                 raw_summaries.append(item["summary"])
 
     if not raw_summaries:
-        raise ValueError(f"최근 {PERIOD_KR.get(period,period)}간 뉴스가 없습니다.")
+        raise ValueError(f"최근 {PERIOD_KR.get(period, period)}간 뉴스가 없습니다.")
 
-    # 2) cleaned 리스트 (최대 1200개, 글자수 제한 없이)
-    cleaned = [s.strip() for s in raw_summaries[:1200]]
+    # 2) cleaned 리스트 (최대 1200개)
+    cleaned = [s.strip() for s in raw_summaries[:1200] if s.strip()]  # 빈 문자열 제거
 
     # 3) full prompt
     prompt = _build_full_prompt(cleaned, ticker, period)
 
     # 4) OpenAI stream 호출
-    resp = openai.ChatCompletion.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "당신은 금융 뉴스 분석 전문가입니다."},
-            {"role": "user",   "content": prompt},
-        ],
-        max_tokens=500,
-        temperature=0.3,
-        top_p=0.9,
-        stream=True,
-    )
+    try:
+        resp = openai.ChatCompletion.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "당신은 금융 뉴스 분석 전문가입니다."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=500,
+            temperature=0.3,
+            top_p=0.9,
+            stream=True,
+        )
 
-    for chunk in resp:
-        if delta := chunk.choices[0].delta.get("content"):
-            # ❌ 절대 붙이지 마세요: "data: "
-            yield delta
+        for chunk in resp:
+            if delta := chunk.choices[0].delta.get("content"):
+                yield delta
+
+    except openai.error.OpenAIError as e:
+        raise ValueError(f"OpenAI API error: {str(e)}")
+    except Exception as e:
+        raise Exception(f"Unexpected error during streaming: {str(e)}")
 
 
 def clean_keyword(keyword):
-    """
-    키워드를 정리하는 함수
-    """
+    """키워드 정리"""
+    """키워드 정리"""
     if not keyword:
         return None
-    keyword = keyword.strip()
+    keyword = str(keyword).strip()
+    keyword = str(keyword).strip()
     if not keyword:
         return None
     # 중괄호, 대괄호, 소괄호, 따옴표 제거
@@ -265,9 +376,8 @@ def clean_keyword(keyword):
     return keyword
 
 def is_valid_keyword(keyword):
-    """
-    유효한 키워드인지 검사하는 함수 (더 강화된 버전)
-    """
+    """유효한 키워드 검사"""
+    """유효한 키워드 검사"""
     if not keyword:
         return False
     if len(keyword) <= 1:
@@ -293,8 +403,26 @@ def is_valid_keyword(keyword):
 
 def get_popular_keywords(days: int = 7, limit: int = 20):
     """
-    최근 N일간의 메인뉴스에서 인기 키워드 추출 (키워드별 관련 종목 티커 리스트 포함, is_selected=True만)
+    최근 N일간의 메인뉴스에서 인기 키워드 추출 (키워드별 관련 종목 정보 포함, is_selected=True만)
     """
+    # 1. 메인뉴스에서 키워드별 count 집계
+    sql = (
+        "SELECT keyword, published_at "
+        "FROM news "
+        "WHERE is_selected = true "
+        "  AND keyword IS NOT NULL "
+        "  AND keyword != '' "
+        "  AND keyword != 'None' "
+        "  AND keyword != 'null' "
+        "  AND keyword NOT LIKE '%{{}}%' "
+        "  AND keyword NOT LIKE '%[]%' "
+        "  AND keyword NOT LIKE '%()%' "
+        f"  AND published_at >= CURRENT_DATE - INTERVAL '{days} days' "
+        "  AND ticker IS NOT NULL "
+        "  AND ticker != '' "
+        "  AND ticker != '000000' "
+        "ORDER BY published_at DESC"
+    )
     # 1. 메인뉴스에서 키워드별 count 집계
     sql = (
         "SELECT keyword, published_at "
@@ -317,6 +445,8 @@ def get_popular_keywords(days: int = 7, limit: int = 20):
     if df.empty:
         return []
     all_keywords = []
+    for _, row in df.iterrows():
+        keywords_str = row['keyword']
     for _, row in df.iterrows():
         keywords_str = row['keyword']
         if not keywords_str or keywords_str.strip() == '':
@@ -344,6 +474,8 @@ def get_popular_keywords(days: int = 7, limit: int = 20):
             filtered_counts[keyword] = count
 
     # 2. 각 키워드별로 메인뉴스에서만 LIKE 검색으로 ticker 집계 (is_selected=True)
+
+    # 2. 각 키워드별로 메인뉴스에서만 LIKE 검색으로 ticker 집계 (is_selected=True)
     popular_keywords = []
     for i, (keyword, count) in enumerate(Counter(filtered_counts).most_common(limit), 1):
         ticker_sql = (
@@ -359,11 +491,35 @@ def get_popular_keywords(days: int = 7, limit: int = 20):
         kw_pattern = f"%{keyword}%"
         ticker_df = pd.read_sql(text(ticker_sql), engine, params={"kw": kw_pattern})
         tickers = sorted([t for t in set(ticker_df['ticker'].tolist()) if t != '000000'])
+
+        # 종목명, 최신 종가, 변동률 가져오기
+        if tickers:
+            tickers_info = []
+            # 종목명 매핑
+            ticker_map_df = pd.read_sql(text("SELECT ticker, company_name FROM ticker WHERE ticker IN :tickers"), engine, params={"tickers": tuple(tickers)})
+            ticker_name_map = {row['ticker']: row['company_name'] for _, row in ticker_map_df.iterrows()}
+            # 최신 종가/변동률
+            price_df = pd.read_sql(text("""
+                SELECT DISTINCT ON (ticker) ticker, close_price, change_rate
+                FROM stock_price
+                WHERE ticker IN :tickers
+                ORDER BY ticker, price_date DESC
+            """), engine, params={"tickers": tuple(tickers)})
+            price_map = {row['ticker']: (row['close_price'], row['change_rate']) for _, row in price_df.iterrows()}
+            for t in tickers:
+                tickers_info.append({
+                    "ticker": t,
+                    "name": ticker_name_map.get(t, t),
+                    "price": price_map.get(t, (None, None))[0],
+                    "change_rate": price_map.get(t, (None, None))[1],
+                })
+        else:
+            tickers_info = []
         popular_keywords.append({
             "rank": i,
             "keyword": keyword,
             "count": count,
-            "tickers": tickers
+            "tickers": tickers_info
         })
     return popular_keywords
 
@@ -384,38 +540,82 @@ def get_sector_stocks(ticker: str):
     return [{"ticker": r["ticker"], "name": r["company_name"], "sector": r["sector"]} for r in df.to_dict(orient="records")]
 
 def get_news_by_keyword(keyword: str, days: int = 7, limit: int = 50):
-    """
-    특정 키워드가 포함된 뉴스 조회
-    """
-    sql = """
-    SELECT 
-        ticker,
-        published_at,
-        title,
-        summary,
-        keyword,
-        url,
-        sentiment_score
-    FROM news
-    WHERE (keyword ILIKE :keyword OR title ILIKE :keyword_title OR summary ILIKE :keyword_summary)
-      AND published_at >= CURRENT_DATE - INTERVAL '%s days'
-      AND ticker != '000000'
-    ORDER BY published_at DESC
-    LIMIT :limit
-    """ % days
+    """특정 키워드가 포함된 뉴스 조회"""
+    if not engine:
+        logger.warning("Database connection not available, returning empty list")
+        return []
     
-    keyword_pattern = f"%{keyword}%"
-    df = pd.read_sql(text(sql), engine, params={
-        "keyword": keyword_pattern,
-        "keyword_title": keyword_pattern,
-        "keyword_summary": keyword_pattern,
-        "limit": limit
-    })
+    try:
+        sql = """
+        SELECT 
+            ticker,
+            published_at,
+            title,
+            summary,
+            keyword,
+            url,
+            sentiment_score
+        FROM news
+        WHERE (keyword ILIKE :keyword OR title ILIKE :keyword_title OR summary ILIKE :keyword_summary)
+          AND published_at >= CURRENT_DATE - INTERVAL '%s days'
+          AND ticker != '000000'
+        ORDER BY published_at DESC
+        LIMIT :limit
+        """ % days
+        
+        keyword_pattern = f"%{keyword}%"
+        df = pd.read_sql(text(sql), engine, params={
+            "keyword": keyword_pattern,
+            "keyword_title": keyword_pattern,
+            "keyword_summary": keyword_pattern,
+            "limit": limit
+        })
+        
+        df = df.fillna('')
+        df['published_at'] = pd.to_datetime(df['published_at']).dt.strftime('%Y-%m-%d %H:%M')
+        
+        return df.to_dict(orient="records")
+    except Exception as e:
+        logger.error(f"Error in get_news_by_keyword: {e}")
+        return []
+    """특정 키워드가 포함된 뉴스 조회"""
+    if not engine:
+        logger.warning("Database connection not available, returning empty list")
+        return []
     
-    df = df.fillna('')
-    df['published_at'] = pd.to_datetime(df['published_at']).dt.strftime('%Y-%m-%d %H:%M')
-    
-    return df.to_dict(orient="records")
+    try:
+        sql = """
+        SELECT 
+            ticker,
+            published_at,
+            title,
+            summary,
+            keyword,
+            url,
+            sentiment_score
+        FROM news
+        WHERE (keyword ILIKE :keyword OR title ILIKE :keyword_title OR summary ILIKE :keyword_summary)
+          AND published_at >= CURRENT_DATE - INTERVAL '%s days'
+          AND ticker != '000000'
+        ORDER BY published_at DESC
+        LIMIT :limit
+        """ % days
+        
+        keyword_pattern = f"%{keyword}%"
+        df = pd.read_sql(text(sql), engine, params={
+            "keyword": keyword_pattern,
+            "keyword_title": keyword_pattern,
+            "keyword_summary": keyword_pattern,
+            "limit": limit
+        })
+        
+        df = df.fillna('')
+        df['published_at'] = pd.to_datetime(df['published_at']).dt.strftime('%Y-%m-%d %H:%M')
+        
+        return df.to_dict(orient="records")
+    except Exception as e:
+        logger.error(f"Error in get_news_by_keyword: {e}")
+        return []
 
 def get_keyword_statistics(keyword: str, days: int = 30):
     """
@@ -453,3 +653,83 @@ def get_keyword_statistics(keyword: str, days: int = 30):
         "total_tickers": len(df[df['ticker_count'] > 0]),
         "avg_daily_mentions": round(df['mention_count'].mean(), 1)
     }
+
+
+def get_latest_reports(ticker):
+    url = f"https://finance.naver.com/research/company_list.naver?searchType=itemCode&itemCode={ticker}"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    res = requests.get(url, headers=headers)
+    res.encoding = 'euc-kr'
+    if res.status_code != 200:
+        print(":x: 요청 실패")
+        return []
+    soup = BeautifulSoup(res.text, 'html.parser')
+    table = soup.select_one("table.type_1")
+    if not table:
+        print(":x: 보고서 테이블을 찾을 수 없습니다.")
+        return []
+    rows = table.select("tr")[2:]
+    reports = []
+    for row in rows:
+        tds = row.select("td")
+        if len(tds) < 5:
+            continue
+        try:
+            stock_td = row.select_one("td > a[href*='/item/main.naver']")
+            stock_name = stock_td.get_text(strip=True) if stock_td else ""
+            title = tds[1].get_text(strip=True)
+            pdf_tag = tds[3].select_one("a")
+            pdf_link = pdf_tag["href"] if pdf_tag else None
+            company = tds[2].get_text(strip=True)
+            date = tds[4].get_text(strip=True)
+            reports.append({
+                "종목명": stock_name,
+                "제목": title,
+                "증권사": company,
+                "날짜": date,
+                "PDF링크": pdf_link
+            })
+        except Exception as e:
+            print(":경고: 파싱 오류:", e)
+            continue
+    if not reports:
+        return []
+    # 날짜 기준 내림차순 정렬 후 10개만 추출
+    reports_sorted = sorted(reports, key=lambda r: r["날짜"], reverse=True)
+    return reports_sorted[:10]
+
+
+def get_news_by_keyword(keyword: str, days: int = 7, limit: int = 50):
+    """
+    특정 키워드가 포함된 메인뉴스만 조회
+    """
+    sql = """
+    SELECT 
+        ticker,
+        published_at,
+        title,
+        summary,
+        keyword,
+        url,
+        sentiment_score
+    FROM news
+    WHERE is_selected = true
+      AND (keyword ILIKE :keyword OR title ILIKE :keyword_title OR summary ILIKE :keyword_summary)
+      AND published_at >= CURRENT_DATE - INTERVAL '%s days'
+      AND ticker != '000000'
+    ORDER BY published_at DESC
+    LIMIT :limit
+    """ % days
+    
+    keyword_pattern = f"%{keyword}%"
+    df = pd.read_sql(text(sql), engine, params={
+        "keyword": keyword_pattern,
+        "keyword_title": keyword_pattern,
+        "keyword_summary": keyword_pattern,
+        "limit": limit
+    })
+    
+    df = df.fillna('')
+    df['published_at'] = pd.to_datetime(df['published_at']).dt.strftime('%Y-%m-%d %H:%M')
+    
+    return df.to_dict(orient="records")
