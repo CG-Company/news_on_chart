@@ -192,6 +192,7 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
 
   // 탭별 뉴스 데이터
   const companyNewsList = useMemo(() => {
+<<<<<<< HEAD
     if (!newsList || newsList.length === 0) return [];
     
     // 최신순 정렬 (published_at 또는 date)
@@ -211,8 +212,31 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
       );
       // 해당 날짜에 뉴스가 없으면 최신 뉴스 표시
       return filtered.length > 0 ? filtered : sorted.slice(0, PAGE_SIZE_COMPANY);
+=======
+    let companyNews = [];
+    if (Array.isArray(news)) {
+      companyNews = news;
+    } else if (news && news.companyNews) {
+      companyNews = news.companyNews;
     }
-  }, [newsList, date]);
+    if (!companyNews || companyNews.length === 0) return [];
+
+    // 날짜가 있으면 해당 날짜만 필터, 없으면 최신순 정렬
+    if (date) {
+      return companyNews.filter(
+        (item) => item.published_at === date || item.date === date
+      );
+    } else {
+      // 최신순 정렬 (published_at, date, 또는 date 필드가 없으면 id 기준)
+      const sorted = [...companyNews].sort((a, b) => {
+        const dateA = new Date(a.published_at || a.date || a.id || 0);
+        const dateB = new Date(b.published_at || b.date || b.id || 0);
+        return dateB - dateA;
+      });
+      return sorted.slice(0, PAGE_SIZE_COMPANY);
+>>>>>>> ac6be24c801a480afadc095b81f4a974de6211a0
+    }
+  }, [news, date]);
   const filteredMacroNews = useMemo(() => {
     if (!date) return macroNewsList;
     return macroNewsList.filter(

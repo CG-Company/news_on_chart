@@ -443,20 +443,11 @@ export default function Page() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex overflow-x-hidden">
-      {/* 사이드바 */}
-      <Sidebar currentPage={selectedPage} onMenuSelect={setSelectedPage} />
-
-      {/* 메인 컨텐츠 */}
-      <div className="flex-1 ml-52 overflow-x-hidden">
-        <Header
-          ticker={ticker}
-          setTicker={setTicker}
-          tickerName={tickerName}
-          setTickerName={setTickerName}
-        />
-
-        <main className="p-6 overflow-x-hidden">
+    <div className="flex">
+      <Sidebar currentPage="news" />
+      <div className="flex-1 ml-52">
+        <Header ticker={ticker} setTicker={setTicker} />
+        <main className="p-8 bg-gray-50">
           {selectedPage === "news" ? (
             <NewsPanel
               news={newsData}

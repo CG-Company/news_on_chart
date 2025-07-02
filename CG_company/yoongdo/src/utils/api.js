@@ -351,20 +351,18 @@ export async function fetchStockWithNews(ticker) {
       if (!newsByDate[date]) {
         newsByDate[date] = { companyNews: [], macroNews: [] };
       }
-      // 뉴스 분류 로직 (제목에 따라 분류) - URL 정보 포함
+      // 뉴스 분류 로직 - fetchNews(ticker)로 가져온 뉴스는 모두 해당 티커의 기업뉴스
       const newsItem = {
         title: news.title,
         url: news.url,
         published_at: news.published_at,
         summary: news.summary,
         keyword: news.keyword,
+        ticker: ticker, // 티커 정보 추가
       };
 
-      if (news.title.includes(ticker) || news.title.includes("기업")) {
-        newsByDate[date].companyNews.push(newsItem);
-      } else {
-        newsByDate[date].macroNews.push(newsItem);
-      }
+      // fetchNews(ticker)로 가져온 뉴스는 모두 기업뉴스
+      newsByDate[date].companyNews.push(newsItem);
     });
 
     // 주식 데이터에 뉴스 정보 추가

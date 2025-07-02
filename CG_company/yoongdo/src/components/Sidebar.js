@@ -6,7 +6,7 @@ const Sidebar = ({ currentPage = "dashboard" }) => {
   const menuItems = [
     {
       id: "dashboard",
-      label: "Dashboard",
+      label: "News on chart",
       icon: "📊",
       href: "/",
       active: true,
