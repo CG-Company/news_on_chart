@@ -233,13 +233,12 @@ export default function NewsPage() {
   }, [tickerName, ticker, price, change]);
 
   const scroll = (direction) => {
-    if (scrollRef.current) {
-      const scrollAmount = 340; // 카드 한 개 너비 + 여백
-      scrollRef.current.scrollBy({
-        left: direction === "right" ? scrollAmount : -scrollAmount,
-        behavior: "smooth",
-      });
-    }
+    if (!scrollRef.current) return;
+    const scrollAmount = 400;
+    scrollRef.current.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
   };
 
   // 리포트 가져오기 함수 (버튼 없이 사용)
@@ -375,121 +374,124 @@ export default function NewsPage() {
             중요 리포트
           </h1>
           {/* 상단 뉴스 카드 슬라이드 */}
-          <div className="relative max-w-[1600px] mx-auto w-full">
+          <div className="relative w-full flex justify-center">
             {/* 왼쪽 화살표 */}
             <button
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/60 rounded-full shadow p-4"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-30 bg-white/60 rounded-full shadow p-6"
               onClick={() => scroll("left")}
               style={{ display: "block" }}
             >
-              <svg className="w-10 h-10 text-black-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-12 h-12 text-black-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            {/* 카드 리스트 */}
-            <div
-              ref={scrollRef}
-              className="flex space-x-4 overflow-x-auto scrollbar-hide scroll-smooth w-full pb-2"
-              style={{ scrollSnapType: "x mandatory" }}
-            >
-              {newsList.map((news) => (
-                <div
-                  key={news.id}
-                  className="min-w-[320px] max-w-xs bg-white rounded-xl shadow-md overflow-hidden flex-shrink-0"
-                  style={{ scrollSnapAlign: "start" }}
-                >
-                  <a
-                    href={news.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col"
-                  >
-                    <img src={news.image} alt={news.title} className="w-full h-40 object-cover" />
-                    <div className="p-4 flex flex-col">
-                      <div
-                        className="font-semibold text-base mb-2 line-clamp-2"
-                        style={{ minHeight: '3rem' }}
-                      >
-                        {news.title}
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
-                        <span>{news.date}</span>
-                        <span>{news.author}</span>
-                      </div>
-                      <div className="mt-2 overflow-hidden whitespace-nowrap truncate">
-                        {(news.tag || '').split(',').map((t, idx, arr) =>
-                          t.trim() && (
-                            <span
-                              key={idx}
-                              className={
-                                "inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded" +
-                                (idx !== arr.length - 1 ? " mr-2" : "")
-                              }
-                            >
-                              #{t.trim()}
-                            </span>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  </a>
-                </div>
-              ))}
-            </div>
             {/* 오른쪽 화살표 */}
             <button
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/60 rounded-full shadow p-4"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-30 bg-white/60 rounded-full shadow p-6"
               onClick={() => scroll("right")}
               style={{ display: "block" }}
             >
-              <svg className="w-10 h-10 text-black-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-12 h-12 text-black-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
+            <div className="bg-white rounded-xl shadow w-full max-w-full sm:max-w-[600px] md:max-w-[900px] lg:max-w-[1200px] xl:max-w-[1400px] 2xl:max-w-[1600px] min-w-0 px-2 sm:px-4 md:px-6 lg:px-8 py-6 mx-auto relative">
+              {/* 카드 리스트 */}
+              <div className="overflow-x-auto scrollbar-hide mt-2 mb-2" ref={scrollRef}>
+                <div className="flex space-x-4 scroll-smooth min-w-full pb-2" style={{ scrollSnapType: "x mandatory" }}>
+                  {newsList.map((news) => (
+                    <div
+                      key={news.id}
+                      className="min-w-[320px] max-w-xs bg-white rounded-xl shadow-md overflow-hidden flex-shrink-0"
+                      style={{ scrollSnapAlign: "start" }}
+                    >
+                      <a
+                        href={news.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col"
+                      >
+                        <img src={news.image} alt={news.title} className="w-full h-40 object-cover" />
+                        <div className="p-4 flex flex-col">
+                          <div
+                            className="font-semibold text-base mb-2 line-clamp-2"
+                            style={{ minHeight: '3rem' }}
+                          >
+                            {news.title}
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                            <span>{news.date}</span>
+                            <span>{news.author}</span>
+                          </div>
+                          <div className="mt-2 overflow-hidden whitespace-nowrap truncate">
+                            {(news.tag || '').split(',').map((t, idx, arr) =>
+                              t.trim() && (
+                                <span
+                                  key={idx}
+                                  className={
+                                    "inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded" +
+                                    (idx !== arr.length - 1 ? " mr-2" : "")
+                                  }
+                                >
+                                  #{t.trim()}
+                                </span>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
+          {/* 자유 피드 타이틀/버튼 */}
+          <div className="flex items-center mb-4 gap-2 mt-10">
+            <h2 className="text-lg font-semibold">자유 피드 📝</h2>
+            <button
+              className="ml-2 px-3 py-1 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 transition"
+              type="button"
+              onClick={handleOpenFeedModal}
+            >
+              피드 작성
+            </button>
+          </div>
           {/* 하단 추천 종목 카드 리스트 */}
-          <div className="max-w-[1600px] mx-auto w-full mt-10">
-            <div className="flex items-center mb-4 gap-2">
-              <h2 className="text-lg font-semibold">자유 피드 📝</h2>
-              <button
-                className="ml-2 px-3 py-1 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 transition"
-                type="button"
-                onClick={handleOpenFeedModal}
-              >
-                피드 작성
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-w-0">
-              {[...newCards, ...stockCards].map((card) => (
-                <div key={card.id} className="bg-white rounded-xl shadow-md p-5 flex flex-col w-auto">
-                  <div className="flex items-center mb-2">
-                    <span className="font-bold text-gray-700 mr-2">{card.name}</span>
-                    <span className="text-xs text-gray-400">{card.code ? `${card.code}.KS` : ''}</span>
-                  </div>
-                  <div className="flex items-center mb-2">
-                    <span className="text-lg font-bold text-blue-600 mr-2">{getCardPrice(card)}</span>
-                    <span className={`text-sm font-semibold ${card.change && `${card.change}`.startsWith("-") ? "text-red-500" : "text-green-600"}`}>
-                      {card.change !== undefined && card.change !== null && !isNaN(Number(card.change))
-                        ? `${Math.round(Number(card.change) * 100) / 100}%`
-                        : card.change}
-                    </span>
-                  </div>
-                  <div className="mb-2">
-                    <span className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded mr-2">{card.opinion} 투자 의견</span>
-                    <span className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">목표가 {card.target}</span>
-                  </div>
-                  <div className="mb-2 text-xs text-gray-500">{card.summary}</div>
-                  <div className="flex items-center justify-between mt-auto pt-2">
-                    <div className="flex items-center space-x-2 text-xs text-gray-400">
-                      <span>👍 {card.like ? card.like : 1}</span>
-                      <span>💬 {card.comment ? card.comment : 1}</span>
+          <div className="relative w-full flex justify-center">
+            <div className="bg-white rounded-xl shadow w-full max-w-full sm:max-w-[600px] md:max-w-[900px] lg:max-w-[1200px] xl:max-w-[1400px] 2xl:max-w-[1600px] min-w-0 px-2 sm:px-4 md:px-6 lg:px-8 py-6 mx-auto relative">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-w-0">
+                {[...newCards, ...stockCards].map((card) => (
+                  <div key={card.id} className="bg-white rounded-xl shadow-md p-5 flex flex-col w-auto">
+                    <div className="flex items-center mb-2">
+                      <span className="font-bold text-gray-700 mr-2">{card.name}</span>
+                      <span className="text-xs text-gray-400">{card.code ? `${card.code}.KS` : ''}</span>
                     </div>
-                    <div className="text-xs text-gray-500">{card.deadline}</div>
+                    <div className="flex items-center mb-2">
+                      <span className="text-lg font-bold text-blue-600 mr-2">{getCardPrice(card)}</span>
+                      <span className={`text-sm font-semibold ${card.change && `${card.change}`.startsWith("-") ? "text-red-500" : "text-green-600"}`}>
+                        {card.change !== undefined && card.change !== null && !isNaN(Number(card.change))
+                          ? `${Math.round(Number(card.change) * 100) / 100}%`
+                          : card.change}
+                      </span>
+                    </div>
+                    <div className="mb-2">
+                      <span className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded mr-2">{card.opinion} 투자 의견</span>
+                      <span className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">목표가 {card.target}</span>
+                    </div>
+                    <div className="mb-2 text-xs text-gray-500">{card.summary}</div>
+                    <div className="flex items-center justify-between mt-auto pt-2">
+                      <div className="flex items-center space-x-2 text-xs text-gray-400">
+                        <span>👍 {card.like ? card.like : 1}</span>
+                        <span>💬 {card.comment ? card.comment : 1}</span>
+                      </div>
+                      <div className="text-xs text-gray-500">{card.deadline}</div>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-400">작성자: {card.author}</div>
                   </div>
-                  <div className="mt-2 text-xs text-gray-400">작성자: {card.author}</div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
