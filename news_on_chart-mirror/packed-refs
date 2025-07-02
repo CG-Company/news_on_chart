@@ -1,0 +1,12 @@
+# pack-refs with: peeled fully-peeled sorted 
+0e5b6c5f059d25400356fe82844070a69ff18117 refs/heads/front
+1801c6d55d6fe57fe90c13c5d80745cca148ee76 refs/heads/news_chart_project
+e6874c1053328688c623daaaa5172e02a3f51ce2 refs/heads/practice
+1411aacef7f0f6866ecbbbd40a23f6731113e6cb refs/heads/upgrade
+53a395892a4bf3fb119e45e5f4e6e3bef1ab1d09 refs/heads/woohyun
+efb7ef111d9eb46d68097c1aebf63a4a9804dfe4 refs/pull/1/head
+8ec45ed4598a66118b205361e30147b14463949f refs/pull/2/head
+e6874c1053328688c623daaaa5172e02a3f51ce2 refs/pull/3/head
+21c21446932cee585439c5169c592dd3a81d77ac refs/pull/3/merge
+0e5b6c5f059d25400356fe82844070a69ff18117 refs/pull/4/head
+7f6e80bd4101c5943e3714cf12eadaf7d985e725 refs/pull/4/merge

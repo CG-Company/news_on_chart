@@ -1,0 +1,344 @@
+[
+  {
+    "date": "2025-04-25",
+    "open": 183000,
+    "high": 185000,
+    "low": 182000,
+    "close": 184400,
+    "companyNews": ["실적 발표: 1분기 호실적"],
+    "macroNews": ["금리 동결 소식"]
+  },
+  {
+    "date": "2025-04-28",
+    "open": 184000,
+    "high": 185500,
+    "low": 181500,
+    "close": 182000,
+    "companyNews": ["신제품 출시"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-04-29",
+    "open": 182000,
+    "high": 183000,
+    "low": 180000,
+    "close": 180800,
+    "companyNews": [],
+    "macroNews": ["환율 변동"]
+  },
+  {
+    "date": "2025-04-30",
+    "open": 181000,
+    "high": 182000,
+    "low": 177000,
+    "close": 177500,
+    "companyNews": ["경쟁사 이슈"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-05-02",
+    "open": 178000,
+    "high": 187000,
+    "low": 177000,
+    "close": 186000,
+    "companyNews": [],
+    "macroNews": ["정책 발표"]
+  },
+  {
+    "date": "2025-05-07",
+    "open": 185000,
+    "high": 191000,
+    "low": 184000,
+    "close": 190800,
+    "companyNews": ["신규 계약 체결"],
+    "macroNews": ["금리 인상 우려"]
+  },
+  {
+    "date": "2025-05-08",
+    "open": 190000,
+    "high": 191500,
+    "low": 189000,
+    "close": 190300,
+    "companyNews": ["주주총회 개최"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-05-09",
+    "open": 190000,
+    "high": 190500,
+    "low": 188500,
+    "close": 190100,
+    "companyNews": ["배당금 발표"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-05-12",
+    "open": 189000,
+    "high": 196000,
+    "low": 188000,
+    "close": 195000,
+    "companyNews": ["신규 제품 출시"],
+    "macroNews": ["유가 상승"]
+  },
+  {
+    "date": "2025-05-13",
+    "open": 195000,
+    "high": 199000,
+    "low": 194000,
+    "close": 198500,
+    "companyNews": ["인수합병 소식"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-05-14",
+    "open": 198000,
+    "high": 207000,
+    "low": 197000,
+    "close": 206000,
+    "companyNews": ["분기 실적 발표"],
+    "macroNews": ["금리 인상 단행"]
+  },
+  {
+    "date": "2025-05-15",
+    "open": 205000,
+    "high": 206500,
+    "low": 199500,
+    "close": 200500,
+    "companyNews": ["주식 매입 발표"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-05-16",
+    "open": 201000,
+    "high": 205000,
+    "low": 200000,
+    "close": 204500,
+    "companyNews": ["신규 사업 진출"],
+    "macroNews": ["환율 안정"]
+  },
+  {
+    "date": "2025-05-19",
+    "open": 204000,
+    "high": 200500,
+    "low": 198500,
+    "close": 199400,
+    "companyNews": ["임원 인사"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-05-20",
+    "open": 198000,
+    "high": 202500,
+    "low": 197500,
+    "close": 202000,
+    "companyNews": ["신규 고객 확보"],
+    "macroNews": ["유가 하락"]
+  },
+  {
+    "date": "2025-05-21",
+    "open": 202000,
+    "high": 201500,
+    "low": 198000,
+    "close": 200500,
+    "companyNews": ["자사주 매입"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-05-22",
+    "open": 200000,
+    "high": 201000,
+    "low": 195000,
+    "close": 196900,
+    "companyNews": ["해외 진출 확대"],
+    "macroNews": ["금리 동결"]
+  },
+  {
+    "date": "2025-05-23",
+    "open": 197000,
+    "high": 201500,
+    "low": 196000,
+    "close": 200000,
+    "companyNews": ["신제품 호조"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-05-26",
+    "open": 200000,
+    "high": 203500,
+    "low": 198500,
+    "close": 203000,
+    "companyNews": ["분기 배당 발표"],
+    "macroNews": ["환율 변동성 확대"]
+  },
+  {
+    "date": "2025-05-27",
+    "open": 203000,
+    "high": 202000,
+    "low": 201000,
+    "close": 202500,
+    "companyNews": ["신규 투자 발표"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-05-28",
+    "open": 202000,
+    "high": 209000,
+    "low": 201500,
+    "close": 208000,
+    "companyNews": ["해외 진출 성과"],
+    "macroNews": ["유가 상승"]
+  },
+  {
+    "date": "2025-05-29",
+    "open": 208000,
+    "high": 213000,
+    "low": 207000,
+    "close": 212000,
+    "companyNews": ["신규 계약 체결"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-05-30",
+    "open": 212000,
+    "high": 210500,
+    "low": 203000,
+    "close": 204500,
+    "companyNews": ["자사주 매입"],
+    "macroNews": ["금리 인상 우려"]
+  },
+  {
+    "date": "2025-06-02",
+    "open": 205000,
+    "high": 208000,
+    "low": 203500,
+    "close": 207500,
+    "companyNews": ["신제품 출시"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-06-04",
+    "open": 207000,
+    "high": 218000,
+    "low": 206000,
+    "close": 217500,
+    "companyNews": ["분기 실적 발표"],
+    "macroNews": ["금리 인상 단행"]
+  },
+  {
+    "date": "2025-06-05",
+    "open": 218000,
+    "high": 225000,
+    "low": 217000,
+    "close": 224500,
+    "companyNews": ["주주총회 개최"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-06-09",
+    "open": 224000,
+    "high": 230000,
+    "low": 223000,
+    "close": 229000,
+    "companyNews": ["배당금 발표"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-06-10",
+    "open": 229000,
+    "high": 231000,
+    "low": 228000,
+    "close": 230500,
+    "companyNews": ["신규 제품 출시"],
+    "macroNews": ["유가 하락"]
+  },
+  {
+    "date": "2025-06-11",
+    "open": 230000,
+    "high": 241000,
+    "low": 229000,
+    "close": 240000,
+    "companyNews": ["인수합병 소식"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-06-12",
+    "open": 240000,
+    "high": 236000,
+    "low": 234000,
+    "close": 235500,
+    "companyNews": ["분기 배당 발표"],
+    "macroNews": ["금리 동결"]
+  },
+  {
+    "date": "2025-06-13",
+    "open": 235000,
+    "high": 236500,
+    "low": 233000,
+    "close": 235500,
+    "companyNews": ["자사주 매입"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-06-16",
+    "open": 235000,
+    "high": 249000,
+    "low": 234000,
+    "close": 248000,
+    "companyNews": ["신규 계약 체결"],
+    "macroNews": ["환율 변동"]
+  },
+  {
+    "date": "2025-06-17",
+    "open": 248000,
+    "high": 250000,
+    "low": 247000,
+    "close": 249000,
+    "companyNews": ["해외 진출 확대"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-06-18",
+    "open": 249000,
+    "high": 247500,
+    "low": 245000,
+    "close": 246500,
+    "companyNews": ["분기 실적 발표"],
+    "macroNews": ["금리 인상 단행"]
+  },
+  {
+    "date": "2025-06-19",
+    "open": 246000,
+    "high": 247000,
+    "low": 244000,
+    "close": 246000,
+    "companyNews": ["주주총회 개최"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-06-20",
+    "open": 246000,
+    "high": 258000,
+    "low": 245000,
+    "close": 257000,
+    "companyNews": ["신제품 호조"],
+    "macroNews": ["유가 상승"]
+  },
+  {
+    "date": "2025-06-23",
+    "open": 257000,
+    "high": 260000,
+    "low": 256000,
+    "close": 259500,
+    "companyNews": ["신규 고객 확보"],
+    "macroNews": []
+  },
+  {
+    "date": "2025-06-24",
+    "open": 259000,
+    "high": 279000,
+    "low": 258000,
+    "close": 278500,
+    "companyNews": ["해외 진출 성과"],
+    "macroNews": ["환율 안정"]
+  }
+]
