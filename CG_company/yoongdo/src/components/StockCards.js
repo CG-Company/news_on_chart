@@ -81,7 +81,7 @@ const StockCards = ({ sectorStocks = [], selectedTicker, onSelectStock }) => {
       style={{ maxWidth: "100%", width: "100%" }}
     >
       <div className="text-sm font-medium text-gray-700 mb-3 px-1">
-        검색 결과 ({sectorStocks.length}개)
+        검색 결과 ({sectorStocks ? sectorStocks.length : 0}개)
       </div>
 
       {/* 고정 너비와 높이 컨테이너 - 절대 전체 화면을 넘지 않도록 */}
@@ -92,7 +92,7 @@ const StockCards = ({ sectorStocks = [], selectedTicker, onSelectStock }) => {
         >
           <div className="relative h-full w-full overflow-hidden">
             {/* 왼쪽 화살표 버튼 */}
-            {sectorStocks.length > 3 && (
+            {sectorStocks && sectorStocks.length > 3 && (
               <button
                 className="absolute left-2 top-1/2 transform -translate-y-1/2 z-20 bg-white/80 hover:bg-white rounded-full shadow-md p-1.5 transition-all duration-200 hover:shadow-lg"
                 onClick={() => scroll("left")}
@@ -128,72 +128,80 @@ const StockCards = ({ sectorStocks = [], selectedTicker, onSelectStock }) => {
                 width: "100%",
               }}
             >
-              {sectorStocks.map((stock) => (
-                <div
-                  key={stock.ticker}
-                  className={`flex-shrink-0 bg-white rounded-lg p-3 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 cursor-pointer ${
-                    selectedTicker === stock.ticker
-                      ? "ring-2 ring-blue-400 shadow-lg"
-                      : ""
-                  }`}
-                  onClick={() => onSelectStock && onSelectStock(stock.ticker)}
-                  style={{
-                    minWidth: "288px", // w-72 = 288px
-                    maxWidth: "288px", // 고정 너비 보장
-                    scrollSnapAlign: "start",
-                    flexShrink: 0,
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    {/* 좌측: 로고 + 정보 */}
-                    <div className="flex items-center space-x-3 min-w-0 flex-1">
-                      <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm">{stock.logo}</span>
+              {sectorStocks &&
+                sectorStocks.map((stock) => (
+                  <div
+                    key={stock.ticker}
+                    className={`flex-shrink-0 bg-white rounded-lg p-3 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 cursor-pointer ${
+                      selectedTicker === stock.ticker
+                        ? "ring-2 ring-blue-400 shadow-lg"
+                        : ""
+                    }`}
+                    onClick={() => onSelectStock && onSelectStock(stock.ticker)}
+                    style={{
+                      minWidth: "288px", // w-72 = 288px
+                      maxWidth: "288px", // 고정 너비 보장
+                      scrollSnapAlign: "start",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      {/* 좌측: 로고 + 정보 */}
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-sm">{stock.logo || "📈"}</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs text-gray-500 font-medium truncate">
+                            {stock.ticker}
+                          </div>
+                          <div className="text-sm font-semibold text-gray-900 truncate">
+                            {stock.name}
+                          </div>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs text-gray-500 font-medium truncate">
-                          {stock.ticker}
-                        </div>
-                        <div className="text-sm font-semibold text-gray-900 truncate">
-                          {stock.name}
-                        </div>
+
+                      {/* 우측: 미니 차트 */}
+                      <div className="flex-shrink-0 ml-2">
+                        <MiniChart
+                          trend={
+                            stock.trend ||
+                            (stock.change_rate && stock.change_rate > 0
+                              ? "up"
+                              : "down")
+                          }
+                        />
                       </div>
                     </div>
 
-                    {/* 우측: 미니 차트 */}
-                    <div className="flex-shrink-0 ml-2">
-                      <MiniChart trend={stock.trend} />
+                    {/* 하단: 가격 정보 */}
+                    <div className="flex items-center justify-between">
+                      <div className="text-base font-bold text-gray-900">
+                        {stock.price !== null
+                          ? stock.price.toLocaleString()
+                          : "-"}
+                      </div>
+                      <div
+                        className={`text-sm font-medium ${
+                          stock.change_rate > 0
+                            ? "text-green-500"
+                            : stock.change_rate < 0
+                            ? "text-red-500"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        {stock.change_rate > 0 ? "+" : ""}
+                        {stock.change_rate !== null
+                          ? stock.change_rate.toFixed(2) + "%"
+                          : "-"}
+                      </div>
                     </div>
                   </div>
-
-                  {/* 하단: 가격 정보 */}
-                  <div className="flex items-center justify-between">
-                    <div className="text-base font-bold text-gray-900">
-                      {stock.price !== null
-                        ? stock.price.toLocaleString()
-                        : "-"}
-                    </div>
-                    <div
-                      className={`text-sm font-medium ${
-                        stock.change_rate > 0
-                          ? "text-green-500"
-                          : stock.change_rate < 0
-                          ? "text-red-500"
-                          : "text-gray-500"
-                      }`}
-                    >
-                      {stock.change_rate > 0 ? "+" : ""}
-                      {stock.change_rate !== null
-                        ? stock.change_rate.toFixed(2) + "%"
-                        : "-"}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
 
             {/* 오른쪽 화살표 버튼 */}
-            {sectorStocks.length > 3 && (
+            {sectorStocks && sectorStocks.length > 3 && (
               <button
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 z-20 bg-white/80 hover:bg-white rounded-full shadow-md p-1.5 transition-all duration-200 hover:shadow-lg"
                 onClick={() => scroll("right")}
@@ -215,7 +223,7 @@ const StockCards = ({ sectorStocks = [], selectedTicker, onSelectStock }) => {
             )}
 
             {/* 스크롤 힌트 (카드가 많을 때만 표시) */}
-            {sectorStocks.length > 3 && (
+            {sectorStocks && sectorStocks.length > 3 && (
               <>
                 {/* 왼쪽 그라데이션 */}
                 <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none z-10" />
