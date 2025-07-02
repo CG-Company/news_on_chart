@@ -193,19 +193,24 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
   // 탭별 뉴스 데이터
   const companyNewsList = useMemo(() => {
     if (!newsList || newsList.length === 0) return [];
+    
+    // 최신순 정렬 (published_at 또는 date)
+    const sorted = [...newsList].sort((a, b) => {
+      const dateA = new Date(a.published_at || a.date || 0);
+      const dateB = new Date(b.published_at || b.date || 0);
+      return dateB - dateA;
+    });
+    
     if (!date) {
-      // 최신순 정렬 (published_at 또는 date)
-      const sorted = [...newsList].sort((a, b) => {
-        const dateA = new Date(a.published_at || a.date || 0);
-        const dateB = new Date(b.published_at || b.date || 0);
-        return dateB - dateA;
-      });
+      // 날짜 선택이 없으면 최신 뉴스들 표시
       return sorted.slice(0, PAGE_SIZE_COMPANY);
     } else {
       // 날짜가 있으면 해당 날짜만 필터
-      return newsList.filter(
+      const filtered = sorted.filter(
         (item) => item.published_at === date || item.date === date
       );
+      // 해당 날짜에 뉴스가 없으면 최신 뉴스 표시
+      return filtered.length > 0 ? filtered : sorted.slice(0, PAGE_SIZE_COMPANY);
     }
   }, [newsList, date]);
   const filteredMacroNews = useMemo(() => {

@@ -460,6 +460,7 @@ export default function Page() {
           {selectedPage === "news" ? (
             <NewsPanel
               news={newsData}
+              date={selectedDate}
               loading={isLoadingStock}
               mainNews={mainNews}
               ticker={ticker}
@@ -629,7 +630,7 @@ export default function Page() {
                       )}
                     >
                       <NewsPanel
-                        news={selectedNews}
+                        news={newsData}
                         date={selectedDate}
                         loading={isLoadingStock}
                         mainNews={mainNews}
