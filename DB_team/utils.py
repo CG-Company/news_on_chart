@@ -10,7 +10,7 @@ from fastapi import HTTPException
 from collections import Counter
 import re
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env.supabase"))
 
 openai.api_key = os.getenv('OPENAI_API_KEY')  # 또는 'YOUR_OPENAI_API_KEY'
 
@@ -18,7 +18,7 @@ engine = create_engine(
     f"postgresql+psycopg2://"
     f"{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@"
     f"{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/"
-    f"{os.getenv('DB_NAME')}"
+    f"{os.getenv('DB_NAME')}?sslmode=require"
 )
 
 PERIOD_DAYS = {
@@ -152,12 +152,12 @@ def get_panel_news_data(ticker: str, date_str: str) -> dict:
     ORDER BY published_at DESC
     """
 
-    # 3-1) 기업뉴스
-    df_company = pd.read_sql(
-        text(sql_common.format(where_clause="ticker = :ticker")),
-        engine,
-        params={"ticker": ticker, "date": date_str},
-    )
+    # # 3-1) 기업뉴스
+    # df_company = pd.read_sql(
+    #     text(sql_common.format(where_clause="ticker = :ticker")),
+    #     engine,
+    #     params={"ticker": ticker, "date": date_str},
+    # )
 
     # 3-2) 메인뉴스 (is_selected = true) — 단건만
     df_main = pd.read_sql(
@@ -174,11 +174,79 @@ def get_panel_news_data(ticker: str, date_str: str) -> dict:
     )
 
     return {
-        "companyNews": df_company.to_dict(orient="records"),
+        # "companyNews": df_company.to_dict(orient="records"),
         # mainNews를 단일 dict 또는 None 반환
         "mainNews": df_main.to_dict(orient="records")[0] if not df_main.empty else None,
         "macroNews": df_macro.to_dict(orient="records"),
     }
+
+
+def _build_full_prompt(cleaned: list[str], ticker: str, period: str) -> str:
+    joined = "\n".join(cleaned)
+    return f"""
+다음은 최근 {PERIOD_KR.get(period, period)}간 종목코드 {ticker}의 뉴스 요약문들입니다.
+
+이 내용들을 바탕으로 다음 조건에 맞춰 요약해주세요:
+1. 4-6문장으로 간결하게
+2. 주요 이슈 중심
+3. 투자자 관점 중요 내용 위주
+4. 긍정/부정 요소 균형 반영
+5. 티커를 직접 얘기하지 말고 종목명으로 얘기할 것
+
+---
+{joined}
+---
+
+전체 요약:"""
+
+def stream_summarize_news_for_period(ticker: str, period: str = "1d"):
+    """
+    ticker/period 에 맞춰 get_panel_news_data → cleaned 리스트 구성 후,
+    OpenAI stream=True 로 떠오는 청크를 바로 yield 해 주는 제너레이터.
+    """
+    # 1) 날짜 리스트, raw_summaries 만들기 (기존 summarize_news_for_period 로직과 동일)
+    days = PERIOD_DAYS.get(period, 1)
+    end_dt = datetime.today()
+    start_dt = end_dt - timedelta(days=days - 1)
+    date_list = [(start_dt + timedelta(days=i)).strftime("%Y-%m-%d")
+                 for i in range(days)]
+
+    raw_summaries = []
+    for date_str in date_list:
+        panel = get_panel_news_data(ticker, date_str)
+        if panel["mainNews"] and panel["mainNews"].get("summary"):
+            raw_summaries.append(panel["mainNews"]["summary"])
+        for item in panel["macroNews"]:
+            if item.get("summary"):
+                raw_summaries.append(item["summary"])
+
+    if not raw_summaries:
+        raise ValueError(f"최근 {PERIOD_KR.get(period,period)}간 뉴스가 없습니다.")
+
+    # 2) cleaned 리스트 (최대 1200개, 글자수 제한 없이)
+    cleaned = [s.strip() for s in raw_summaries[:1200]]
+
+    # 3) full prompt
+    prompt = _build_full_prompt(cleaned, ticker, period)
+
+    # 4) OpenAI stream 호출
+    resp = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "당신은 금융 뉴스 분석 전문가입니다."},
+            {"role": "user",   "content": prompt},
+        ],
+        max_tokens=500,
+        temperature=0.3,
+        top_p=0.9,
+        stream=True,
+    )
+
+    for chunk in resp:
+        if delta := chunk.choices[0].delta.get("content"):
+            # ❌ 절대 붙이지 마세요: "data: "
+            yield delta
+
 
 def clean_keyword(keyword):
     """
@@ -381,7 +449,7 @@ def get_keyword_statistics(keyword: str, days: int = 30):
         "keyword": keyword,
         "period": f"{days}일",
         "daily_stats": df.to_dict(orient="records"),
-        "total_mentions": int(df['mention_count'].sum()),
+        "total_mentions": int(df['mention_count'].sum() or 0),
         "total_tickers": len(df[df['ticker_count'] > 0]),
         "avg_daily_mentions": round(df['mention_count'].mean(), 1)
     }

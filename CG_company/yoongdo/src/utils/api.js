@@ -1,5 +1,6 @@
 // utils/api.js - 백엔드 FastAPI 연동 버전
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.105:8000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.105:8000";
 const REQUEST_TIMEOUT = 30000; // 15초 (DB 쿼리 시간 고려)
 
 // 공통 fetch 래퍼 함수
@@ -417,11 +418,13 @@ export async function fetchMacroNews() {
     const response = await fetchWithTimeout(`${API_BASE}/api/macro_news`);
     const data = await response.json();
     if (!Array.isArray(data)) {
-      throw new Error('서버에서 유효하지 않은 거시경제 뉴스 데이터를 반환했습니다.');
+      throw new Error(
+        "서버에서 유효하지 않은 거시경제 뉴스 데이터를 반환했습니다."
+      );
     }
     return data;
   } catch (error) {
-    console.error('거시경제 뉴스 조회 실패:', error);
+    console.error("거시경제 뉴스 조회 실패:", error);
     throw error;
   }
 }
@@ -429,15 +432,17 @@ export async function fetchMacroNews() {
 // 기업 메인뉴스만 가져오기
 export async function fetchMainNews(ticker) {
   try {
-    const response = await fetchWithTimeout(`${API_BASE}/api/news_is_selected?ticker=${encodeURIComponent(ticker)}`);
+    const response = await fetchWithTimeout(
+      `${API_BASE}/api/news_is_selected?ticker=${encodeURIComponent(ticker)}`
+    );
     const data = await response.json();
     if (!data || !Array.isArray(data.news)) {
-      throw new Error('서버에서 유효하지 않은 메인뉴스 데이터를 반환했습니다.');
+      throw new Error("서버에서 유효하지 않은 메인뉴스 데이터를 반환했습니다.");
     }
     // news: [{title, summary, keyword, url, ...}]
     return data.news;
   } catch (error) {
-    console.error('메인뉴스 조회 실패:', error);
+    console.error("메인뉴스 조회 실패:", error);
     throw error;
   }
 }
@@ -445,7 +450,9 @@ export async function fetchMainNews(ticker) {
 // 뉴스 패널/툴팁용: 한 번에 기업뉴스, 메인뉴스, 거시경제뉴스를 가져옴
 export async function fetchNewsPanelData(ticker, date) {
   if (!ticker || !date) throw new Error("ticker와 date는 필수입니다.");
-  const url = `${API_BASE}/api/news_panel_data?ticker=${encodeURIComponent(ticker)}&date=${encodeURIComponent(date)}`;
+  const url = `${API_BASE}/api/news_panel_data?ticker=${encodeURIComponent(
+    ticker
+  )}&date=${encodeURIComponent(date)}`;
   const response = await fetchWithRetry(url);
   const data = await response.json();
   // companyNews, mainNews, macroNews 구조로 반환됨

@@ -1,0 +1,6 @@
+31fe90dda3f35f4df9ffedd344c963a2f04d92f0 commit	refs/heads/upgrade
+1801c6d55d6fe57fe90c13c5d80745cca148ee76 commit	refs/remotes/origin/HEAD
+d42516aa1f431e1ae8b1530ebc9fb4326adf1c2e commit	refs/remotes/origin/front
+1801c6d55d6fe57fe90c13c5d80745cca148ee76 commit	refs/remotes/origin/news_chart_project
+9799ce18eaa63af694ee40c953e756aabf2aacaf commit	refs/remotes/origin/practice
+1411aacef7f0f6866ecbbbd40a23f6731113e6cb commit	refs/remotes/origin/upgrade

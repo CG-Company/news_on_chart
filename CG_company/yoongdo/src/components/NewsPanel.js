@@ -1,17 +1,18 @@
 // components/NewsPanel.js (업데이트됨)
 import React, { useState, useMemo, useEffect } from "react";
 import { fetchMacroNews } from "../utils/api";
+import AINewsSummaryBanner from "./AINewsSummaryBanner";
 
-const PAGE_SIZE_COMPANY = 5;
-const PAGE_SIZE_MACRO = 4;
+const PAGE_SIZE_COMPANY = 3;
+const PAGE_SIZE_MACRO = 3;
 
 const TABS = [
-  { key: 'company', label: '기업뉴스' },
-  { key: 'macro', label: '거시경제' },
+  { key: "company", label: "기업뉴스" },
+  { key: "macro", label: "거시경제" },
 ];
 
-const NewsPanel = ({ date, news, loading, mainNews }) => {
-  const [activeTab, setActiveTab] = useState('company');
+const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
+  const [activeTab, setActiveTab] = useState("company");
   const [page, setPage] = useState(1);
   const [macroNewsList, setMacroNewsList] = useState([]);
   const [macroLoading, setMacroLoading] = useState(false);
@@ -19,7 +20,7 @@ const NewsPanel = ({ date, news, loading, mainNews }) => {
 
   // 거시경제 탭 선택 시 거시경제 뉴스 fetch
   useEffect(() => {
-    if (activeTab === 'macro') {
+    if (activeTab === "macro") {
       setMacroLoading(true);
       setMacroError(null);
       fetchMacroNews()
@@ -28,7 +29,7 @@ const NewsPanel = ({ date, news, loading, mainNews }) => {
           setMacroLoading(false);
         })
         .catch((err) => {
-          setMacroError('거시경제 뉴스 로딩 실패');
+          setMacroError("거시경제 뉴스 로딩 실패");
           setMacroNewsList([]);
           setMacroLoading(false);
         });
@@ -194,10 +195,14 @@ const NewsPanel = ({ date, news, loading, mainNews }) => {
   const companyNewsList = newsList;
   const filteredMacroNews = useMemo(() => {
     if (!date) return macroNewsList;
-    return macroNewsList.filter((item) => item.published_at === date || item.date === date);
+    return macroNewsList.filter(
+      (item) => item.published_at === date || item.date === date
+    );
   }, [macroNewsList, date]);
-  const newsListByTab = activeTab === 'company' ? companyNewsList : filteredMacroNews;
-  const pageSize = activeTab === 'company' ? PAGE_SIZE_COMPANY : PAGE_SIZE_MACRO;
+  const newsListByTab =
+    activeTab === "company" ? companyNewsList : filteredMacroNews;
+  const pageSize =
+    activeTab === "company" ? PAGE_SIZE_COMPANY : PAGE_SIZE_MACRO;
   const totalPages = Math.ceil(newsListByTab.length / pageSize);
   const pagedNews = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -223,8 +228,8 @@ const NewsPanel = ({ date, news, loading, mainNews }) => {
             key={tab.key}
             className={`px-4 py-2 font-semibold text-sm border-b-2 transition-colors duration-150 ${
               activeTab === tab.key
-                ? 'border-blue-500 text-blue-700'
-                : 'border-transparent text-gray-500 hover:text-blue-500'
+                ? "border-blue-500 text-blue-700"
+                : "border-transparent text-gray-500 hover:text-blue-500"
             }`}
             onClick={() => handleTab(tab.key)}
           >
@@ -235,7 +240,7 @@ const NewsPanel = ({ date, news, loading, mainNews }) => {
 
       {/* 메인뉴스 강조 card 완전 제거, 리스트 내에서만 메인 pill+title+summary+날짜로 통일 */}
       <ul className="divide-y divide-gray-100 mb-4">
-        {activeTab === 'company' && mainNews && page === 1 && (
+        {activeTab === "company" && mainNews && page === 1 && (
           <li className="py-3">
             <a
               href={mainNews.url}
@@ -244,42 +249,73 @@ const NewsPanel = ({ date, news, loading, mainNews }) => {
               className="block hover:bg-gray-50 rounded px-2 py-1"
             >
               <div className="flex items-center mb-1 gap-2 flex-nowrap">
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700 shrink-0">메인</span>
-                <div className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">{mainNews.title}</div>
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700 shrink-0">
+                  메인
+                </span>
+                <div className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">
+                  {mainNews.title}
+                </div>
               </div>
               {mainNews.summary && (
-                <div className="text-xs text-gray-600 mt-1">{mainNews.summary}</div>
+                <div className="text-xs text-gray-600 mt-1">
+                  {mainNews.summary}
+                </div>
               )}
               <div className="flex justify-end">
-                <span className="text-xs text-gray-400 font-medium mt-1">{mainNews.published_at || mainNews.date}</span>
+                <span className="text-xs text-gray-400 font-medium mt-1">
+                  {mainNews.published_at || mainNews.date}
+                </span>
               </div>
             </a>
           </li>
         )}
-        {activeTab === 'macro' && filteredMacroNews.length > 0 && page === 1 && (
-          <li className="py-3">
-            <a
-              href={filteredMacroNews[0].url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block hover:bg-gray-50 rounded px-2 py-1"
-            >
-              <div className="flex items-center mb-1 gap-2 flex-nowrap">
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 shrink-0">메인</span>
-                <div className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">{filteredMacroNews[0].title}</div>
-              </div>
-              {filteredMacroNews[0].summary && (
-                <div className="text-xs text-gray-600 mt-1">{filteredMacroNews[0].summary}</div>
-              )}
-              <div className="flex justify-end">
-                <span className="text-xs text-gray-400 font-medium mt-1">{filteredMacroNews[0].published_at || filteredMacroNews[0].date}</span>
-              </div>
-            </a>
-          </li>
-        )}
+        {activeTab === "macro" &&
+          filteredMacroNews.length > 0 &&
+          page === 1 && (
+            <li className="py-3">
+              <a
+                href={filteredMacroNews[0].url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block hover:bg-gray-50 rounded px-2 py-1"
+              >
+                <div className="flex items-center mb-1 gap-2 flex-nowrap">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 shrink-0">
+                    메인
+                  </span>
+                  <div className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">
+                    {filteredMacroNews[0].title}
+                  </div>
+                </div>
+                {filteredMacroNews[0].summary && (
+                  <div className="text-xs text-gray-600 mt-1">
+                    {filteredMacroNews[0].summary}
+                  </div>
+                )}
+                <div className="flex justify-end">
+                  <span className="text-xs text-gray-400 font-medium mt-1">
+                    {filteredMacroNews[0].published_at ||
+                      filteredMacroNews[0].date}
+                  </span>
+                </div>
+              </a>
+            </li>
+          )}
         {/* 일반 뉴스 리스트 (메인뉴스와 중복 제거, summary 없으면 아무것도 표시 X) */}
         {pagedNews
-          .filter(news => !((activeTab === 'company' && mainNews && page === 1 && news.title === mainNews.title) || (activeTab === 'macro' && filteredMacroNews.length > 0 && page === 1 && news.title === filteredMacroNews[0].title)))
+          .filter(
+            (news) =>
+              !(
+                (activeTab === "company" &&
+                  mainNews &&
+                  page === 1 &&
+                  news.title === mainNews.title) ||
+                (activeTab === "macro" &&
+                  filteredMacroNews.length > 0 &&
+                  page === 1 &&
+                  news.title === filteredMacroNews[0].title)
+              )
+          )
           .map((news, idx) => (
             <li key={idx} className="py-3">
               <a
@@ -288,12 +324,18 @@ const NewsPanel = ({ date, news, loading, mainNews }) => {
                 rel="noopener noreferrer"
                 className="block hover:bg-gray-50 rounded px-2 py-1"
               >
-                <div className="font-semibold text-gray-900 text-sm mb-1">{news.title}</div>
-                {news.summary && news.summary !== 'None' && (
-                  <div className="text-xs text-gray-600 mb-1">{news.summary}</div>
+                <div className="font-semibold text-gray-900 text-sm mb-1">
+                  {news.title}
+                </div>
+                {news.summary && news.summary !== "None" && (
+                  <div className="text-xs text-gray-600 mb-1">
+                    {news.summary}
+                  </div>
                 )}
                 <div className="flex justify-end">
-                  <span className="text-xs text-gray-400">{news.published_at || news.date}</span>
+                  <span className="text-xs text-gray-400">
+                    {news.published_at || news.date}
+                  </span>
                 </div>
               </a>
             </li>
@@ -322,6 +364,11 @@ const NewsPanel = ({ date, news, loading, mainNews }) => {
           </button>
         </div>
       )}
+
+      {/* AI 뉴스 요약 배너 - 뉴스패널 하단에 배치 */}
+      <div className="mt-4">
+        <AINewsSummaryBanner ticker={ticker} />
+      </div>
     </div>
   );
 };

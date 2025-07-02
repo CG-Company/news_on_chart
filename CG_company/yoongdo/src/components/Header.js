@@ -4,63 +4,40 @@ import SearchBar from "./SearchBar";
 
 const Header = ({ ticker, setTicker, tickerName, setTickerName }) => {
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4 ml-52">
+    <header className="bg-white border-b border-gray-200 px-6 py-4 relative z-50">
       <div className="flex items-center justify-between">
-        {/* 페이지 제목 */}
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Stock Analysis
-          </h1>
-        </div>
-
-        {/* 중앙 검색바 */}
-        <div className="flex-1 max-w-lg mx-8">
-          <SearchBar
-            ticker={ticker}
-            setTicker={setTicker}
-            setTickerName={setTickerName}
-          />
-        </div>
-
-        {/* 우측 아이콘들 */}
-        <div className="flex items-center space-x-4">
-          {/* 알림 아이콘 */}
-          <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 17h5l-5.5-5.5V9a6.5 6.5 0 00-13 0v2.5L7 17h5m3 0v1a3 3 0 11-6 0v-1"
-              />
-            </svg>
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
-
-          {/* 사용자 프로필 */}
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-bold">U</span>
+        {/* 페이지 제목과 검색창 */}
+        <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <svg
+                className="w-5 h-5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
             </div>
-            <span className="text-sm font-medium text-gray-700">User</span>
-            <svg
-              className="w-4 h-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                News on Chart
+              </h1>
+            </div>
+          </div>
+
+          {/* 검색창 */}
+          <div className="w-96 relative">
+            <SearchBar
+              ticker={ticker}
+              setTicker={setTicker}
+              setTickerName={setTickerName}
+            />
           </div>
         </div>
       </div>
