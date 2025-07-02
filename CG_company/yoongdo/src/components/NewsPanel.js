@@ -220,7 +220,10 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-xl mx-auto min-h-[420px] h-full relative">
+    <div
+      className="bg-white rounded-lg shadow-lg p-4 w-full max-w-xl mx-auto h-full relative"
+      style={{ height: "600px" }}
+    >
       {/* 탭 */}
       <div className="flex border-b mb-4">
         {TABS.map((tab) => (
@@ -365,7 +368,7 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
         </div>
       )}
 
-      {/* AI 뉴스 요약 배너 - 뉴스패널 하단에 배치 */}
+      {/* AI 뉴스 요약 배너 - 개발자 배너 형태 */}
       <div className="mt-4">
         <AINewsSummaryBanner ticker={ticker} />
       </div>

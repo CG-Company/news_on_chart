@@ -105,138 +105,93 @@ export default function AINewsSummaryBanner({ ticker }) {
   return (
     <div
       style={{
-        marginTop: 24,
-        maxWidth: 700,
-        background: "#f9fafb",
-        border: "1.5px solid #e5e7eb",
-        borderRadius: 16,
-        boxShadow: "0 2px 8px 0 rgba(0,0,0,0.04)",
-        padding: 0,
-        overflow: "hidden",
+        background: "#f8fafc",
+        border: "1px solid #e2e8f0",
+        borderRadius: "8px",
+        padding: "12px",
+        marginTop: "12px",
+        fontSize: "12px",
+        color: "#475569",
+        position: "relative",
       }}
     >
-      {/* 상단 강조 바 */}
+      {/* 개발자 배너 스타일 */}
       <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          background: "#ede9fe",
-          padding: "10px 20px 8px 20px",
-          borderBottom: "1px solid #e5e7eb",
-        }}
+        style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}
       >
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <span style={{ fontSize: 20, marginRight: 10 }}>🤖</span>
-          <span style={{ fontWeight: 700, color: "#7c3aed", fontSize: 15 }}>
-            AI가 최근 뉴스를 요약했어요
-          </span>
-        </div>
-
-        {/* 디버깅 정보 (개발 환경에서만 표시) */}
-        {process.env.NODE_ENV === "development" && debugInfo && (
-          <div
-            style={{
-              fontSize: 10,
-              color: "#666",
-              background: "#fff",
-              padding: "2px 6px",
-              borderRadius: 4,
-              border: "1px solid #ddd",
-            }}
+        <span style={{ fontSize: "14px", marginRight: "6px" }}>🤖</span>
+        <span style={{ fontWeight: "600", color: "#1e293b" }}>
+          AI 뉴스 요약
+        </span>
+        {debugInfo && (
+          <span
+            style={{ marginLeft: "auto", fontSize: "10px", color: "#64748b" }}
           >
-            뉴스: {debugInfo.newsCount}건 |
-            {debugInfo.cached ? " 캐시됨" : " 실시간"} |{debugInfo.responseTime}
-            ms
-          </div>
+            {debugInfo.newsCount}건 | {debugInfo.responseTime}ms
+          </span>
         )}
       </div>
 
-      {/* 타이틀 */}
-      <div
-        style={{
-          padding: "12px 20px 0 20px",
-          fontWeight: 600,
-          fontSize: 15,
-          color: "#22223b",
-        }}
-      >
-        지난{" "}
-        {summaryPeriod === "1m"
-          ? "1개월"
-          : summaryPeriod === "3m"
-          ? "3개월"
-          : "1년"}{" "}
-        뉴스 요약
-      </div>
-
-      {/* 기간 버튼 */}
-      <div
-        style={{
-          padding: "6px 20px 0 20px",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-        }}
-      >
+      {/* 기간 선택 */}
+      <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
         <button
           onClick={() => setSummaryPeriod("1m")}
           disabled={summaryLoading}
           style={{
-            fontWeight: summaryPeriod === "1m" ? 700 : 400,
-            fontStyle: summaryPeriod === "1m" ? "italic" : "normal",
-            color: summaryPeriod === "1m" ? "#7c3aed" : "#666",
-            background: "none",
+            fontSize: "10px",
+            padding: "2px 6px",
+            background: summaryPeriod === "1m" ? "#3b82f6" : "#f1f5f9",
+            color: summaryPeriod === "1m" ? "white" : "#64748b",
             border: "none",
+            borderRadius: "4px",
             cursor: summaryLoading ? "not-allowed" : "pointer",
             opacity: summaryLoading ? 0.5 : 1,
           }}
         >
-          1개월
+          1M
         </button>
         <button
           onClick={() => setSummaryPeriod("3m")}
           disabled={summaryLoading}
           style={{
-            fontWeight: summaryPeriod === "3m" ? 700 : 400,
-            fontStyle: summaryPeriod === "3m" ? "italic" : "normal",
-            color: summaryPeriod === "3m" ? "#7c3aed" : "#666",
-            background: "none",
+            fontSize: "10px",
+            padding: "2px 6px",
+            background: summaryPeriod === "3m" ? "#3b82f6" : "#f1f5f9",
+            color: summaryPeriod === "3m" ? "white" : "#64748b",
             border: "none",
+            borderRadius: "4px",
             cursor: summaryLoading ? "not-allowed" : "pointer",
             opacity: summaryLoading ? 0.5 : 1,
           }}
         >
-          3개월
+          3M
         </button>
         <button
           onClick={() => setSummaryPeriod("1y")}
           disabled={summaryLoading}
           style={{
-            fontWeight: summaryPeriod === "1y" ? 700 : 400,
-            fontStyle: summaryPeriod === "1y" ? "italic" : "normal",
-            color: summaryPeriod === "1y" ? "#7c3aed" : "#666",
-            background: "none",
+            fontSize: "10px",
+            padding: "2px 6px",
+            background: summaryPeriod === "1y" ? "#3b82f6" : "#f1f5f9",
+            color: summaryPeriod === "1y" ? "white" : "#64748b",
             border: "none",
+            borderRadius: "4px",
             cursor: summaryLoading ? "not-allowed" : "pointer",
             opacity: summaryLoading ? 0.5 : 1,
           }}
         >
-          1년
+          1Y
         </button>
-
-        {/* 에러 시 재시도 버튼 */}
         {summaryError && (
           <button
             onClick={retrySummary}
             style={{
-              marginLeft: 16,
-              padding: "2px 8px",
-              fontSize: 11,
+              fontSize: "10px",
+              padding: "2px 6px",
               background: "#ef4444",
               color: "white",
               border: "none",
-              borderRadius: 4,
+              borderRadius: "4px",
               cursor: "pointer",
             }}
           >
@@ -245,56 +200,34 @@ export default function AINewsSummaryBanner({ ticker }) {
         )}
       </div>
 
-      {/* 요약문 카드 */}
-      <div
-        style={{
-          margin: "12px 20px 14px 20px",
-          background: "#fff",
-          border: "1.5px solid #e5e7eb",
-          borderRadius: 10,
-          minHeight: 48,
-          padding: 14,
-          fontSize: 14,
-          fontStyle: "italic",
-          color: "#22223b",
-          boxShadow: "0 1px 4px 0 rgba(0,0,0,0.03)",
-          position: "relative",
-        }}
-      >
+      {/* 요약문 */}
+      <div style={{ fontSize: "11px", lineHeight: "1.4", color: "#475569" }}>
         {summaryLoading && (
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              color: "#888",
+              gap: "4px",
+              color: "#64748b",
             }}
           >
             <div
               style={{
-                width: 16,
-                height: 16,
-                border: "2px solid #e5e7eb",
-                borderTop: "2px solid #7c3aed",
+                width: "10px",
+                height: "10px",
+                border: "1px solid #cbd5e1",
+                borderTop: "1px solid #3b82f6",
                 borderRadius: "50%",
                 animation: "spin 1s linear infinite",
               }}
             ></div>
-            요약을 생성하고 있습니다...
+            요약 생성 중...
           </div>
         )}
 
         {summaryError && (
-          <div
-            style={{
-              color: "#ef4444",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <span>⚠️</span>
-            {summaryError}
+          <div style={{ color: "#ef4444", fontSize: "10px" }}>
+            ⚠️ {summaryError}
           </div>
         )}
 
@@ -303,69 +236,33 @@ export default function AINewsSummaryBanner({ ticker }) {
             {summaryText}
             {debugInfo && debugInfo.newsCount > 0 && (
               <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 11,
-                  color: "#666",
-                  fontStyle: "normal",
-                }}
+                style={{ marginTop: "4px", fontSize: "9px", color: "#64748b" }}
               >
-                📊 {debugInfo.newsCount}건의 뉴스를 분석했습니다
+                📊 {debugInfo.newsCount}건 분석
               </div>
             )}
           </div>
         )}
 
         {!summaryLoading && !summaryError && !summaryText && (
-          <div style={{ color: "#888" }}>요약할 뉴스가 없습니다.</div>
+          <div style={{ color: "#64748b", fontSize: "10px" }}>
+            요약할 뉴스가 없습니다.
+          </div>
         )}
       </div>
 
       {/* 하단 안내 */}
-      <div
-        style={{
-          borderTop: "1px solid #f3f4f6",
-          background: "#f4f3ff",
-          color: "#7c3aed",
-          fontSize: 12,
-          padding: "7px 20px",
-          borderBottomLeftRadius: 16,
-          borderBottomRightRadius: 16,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <span>※ AI가 제공하는 요약 정보는 참고용입니다.</span>
-        {/* API 상태 체크 버튼 (개발 환경) */}
-        {process.env.NODE_ENV === "development" && (
-          <button
-            onClick={() => {
-              fetch(`${API_BASE}/api/health`)
-                .then((res) => res.json())
-                .then((data) => {
-                  console.log("🏥 API Health Check:", data);
-                  alert(`API 상태: ${JSON.stringify(data, null, 2)}`);
-                })
-                .catch((err) => {
-                  console.error("🏥 API Health Check 실패:", err);
-                  alert(`API 상태 확인 실패: ${err.message}`);
-                });
-            }}
-            style={{
-              fontSize: 10,
-              padding: "2px 6px",
-              background: "#7c3aed",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              cursor: "pointer",
-            }}
-          >
-            API 체크
-          </button>
-        )}
-      </div>
+      {/* CSS 애니메이션 추가 */}
+      <style jsx>{`
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -522,9 +522,12 @@ export default function Page() {
               </ErrorBoundary>
 
               {/* 차트와 뉴스 패널 */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div
+                className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+                style={{ minHeight: "600px" }}
+              >
                 {/* 차트 영역 (2/3) */}
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2" style={{ height: "600px" }}>
                   <ErrorBoundary
                     name="ChartContainer"
                     fallback={(error, retry) => (
@@ -611,7 +614,7 @@ export default function Page() {
                 </div>
 
                 {/* 뉴스 패널 (1/3) */}
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-1" style={{ height: "600px" }}>
                   <ErrorBoundary
                     name="NewsPanel"
                     fallback={(error, retry) => (
