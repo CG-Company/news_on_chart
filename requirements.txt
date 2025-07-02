@@ -1,0 +1,9 @@
+fastapi==0.115.14
+openai==0.28.1
+pandas==2.3.0
+psycopg2==2.9.10
+psycopg2_binary==2.9.10
+pykrx==1.0.51
+python-dotenv==1.1.1
+Requests==2.32.4
+SQLAlchemy==2.0.41
