@@ -2,6 +2,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
+import KeywordPanel from "./KeywordPanel";
 
 // 더미 데이터
 const dummyNewsList = [
@@ -385,15 +386,16 @@ export default function NewsPage() {
   return (
     <div className="flex overflow-x-hidden">
       <Sidebar currentPage="community" />
-              <div className="flex-1 ml-64">
-                  <Header
-            ticker={ticker}
-            setTicker={setTicker}
-            tickerName={tickerName}
-            setTickerName={setTickerName}
-            currentPage="community"
-          />
+      <div className="flex-1 ml-64">
+        <Header
+          ticker={ticker}
+          setTicker={setTicker}
+          tickerName={tickerName}
+          setTickerName={setTickerName}
+          currentPage="community"
+        />
         <main className="p-8 bg-gray-50 min-h-screen overflow-x-auto">
+          {/* 상단 카드 패널(중요 리포트 등) */}
           <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
             중요 리포트
           </h1>
@@ -508,408 +510,418 @@ export default function NewsPage() {
             </div>
           </div>
 
-          {/* 자유 피드 타이틀/버튼 */}
-          <div className="flex items-center mb-4 gap-2 mt-10">
-            <h2 className="text-lg font-semibold">자유 피드 📝</h2>
-            <button
-              className="ml-2 px-3 py-1 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 transition"
-              type="button"
-              onClick={handleOpenFeedModal}
-            >
-              피드 작성
-            </button>
-          </div>
-          {/* 하단 추천 종목 카드 리스트 */}
-          <div className="relative w-full flex justify-center">
-            <div className="bg-white rounded-xl shadow w-full max-w-full sm:max-w-[600px] md:max-w-[900px] lg:max-w-[1200px] xl:max-w-[1400px] 2xl:max-w-[1600px] min-w-0 px-2 sm:px-4 md:px-6 lg:px-8 py-6 mx-auto relative">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-w-0">
-                {[...newCards, ...stockCards].map((card) => (
-                  <div
-                    key={card.id}
-                    className="bg-white rounded-xl shadow-md p-5 flex flex-col w-auto"
-                  >
-                    <div className="flex items-center mb-2">
-                      <span className="font-bold text-gray-700 mr-2">
-                        {card.name}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {card.code ? `${card.code}.KS` : ""}
-                      </span>
-                    </div>
-                    <div className="flex items-center mb-2">
-                      <span className="text-lg font-bold text-blue-600 mr-2">
-                        {getCardPrice(card)}
-                      </span>
-                      <span
-                        className={`text-sm font-semibold ${
-                          card.change && `${card.change}`.startsWith("-")
-                            ? "text-red-500"
-                            : "text-green-600"
-                        }`}
-                      >
-                        {card.change !== undefined &&
-                        card.change !== null &&
-                        !isNaN(Number(card.change))
-                          ? `${Math.round(Number(card.change) * 100) / 100}%`
-                          : card.change}
-                      </span>
-                    </div>
-                    <div className="mb-2">
-                      <span className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded mr-2">
-                        {card.opinion} 투자 의견
-                      </span>
-                      <span className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
-                        목표가 {card.target}
-                      </span>
-                    </div>
-                    <div className="mb-2 text-xs text-gray-500">
-                      {card.summary}
-                    </div>
-                    <div className="flex items-center justify-between mt-auto pt-2">
-                      <div className="flex items-center space-x-2 text-xs text-gray-400">
-                        <span>👍 {card.like ? card.like : 1}</span>
-                        <span>💬 {card.comment ? card.comment : 1}</span>
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {card.deadline}
-                      </div>
-                    </div>
-                    <div className="mt-2 text-xs text-gray-400">
-                      작성자: {card.author}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* 피드 작성 모달 */}
-          {showFeedModal && (
-            <div
-              className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) setShowFeedModal(false);
-              }}
-            >
-              <form
-                className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md relative"
-                onSubmit={handleFeedSubmit}
-              >
-                {/* X 버튼 */}
+          {/* 하단: 자유 피드 + 키워드 패널 */}
+          <div className="flex gap-8 mt-8">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center mb-4 gap-2">
+                <h2 className="text-xl font-bold">자유 피드</h2>
                 <button
+                  className="ml-2 px-3 py-1 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 transition"
                   type="button"
-                  className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 focus:outline-none"
-                  onClick={() => setShowFeedModal(false)}
-                  aria-label="닫기"
+                  onClick={handleOpenFeedModal}
                 >
-                  <img
-                    src="/icons/exit_white.svg"
-                    alt="닫기"
-                    className="w-8 h-8 transition duration-150 hover:brightness-110"
-                  />
+                  피드 작성
                 </button>
-                <h3 className="text-lg font-bold mb-4">피드 작성</h3>
-                <div className="mb-2">
-                  <label className="block mb-1 text-sm">
-                    <span className="text-red-500 mr-1">*</span>종목명
-                  </label>
-                  <input
-                    className="w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 text-gray-400 bg-gray-100"
-                    placeholder="종목명"
-                    value={feedForm.name}
-                    disabled
-                  />
-                  <label className="block mb-1 text-sm">
-                    <span className="text-red-500 mr-1">*</span>종목코드
-                  </label>
-                  <input
-                    className="w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 text-gray-400 bg-gray-100"
-                    placeholder="종목코드"
-                    value={feedForm.code}
-                    disabled
-                  />
-                  <label className="block mb-1 text-sm">
-                    <span className="text-red-500 mr-1">*</span>현재가
-                  </label>
-                  <input
-                    className="w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 text-gray-400 bg-gray-100"
-                    placeholder="현재가"
-                    value={
-                      feedForm.price
-                        ? Number(feedForm.price).toLocaleString()
-                        : ""
-                    }
-                    disabled
-                  />
-                  <label className="block mb-1 text-sm">
-                    <span className="text-red-500 mr-1">*</span>등락률
-                  </label>
-                  <input
-                    className="w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 text-gray-400 bg-gray-100"
-                    placeholder="등락률 (예: +1.23%)"
-                    value={feedForm.change}
-                    disabled
-                  />
-                  <label className="block mb-1 text-sm">
-                    <span className="text-red-500 mr-1">*</span>투자 의견
-                  </label>
-                  <select
-                    ref={opinionRef}
-                    className={`w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 appearance-none focus:border-blue-600 focus:border-2 focus:outline-none ${
-                      opinionError ? "border-red-500 border-2" : ""
-                    }`}
-                    style={{
-                      background:
-                        "url('/icons/arrow-down.svg') no-repeat right 1rem center/1.2em auto",
-                      paddingRight: "2.5rem",
-                    }}
-                    value={feedForm.opinion}
-                    onChange={(e) => {
-                      setFeedForm({ ...feedForm, opinion: e.target.value });
-                      setOpinionError(false);
-                    }}
+              </div>
+              {/* 하단 추천 종목 카드 리스트 */}
+              <div className="relative w-full flex justify-center">
+                <div className="bg-white rounded-xl shadow w-full max-w-full sm:max-w-[600px] md:max-w-[900px] lg:max-w-[1200px] xl:max-w-[1400px] 2xl:max-w-[1600px] min-w-0 px-2 sm:px-4 md:px-6 lg:px-8 py-6 mx-auto relative">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-w-0">
+                    {[...newCards, ...stockCards].map((card) => (
+                      <div
+                        key={card.id}
+                        className="bg-white rounded-xl shadow-md p-5 flex flex-col w-auto"
+                      >
+                        <div className="flex items-center mb-2">
+                          <span className="font-bold text-gray-700 mr-2">
+                            {card.name}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {card.code ? `${card.code}.KS` : ""}
+                          </span>
+                        </div>
+                        <div className="flex items-center mb-2">
+                          <span className="text-lg font-bold text-blue-600 mr-2">
+                            {getCardPrice(card)}
+                          </span>
+                          <span
+                            className={`text-sm font-semibold ${
+                              card.change && `${card.change}`.startsWith("-")
+                                ? "text-red-500"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {card.change !== undefined &&
+                            card.change !== null &&
+                            !isNaN(Number(card.change))
+                              ? `${Math.round(Number(card.change) * 100) / 100}%`
+                              : card.change}
+                          </span>
+                        </div>
+                        <div className="mb-2">
+                          <span className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded mr-2">
+                            {card.opinion} 투자 의견
+                          </span>
+                          <span className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
+                            목표가 {card.target}
+                          </span>
+                        </div>
+                        <div className="mb-2 text-xs text-gray-500">
+                          {card.summary}
+                        </div>
+                        <div className="flex items-center justify-between mt-auto pt-2">
+                          <div className="flex items-center space-x-2 text-xs text-gray-400">
+                            <span>👍 {card.like ? card.like : 1}</span>
+                            <span>💬 {card.comment ? card.comment : 1}</span>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {card.deadline}
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-400">
+                          작성자: {card.author}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 피드 작성 모달 */}
+              {showFeedModal && (
+                <div
+                  className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) setShowFeedModal(false);
+                  }}
+                >
+                  <form
+                    className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md relative"
+                    onSubmit={handleFeedSubmit}
                   >
-                    <option
-                      value=""
-                      disabled
-                      hidden
-                      style={{ color: "#b0b0b0" }}
-                    >
-                      목록에서 항목을 선택하세요
-                    </option>
-                    <option value="매수">매수</option>
-                    <option value="강력 매수">강력 매수</option>
-                    <option value="중립">중립</option>
-                    <option value="관망">관망</option>
-                    <option value="매도">매도</option>
-                  </select>
-                  {opinionError && isSubmitted && (
-                    <div
-                      className="relative flex items-center gap-2 text-white text-xs mb-2 bg-red-500 rounded-xl px-3 py-2 shadow-lg"
-                      style={{ width: "fit-content" }}
-                    >
-                      <img
-                        src="/icons/warning.svg"
-                        alt="경고"
-                        className="w-4 h-4"
-                      />
-                      투자 의견을 선택해 주세요.
-                      <span
-                        className="absolute left-4 -top-2 w-3 h-3"
-                        style={{
-                          background: "#ef4444",
-                          clipPath: "polygon(50% 0, 0 100%, 100% 100%)",
-                        }}
-                      />
-                    </div>
-                  )}
-                  <label className="block mb-1 text-sm flex items-center">
-                    <span className="text-red-500 mr-1">*</span>목표가
+                    {/* X 버튼 */}
                     <button
                       type="button"
-                      className="ml-1 text-gray-400 hover:text-blue-600 relative"
-                      onMouseEnter={() => setShowTargetTooltip(true)}
-                      onMouseLeave={() => setShowTargetTooltip(false)}
-                      onFocus={() => setShowTargetTooltip(true)}
-                      onBlur={() => setShowTargetTooltip(false)}
-                      tabIndex={0}
-                      style={{ lineHeight: 1 }}
+                      className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 focus:outline-none"
+                      onClick={() => setShowFeedModal(false)}
+                      aria-label="닫기"
                     >
-                      <svg
-                        width="12"
-                        height="12"
-                        fill="none"
-                        viewBox="0 0 12 12"
-                      >
-                        <circle cx="6" cy="6" r="6" fill="#9ca3af" />
-                        <text
-                          x="6"
-                          y="9"
-                          textAnchor="middle"
-                          fontSize="8"
-                          fontWeight="bold"
-                          fill="#fff"
-                        >
-                          !
-                        </text>
-                      </svg>
-                      {showTargetTooltip && (
-                        <span className="absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap bg-black text-white text-xs rounded px-2 py-1 shadow z-10">
-                          숫자만 입력이 가능합니다.
-                        </span>
-                      )}
+                      <img
+                        src="/icons/exit_white.svg"
+                        alt="닫기"
+                        className="w-8 h-8 transition duration-150 hover:brightness-110"
+                      />
                     </button>
-                  </label>
-                  <input
-                    ref={targetRef}
-                    className={`w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 focus:border-blue-600 focus:border-2 focus:outline-none ${
-                      targetError ? "border-red-500 border-2" : ""
-                    }`}
-                    placeholder="목표가 (예: 120000)"
-                    value={feedForm.target || ""}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^0-9]/g, "");
-                      const formatted = raw.replace(
-                        /\B(?=(\d{3})+(?!\d))/g,
-                        ","
-                      );
-                      setFeedForm({ ...feedForm, target: formatted });
-                      setTargetError(false);
-                    }}
-                  />
-                  {targetError && isSubmitted && (
-                    <div
-                      className="relative flex items-center gap-2 text-white text-xs mb-2 bg-red-500 rounded-xl px-3 py-2 shadow-lg"
-                      style={{ width: "fit-content" }}
-                    >
-                      <img
-                        src="/icons/warning.svg"
-                        alt="경고"
-                        className="w-4 h-4"
+                    <h3 className="text-lg font-bold mb-4">피드 작성</h3>
+                    <div className="mb-2">
+                      <label className="block mb-1 text-sm">
+                        <span className="text-red-500 mr-1">*</span>종목명
+                      </label>
+                      <input
+                        className="w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 text-gray-400 bg-gray-100"
+                        placeholder="종목명"
+                        value={feedForm.name}
+                        disabled
                       />
-                      목표가를 입력해 주세요.
-                      <span
-                        className="absolute left-4 -top-2 w-3 h-3"
+                      <label className="block mb-1 text-sm">
+                        <span className="text-red-500 mr-1">*</span>종목코드
+                      </label>
+                      <input
+                        className="w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 text-gray-400 bg-gray-100"
+                        placeholder="종목코드"
+                        value={feedForm.code}
+                        disabled
+                      />
+                      <label className="block mb-1 text-sm">
+                        <span className="text-red-500 mr-1">*</span>현재가
+                      </label>
+                      <input
+                        className="w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 text-gray-400 bg-gray-100"
+                        placeholder="현재가"
+                        value={
+                          feedForm.price
+                            ? Number(feedForm.price).toLocaleString()
+                            : ""
+                        }
+                        disabled
+                      />
+                      <label className="block mb-1 text-sm">
+                        <span className="text-red-500 mr-1">*</span>등락률
+                      </label>
+                      <input
+                        className="w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 text-gray-400 bg-gray-100"
+                        placeholder="등락률 (예: +1.23%)"
+                        value={feedForm.change}
+                        disabled
+                      />
+                      <label className="block mb-1 text-sm">
+                        <span className="text-red-500 mr-1">*</span>투자 의견
+                      </label>
+                      <select
+                        ref={opinionRef}
+                        className={`w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 appearance-none focus:border-blue-600 focus:border-2 focus:outline-none ${
+                          opinionError ? "border-red-500 border-2" : ""
+                        }`}
                         style={{
-                          background: "#ef4444",
-                          clipPath: "polygon(50% 0, 0 100%, 100% 100%)",
+                          background:
+                            "url('/icons/arrow-down.svg') no-repeat right 1rem center/1.2em auto",
+                          paddingRight: "2.5rem",
+                        }}
+                        value={feedForm.opinion}
+                        onChange={(e) => {
+                          setFeedForm({ ...feedForm, opinion: e.target.value });
+                          setOpinionError(false);
+                        }}
+                      >
+                        <option
+                          value=""
+                          disabled
+                          hidden
+                          style={{ color: "#b0b0b0" }}
+                        >
+                          목록에서 항목을 선택하세요
+                        </option>
+                        <option value="매수">매수</option>
+                        <option value="강력 매수">강력 매수</option>
+                        <option value="중립">중립</option>
+                        <option value="관망">관망</option>
+                        <option value="매도">매도</option>
+                      </select>
+                      {opinionError && isSubmitted && (
+                        <div
+                          className="relative flex items-center gap-2 text-white text-xs mb-2 bg-red-500 rounded-xl px-3 py-2 shadow-lg"
+                          style={{ width: "fit-content" }}
+                        >
+                          <img
+                            src="/icons/warning.svg"
+                            alt="경고"
+                            className="w-4 h-4"
+                          />
+                          투자 의견을 선택해 주세요.
+                          <span
+                            className="absolute left-4 -top-2 w-3 h-3"
+                            style={{
+                              background: "#ef4444",
+                              clipPath: "polygon(50% 0, 0 100%, 100% 100%)",
+                            }}
+                          />
+                        </div>
+                      )}
+                      <label className="block mb-1 text-sm flex items-center">
+                        <span className="text-red-500 mr-1">*</span>목표가
+                        <button
+                          type="button"
+                          className="ml-1 text-gray-400 hover:text-blue-600 relative"
+                          onMouseEnter={() => setShowTargetTooltip(true)}
+                          onMouseLeave={() => setShowTargetTooltip(false)}
+                          onFocus={() => setShowTargetTooltip(true)}
+                          onBlur={() => setShowTargetTooltip(false)}
+                          tabIndex={0}
+                          style={{ lineHeight: 1 }}
+                        >
+                          <svg
+                            width="12"
+                            height="12"
+                            fill="none"
+                            viewBox="0 0 12 12"
+                          >
+                            <circle cx="6" cy="6" r="6" fill="#9ca3af" />
+                            <text
+                              x="6"
+                              y="9"
+                              textAnchor="middle"
+                              fontSize="8"
+                              fontWeight="bold"
+                              fill="#fff"
+                            >
+                              !
+                            </text>
+                          </svg>
+                          {showTargetTooltip && (
+                            <span className="absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap bg-black text-white text-xs rounded px-2 py-1 shadow z-10">
+                              숫자만 입력이 가능합니다.
+                            </span>
+                          )}
+                        </button>
+                      </label>
+                      <input
+                        ref={targetRef}
+                        className={`w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 focus:border-blue-600 focus:border-2 focus:outline-none ${
+                          targetError ? "border-red-500 border-2" : ""
+                        }`}
+                        placeholder="목표가 (예: 120000)"
+                        value={feedForm.target || ""}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/[^0-9]/g, "");
+                          const formatted = raw.replace(
+                            /\B(?=(\d{3})+(?!\d))/g,
+                            ","
+                          );
+                          setFeedForm({ ...feedForm, target: formatted });
+                          setTargetError(false);
                         }}
                       />
-                    </div>
-                  )}
-                  <label className="block mb-1 text-sm">
-                    <span className="text-red-500 mr-1">*</span>요약/설명
-                  </label>
-                  <textarea
-                    ref={summaryRef}
-                    className={`w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 focus:border-blue-600 focus:border-2 focus:outline-none ${
-                      summaryError ? "border-red-500 border-2" : ""
-                    }`}
-                    placeholder="요약/설명"
-                    value={feedForm.summary}
-                    onChange={(e) => {
-                      setFeedForm({ ...feedForm, summary: e.target.value });
-                      setSummaryError(false);
-                    }}
-                    rows={3}
-                  />
-                  {summaryError && isSubmitted && (
-                    <div
-                      className="relative flex items-center gap-2 text-white text-xs mb-2 bg-red-500 rounded-xl px-3 py-2 shadow-lg"
-                      style={{ width: "fit-content" }}
-                    >
-                      <img
-                        src="/icons/warning.svg"
-                        alt="경고"
-                        className="w-4 h-4"
+                      {targetError && isSubmitted && (
+                        <div
+                          className="relative flex items-center gap-2 text-white text-xs mb-2 bg-red-500 rounded-xl px-3 py-2 shadow-lg"
+                          style={{ width: "fit-content" }}
+                        >
+                          <img
+                            src="/icons/warning.svg"
+                            alt="경고"
+                            className="w-4 h-4"
+                          />
+                          목표가를 입력해 주세요.
+                          <span
+                            className="absolute left-4 -top-2 w-3 h-3"
+                            style={{
+                              background: "#ef4444",
+                              clipPath: "polygon(50% 0, 0 100%, 100% 100%)",
+                            }}
+                          />
+                        </div>
+                      )}
+                      <label className="block mb-1 text-sm">
+                        <span className="text-red-500 mr-1">*</span>요약/설명
+                      </label>
+                      <textarea
+                        ref={summaryRef}
+                        className={`w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 focus:border-blue-600 focus:border-2 focus:outline-none ${
+                          summaryError ? "border-red-500 border-2" : ""
+                        }`}
+                        placeholder="요약/설명"
+                        value={feedForm.summary}
+                        onChange={(e) => {
+                          setFeedForm({ ...feedForm, summary: e.target.value });
+                          setSummaryError(false);
+                        }}
+                        rows={3}
                       />
-                      요약/설명을 입력해 주세요.
-                      <span
-                        className="absolute left-4 -top-2 w-3 h-3"
-                        style={{
-                          background: "#ef4444",
-                          clipPath: "polygon(50% 0, 0 100%, 100% 100%)",
+                      {summaryError && isSubmitted && (
+                        <div
+                          className="relative flex items-center gap-2 text-white text-xs mb-2 bg-red-500 rounded-xl px-3 py-2 shadow-lg"
+                          style={{ width: "fit-content" }}
+                        >
+                          <img
+                            src="/icons/warning.svg"
+                            alt="경고"
+                            className="w-4 h-4"
+                          />
+                          요약/설명을 입력해 주세요.
+                          <span
+                            className="absolute left-4 -top-2 w-3 h-3"
+                            style={{
+                              background: "#ef4444",
+                              clipPath: "polygon(50% 0, 0 100%, 100% 100%)",
+                            }}
+                          />
+                        </div>
+                      )}
+                      <label className="block mb-1 text-sm">
+                        <span className="text-red-500 mr-1">*</span>작성자
+                      </label>
+                      <input
+                        ref={authorRef}
+                        className={`w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 focus:border-blue-600 focus:border-2 focus:outline-none ${
+                          authorError ? "border-red-500 border-2" : ""
+                        }`}
+                        placeholder="작성자"
+                        value={feedForm.author}
+                        onChange={(e) => {
+                          setFeedForm({ ...feedForm, author: e.target.value });
+                          setAuthorError(false);
                         }}
                       />
-                    </div>
-                  )}
-                  <label className="block mb-1 text-sm">
-                    <span className="text-red-500 mr-1">*</span>작성자
-                  </label>
-                  <input
-                    ref={authorRef}
-                    className={`w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 focus:border-blue-600 focus:border-2 focus:outline-none ${
-                      authorError ? "border-red-500 border-2" : ""
-                    }`}
-                    placeholder="작성자"
-                    value={feedForm.author}
-                    onChange={(e) => {
-                      setFeedForm({ ...feedForm, author: e.target.value });
-                      setAuthorError(false);
-                    }}
-                  />
-                  {authorError && isSubmitted && (
-                    <div
-                      className="relative flex items-center gap-2 text-white text-xs mb-2 bg-red-500 rounded-xl px-3 py-2 shadow-lg"
-                      style={{ width: "fit-content" }}
-                    >
-                      <img
-                        src="/icons/warning.svg"
-                        alt="경고"
-                        className="w-4 h-4"
-                      />
-                      작성자를 입력해 주세요.
-                      <span
-                        className="absolute left-4 -top-2 w-3 h-3"
-                        style={{
-                          background: "#ef4444",
-                          clipPath: "polygon(50% 0, 0 100%, 100% 100%)",
+                      {authorError && isSubmitted && (
+                        <div
+                          className="relative flex items-center gap-2 text-white text-xs mb-2 bg-red-500 rounded-xl px-3 py-2 shadow-lg"
+                          style={{ width: "fit-content" }}
+                        >
+                          <img
+                            src="/icons/warning.svg"
+                            alt="경고"
+                            className="w-4 h-4"
+                          />
+                          작성자를 입력해 주세요.
+                          <span
+                            className="absolute left-4 -top-2 w-3 h-3"
+                            style={{
+                              background: "#ef4444",
+                              clipPath: "polygon(50% 0, 0 100%, 100% 100%)",
+                            }}
+                          />
+                        </div>
+                      )}
+                      <label className="block mb-1 text-sm">
+                        <span className="text-red-500 mr-1">*</span>마감일
+                      </label>
+                      <input
+                        ref={deadlineRef}
+                        className={`w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 text-gray-400 bg-gray-100 focus:border-blue-600 focus:border-2 focus:outline-none ${
+                          deadlineError ? "border-red-500 border-2" : ""
+                        }`}
+                        placeholder="마감일 (예: 2025.12.31 까지)"
+                        value={feedForm.deadline}
+                        disabled
+                        onChange={(e) => {
+                          setFeedForm({ ...feedForm, deadline: e.target.value });
+                          setDeadlineError(false);
                         }}
                       />
+                      {deadlineError && isSubmitted && (
+                        <div
+                          className="relative flex items-center gap-2 text-white text-xs mb-2 bg-red-500 rounded-xl px-3 py-2 shadow-lg"
+                          style={{ width: "fit-content" }}
+                        >
+                          <img
+                            src="/icons/warning.svg"
+                            alt="경고"
+                            className="w-4 h-4"
+                          />
+                          마감일을 입력해 주세요.
+                          <span
+                            className="absolute left-4 -top-2 w-3 h-3"
+                            style={{
+                              background: "#ef4444",
+                              clipPath: "polygon(50% 0, 0 100%, 100% 100%)",
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <label className="block mb-1 text-sm">
-                    <span className="text-red-500 mr-1">*</span>마감일
-                  </label>
-                  <input
-                    ref={deadlineRef}
-                    className={`w-full rounded-xl px-3 py-2 mb-2 text-sm border border-gray-300 text-gray-400 bg-gray-100 focus:border-blue-600 focus:border-2 focus:outline-none ${
-                      deadlineError ? "border-red-500 border-2" : ""
-                    }`}
-                    placeholder="마감일 (예: 2025.12.31 까지)"
-                    value={feedForm.deadline}
-                    disabled
-                    onChange={(e) => {
-                      setFeedForm({ ...feedForm, deadline: e.target.value });
-                      setDeadlineError(false);
-                    }}
-                  />
-                  {deadlineError && isSubmitted && (
-                    <div
-                      className="relative flex items-center gap-2 text-white text-xs mb-2 bg-red-500 rounded-xl px-3 py-2 shadow-lg"
-                      style={{ width: "fit-content" }}
-                    >
-                      <img
-                        src="/icons/warning.svg"
-                        alt="경고"
-                        className="w-4 h-4"
-                      />
-                      마감일을 입력해 주세요.
-                      <span
-                        className="absolute left-4 -top-2 w-3 h-3"
-                        style={{
-                          background: "#ef4444",
-                          clipPath: "polygon(50% 0, 0 100%, 100% 100%)",
-                        }}
-                      />
+                    <div className="flex justify-end gap-2 mt-4">
+                      <button
+                        type="button"
+                        className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300"
+                        onClick={() => setShowFeedModal(false)}
+                      >
+                        취소
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
+                      >
+                        등록
+                      </button>
                     </div>
-                  )}
+                  </form>
                 </div>
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    type="button"
-                    className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300"
-                    onClick={() => setShowFeedModal(false)}
-                  >
-                    취소
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    등록
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
+              )}
 
-          {globalAlert && (
-            <div className="flex items-center gap-2 text-red-600 text-sm mt-4 bg-white border border-red-500 rounded-xl px-4 py-3">
-              <img src="/icons/warning.svg" alt="경고" className="w-5 h-5" />
-              {globalAlert}
+              {globalAlert && (
+                <div className="flex items-center gap-2 text-red-600 text-sm mt-4 bg-white border border-red-500 rounded-xl px-4 py-3">
+                  <img src="/icons/warning.svg" alt="경고" className="w-5 h-5" />
+                  {globalAlert}
+                </div>
+              )}
             </div>
-          )}
+            <div className="w-80 flex-shrink-0">
+              <div className="flex items-center mb-4">
+                <h2 className="text-xl font-bold">키워드</h2>
+              </div>
+              <KeywordPanel ticker={ticker} />
+            </div>
+          </div>
         </main>
       </div>
     </div>
