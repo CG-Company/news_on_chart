@@ -593,7 +593,7 @@ export default function Page() {
               {/* 차트와 뉴스 패널 */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* 차트 영역 (2/3) */}
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 flex flex-col">
                   <ErrorBoundary
                     name="ChartContainer"
                     fallback={(error, retry) => (
@@ -677,35 +677,32 @@ export default function Page() {
                       />
                     )}
                   </ErrorBoundary>
-                </div>
 
-                {/* 뉴스 패널 + AI 요약 배너 영역 (1/3) */}
-                <div className="lg:col-span-1 flex flex-col">
-                  {/* 뉴스 패널 */}
-                  <div className="flex-1">
-                    <ErrorBoundary
-                      name="NewsPanel"
-                      fallback={(error, retry) => (
-                        <NewsErrorFallback error={error} onRetry={retry} />
-                      )}
-                    >
-                      <NewsPanel
-                        news={newsData}
-                        date={selectedDate}
-                        loading={isLoadingStock}
-                        mainNews={mainNews}
-                        ticker={ticker}
-                        key={
-                          selectedDate ? `news-${selectedDate}` : "news-empty"
-                        }
-                      />
-                    </ErrorBoundary>
-                  </div>
-
-                  {/* AI 뉴스 요약 배너 - 뉴스패널 바로 아래 */}
-                  <div className="mt-6">
+                  {/* AI 뉴스 요약 배너 - 차트 아래로 이동 */}
+                  <div className="mt-4">
                     <AINewsSummaryBanner ticker={ticker} />
                   </div>
+                </div>
+
+                {/* 뉴스 패널 영역 (1/3) - 높이 늘림 */}
+                <div className="lg:col-span-1">
+                  <ErrorBoundary
+                    name="NewsPanel"
+                    fallback={(error, retry) => (
+                      <NewsErrorFallback error={error} onRetry={retry} />
+                    )}
+                  >
+                    <NewsPanel
+                      news={newsData}
+                      date={selectedDate}
+                      loading={isLoadingStock}
+                      mainNews={mainNews}
+                      ticker={ticker}
+                      key={
+                        selectedDate ? `news-${selectedDate}` : "news-empty"
+                      }
+                    />
+                  </ErrorBoundary>
                 </div>
               </div>
 

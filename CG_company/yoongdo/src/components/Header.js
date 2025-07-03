@@ -18,7 +18,7 @@ const Header = ({ ticker, setTicker, tickerName, setTickerName, currentPage = "d
         <div className="flex items-center space-x-6 flex-1">
           {/* 페이지 제목 */}
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-semibold text-gray-900">
+            <h1 className="text-xl font-semibold bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-800 bg-clip-text text-transparent">
               {pageTitle[currentPage] || "NEWS & CHART"}
             </h1>
           </div>

@@ -133,7 +133,7 @@ const LandingPage = ({ onEnterApp, onNavigate }) => {
           whileTap={{ scale: 0.95 }}
           onClick={onEnterApp}
         >
-          START
+         JOIN
         </motion.button>
       </motion.nav>
 
