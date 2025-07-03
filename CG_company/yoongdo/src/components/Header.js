@@ -3,17 +3,34 @@ import React from "react";
 import SearchBar from "./SearchBar";
 import { Bell, Mail, User } from "lucide-react";
 
-const Header = ({ ticker, setTicker, tickerName, setTickerName }) => {
+const Header = ({ ticker, setTicker, tickerName, setTickerName, currentPage = "dashboard" }) => {
+  // 페이지별 제목 매핑
+  const pageTitle = {
+    dashboard: "NEWS & CHART",
+    analysis: "ANALYSIS", 
+    community: "COMMUNITY"
+  };
+
   return (
     <header className="bg-white border-b border-gray-100 px-6 py-3 relative z-50">
       <div className="flex items-center justify-between">
-        {/* 검색창 */}
-        <div className="flex-1 max-w-md">
-          <SearchBar
-            ticker={ticker}
-            setTicker={setTicker}
-            setTickerName={setTickerName}
-          />
+        {/* 페이지 제목과 검색창 */}
+        <div className="flex items-center space-x-6 flex-1">
+          {/* 페이지 제목 */}
+          <div className="flex items-center space-x-2">
+            <h1 className="text-xl font-semibold text-gray-900">
+              {pageTitle[currentPage] || "NEWS & CHART"}
+            </h1>
+          </div>
+          
+          {/* 검색창 */}
+          <div className="flex-1 max-w-xl">
+            <SearchBar
+              ticker={ticker}
+              setTicker={setTicker}
+              setTickerName={setTickerName}
+            />
+          </div>
         </div>
 
         {/* 우측 아이콘들 */}

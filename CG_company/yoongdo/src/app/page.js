@@ -57,8 +57,33 @@ const NewsPanel = dynamic(() => import("../components/NewsPanel"), {
 });
 
 export default function Page() {
-  // 랜딩 페이지 상태
+  // 랜딩 페이지 상태 - URL 파라미터로 제어
   const [showLanding, setShowLanding] = useState(true);
+  
+  // URL 파라미터 변경 감지
+  useEffect(() => {
+    const checkSkipLanding = () => {
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const shouldSkip = urlParams.get('skipLanding');
+        setShowLanding(!shouldSkip);
+      }
+    };
+    
+    // 초기 로드 시 확인
+    checkSkipLanding();
+    
+    // URL 변경 감지 (뒤로가기/앞으로가기 등)
+    const handlePopState = () => {
+      checkSkipLanding();
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
   
   // 기본 상태
   const [ticker, setTicker] = useState("000660");
@@ -396,6 +421,7 @@ export default function Page() {
   // 랜딩 페이지 진입 핸들러
   const handleEnterApp = useCallback(() => {
     setShowLanding(false);
+    setSelectedPage('dashboard'); // 기본 대시보드로 이동
   }, []);
 
   // 네비게이션 핸들러
@@ -406,11 +432,22 @@ export default function Page() {
     } else if (page === 'keyword') {
       setSelectedPage('keyword');
     } else if (page === 'analysis') {
-      setSelectedPage('analysis');
+      // Analysis 페이지는 별도 라우트로 이동
+      window.location.href = '/analysis';
+      return;
+    } else if (page === 'community') {
+      // Community 페이지는 별도 라우트로 이동
+      window.location.href = '/community';
+      return;
     } else if (page === 'demo') {
       // 데모 페이지로 이동 (일단 메인 앱으로)
       setSelectedPage('dashboard');
     }
+  }, []);
+
+  // 랜딩페이지로 돌아가는 핸들러
+  const handleBackToLanding = useCallback(() => {
+    setShowLanding(true);
   }, []);
 
   // 랜딩 페이지 표시
@@ -473,9 +510,9 @@ export default function Page() {
 
   return (
     <div className="flex overflow-x-hidden">
-      <Sidebar currentPage="dashboard" />
-      <div className="flex-1 ml-52 min-w-0">
-        <Header ticker={ticker} setTicker={setTicker} />
+              <Sidebar currentPage="dashboard" onBackToLanding={handleBackToLanding} />
+              <div className="flex-1 ml-64 min-w-0">
+                  <Header ticker={ticker} setTicker={setTicker} currentPage="dashboard" />
         <main className="p-8 bg-gray-50 min-w-0">
           {selectedPage === "news" ? (
             <NewsPanel
