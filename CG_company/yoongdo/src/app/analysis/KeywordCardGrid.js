@@ -9,11 +9,13 @@ const KeywordCardGrid = ({ selectedPeriod, onSelectKeyword, search = '' }) => {
     const [error, setError] = useState(null);
     const [tickerMap, setTickerMap] = useState([]);
 
+    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.138:8000";
+
     // 티커맵 가져오기
     useEffect(() => {
         const fetchTickerMap = async () => {
             try {
-                const response = await fetch('http://192.168.1.105:8000/api/ticker_map');
+                const response = await fetch(`${API_BASE}/api/ticker_map`);
                 if (response.ok) {
                     const data = await response.json();
                     setTickerMap(data);
@@ -29,7 +31,7 @@ const KeywordCardGrid = ({ selectedPeriod, onSelectKeyword, search = '' }) => {
     // 주식 데이터 가져오기 함수
     const fetchStockData = async (ticker) => {
         try {
-            const response = await fetch(`http://192.168.1.105:8000/api/stock?ticker=${ticker}`);
+            const response = await fetch(`${API_BASE}/api/stock?ticker=${ticker}`);
             if (!response.ok) {
                 return null;
             }
@@ -56,7 +58,7 @@ const KeywordCardGrid = ({ selectedPeriod, onSelectKeyword, search = '' }) => {
             
             try {
                 const response = await fetch(
-                    `http://192.168.1.105:8000/api/popular_keywords?days=${selectedPeriod}&limit=12`
+                    `${API_BASE}/api/popular_keywords?days=${selectedPeriod}&limit=12`
                 );
                 
                 if (!response.ok) {

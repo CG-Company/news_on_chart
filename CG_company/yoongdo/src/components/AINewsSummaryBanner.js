@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.105:8000";
+  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+  // process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.138:8000";
+
 
 export default function AINewsSummaryBanner({ ticker }) {
   const [summaryPeriod, setSummaryPeriod] = useState("3m");

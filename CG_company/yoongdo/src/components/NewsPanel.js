@@ -192,28 +192,28 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
 
   // 탭별 뉴스 데이터
   const companyNewsList = useMemo(() => {
-    // newsList에서 source가 'Company News'인 것만 추출
-    const companyNews = (newsList || []).filter(
-      (item) => item.source === "Company News"
-    );
-    if (!companyNews.length) return [];
+    if (!newsList || newsList.length === 0) return [];
 
-    // 날짜 필터
-    if (date) {
-      const filtered = companyNews.filter(
-        (item) => item.published_at === date || item.date === date
-      );
-      // 해당 날짜에 뉴스가 없으면 최신 뉴스 표시
-      if (filtered.length > 0) return filtered;
-    }
-
-    // 최신순 정렬
-    const sorted = [...companyNews].sort((a, b) => {
+    // 최신순 정렬 (published_at 또는 date)
+    const sorted = [...newsList].sort((a, b) => {
       const dateA = new Date(a.published_at || a.date || 0);
       const dateB = new Date(b.published_at || b.date || 0);
       return dateB - dateA;
     });
-    return sorted.slice(0, PAGE_SIZE_COMPANY);
+
+    if (!date) {
+      // 날짜 선택이 없으면 최신 뉴스들 표시
+      return sorted.slice(0, PAGE_SIZE_COMPANY);
+    } else {
+      // 날짜가 있으면 해당 날짜만 필터
+      const filtered = sorted.filter(
+        (item) => item.published_at === date || item.date === date
+      );
+      // 해당 날짜에 뉴스가 없으면 최신 뉴스 표시
+      return filtered.length > 0
+        ? filtered
+        : sorted.slice(0, PAGE_SIZE_COMPANY);
+    }
   }, [newsList, date]);
 
   const filteredMacroNews = useMemo(() => {

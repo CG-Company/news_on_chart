@@ -36,11 +36,13 @@ const [activeTab, setActiveTab] = useState("stocks");
 const [tickerMap, setTickerMap] = useState([]);
 const [relatedStocksWithPrices, setRelatedStocksWithPrices] = useState([]);
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.138:8000";
+
 // 티커맵 가져오기
 useEffect(() => {
     const fetchTickerMap = async () => {
         try {
-            const response = await fetch('http://192.168.1.105:8000/api/ticker_map');
+            const response = await fetch(`${API_BASE}/api/ticker_map`);
             if (response.ok) {
                 const data = await response.json();
                 setTickerMap(data);
@@ -56,7 +58,7 @@ useEffect(() => {
 // 주식 데이터 가져오기 함수
 const fetchStockData = async (ticker) => {
     try {
-        const response = await fetch(`http://192.168.1.105:8000/api/stock?ticker=${ticker}`);
+        const response = await fetch(`${API_BASE}/api/stock?ticker=${ticker}`);
         if (!response.ok) {
             return null;
         }
@@ -140,17 +142,17 @@ const fetchData = async () => {
     const [statsResponse, newsResponse, relatedResponse] =
         await Promise.allSettled([
         fetch(
-            `http://192.168.1.105:8000/api/keyword_stats?keyword=${encodeURIComponent(
+            `${API_BASE}/api/keyword_stats?keyword=${encodeURIComponent(
             keyword.keyword
             )}&days=30`
         ),
         fetch(
-            `http://192.168.1.105:8000/api/keyword_news?keyword=${encodeURIComponent(
+            `${API_BASE}/api/keyword_news?keyword=${encodeURIComponent(
             keyword.keyword
             )}&days=7&limit=20`
         ),
         fetch(
-            `http://192.168.1.105:8000/api/related_keywords?keyword=${encodeURIComponent(
+            `${API_BASE}/api/related_keywords?keyword=${encodeURIComponent(
             keyword.keyword
             )}&days=7&limit=10`
         ),
@@ -241,25 +243,41 @@ return (
 );
 }
 
-// 상관관계 차트 데이터 (모의 데이터)
-const correlationData = stats?.daily_stats
-?.slice(0, 7)
-.map((stat, index) => ({
-    date: new Date(stat.date).toLocaleDateString("ko-KR", {
-    month: "2-digit",
-    day: "2-digit",
-    }),
-    mentions: stat.mention_count || 0,
-    priceChange: (Math.random() - 0.5) * 6,
-})) || [
-{ date: "07-01", mentions: 45, priceChange: 1.2 },
-{ date: "07-02", mentions: 67, priceChange: 2.8 },
-{ date: "07-03", mentions: 23, priceChange: -0.5 },
-{ date: "07-04", mentions: 89, priceChange: 3.1 },
-{ date: "07-05", mentions: 156, priceChange: 4.7 },
-{ date: "07-08", mentions: 98, priceChange: 2.3 },
-{ date: "07-09", mentions: 134, priceChange: 3.9 },
-];
+// 상관관계 차트 데이터 (실제 데이터 활용)
+const correlationData = (() => {
+    if (stats?.daily_stats && stats.daily_stats.length > 0) {
+        return stats.daily_stats.slice(0, 14).map((stat) => {
+            // 관련 종목들의 평균 변동률 계산
+            const avgPriceChange = relatedStocksWithPrices.length > 0 
+                ? relatedStocksWithPrices.reduce((sum, stock) => {
+                    return sum + (stock.change || 0);
+                }, 0) / relatedStocksWithPrices.length
+                : 0;
+
+            return {
+                date: new Date(stat.date).toLocaleDateString("ko-KR", {
+                    month: "2-digit",
+                    day: "2-digit",
+                }),
+                mentions: stat.mention_count || 0,
+                priceChange: Number(avgPriceChange.toFixed(2)),
+                tickerCount: stat.ticker_count || 0,
+                avgSentiment: stat.avg_sentiment || 0
+            };
+        });
+    } else {
+        // API 데이터가 없을 경우 기본 데이터
+        return [
+            { date: "07-01", mentions: keyword.count || 45, priceChange: 1.2, tickerCount: keyword.tickers?.length || 2 },
+            { date: "07-02", mentions: Math.floor((keyword.count || 45) * 1.5), priceChange: 2.8, tickerCount: keyword.tickers?.length || 2 },
+            { date: "07-03", mentions: Math.floor((keyword.count || 45) * 0.5), priceChange: -0.5, tickerCount: keyword.tickers?.length || 2 },
+            { date: "07-04", mentions: Math.floor((keyword.count || 45) * 2), priceChange: 3.1, tickerCount: keyword.tickers?.length || 2 },
+            { date: "07-05", mentions: Math.floor((keyword.count || 45) * 3.5), priceChange: 4.7, tickerCount: keyword.tickers?.length || 2 },
+            { date: "07-08", mentions: Math.floor((keyword.count || 45) * 2.2), priceChange: 2.3, tickerCount: keyword.tickers?.length || 2 },
+            { date: "07-09", mentions: Math.floor((keyword.count || 45) * 3), priceChange: 3.9, tickerCount: keyword.tickers?.length || 2 },
+        ];
+    }
+})();
 
 const getSentimentBadge = (sentiment) => {
 const badges = {
@@ -511,7 +529,7 @@ return (
 
             <div className="bg-gradient-to-r from-blue-50 to-white rounded-lg p-6">
             <h4 className="font-semibold mb-4">분석 인사이트</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <div className="text-center p-4 bg-white rounded-lg shadow-sm">
                 <div className="text-2xl font-bold text-blue-600">
                     {stats?.total_mentions || keyword.count || 0}
@@ -520,23 +538,84 @@ return (
                 </div>
                 <div className="text-center p-4 bg-white rounded-lg shadow-sm">
                 <div className="text-2xl font-bold text-green-600">
-                    {stats?.total_tickers || keyword.tickers?.length || 0}
+                    {relatedStocksWithPrices.length || keyword.tickers?.length || 0}
                 </div>
                 <div className="text-sm text-gray-600">관련 종목</div>
                 </div>
                 <div className="text-center p-4 bg-white rounded-lg shadow-sm">
                 <div className="text-2xl font-bold text-purple-600">
-                    {stats?.avg_daily_mentions?.toFixed(1) || "0.0"}
+                    {stats?.avg_daily_mentions?.toFixed(1) || ((keyword.count || 0) / 7).toFixed(1)}
                 </div>
                 <div className="text-sm text-gray-600">일평균 언급</div>
                 </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                <div className={`text-2xl font-bold ${
+                    relatedStocksWithPrices.length > 0 
+                        ? (relatedStocksWithPrices.reduce((sum, stock) => sum + (stock.change || 0), 0) / relatedStocksWithPrices.length) >= 0 
+                            ? 'text-green-600' : 'text-red-600'
+                        : 'text-gray-600'
+                }`}>
+                    {relatedStocksWithPrices.length > 0 
+                        ? `${(relatedStocksWithPrices.reduce((sum, stock) => sum + (stock.change || 0), 0) / relatedStocksWithPrices.length >= 0 ? '+' : '')}${(relatedStocksWithPrices.reduce((sum, stock) => sum + (stock.change || 0), 0) / relatedStocksWithPrices.length).toFixed(2)}%`
+                        : 'N/A'
+                    }
+                </div>
+                <div className="text-sm text-gray-600">평균 변동률</div>
+                </div>
             </div>
+            
+            {/* 상세 분석 정보 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <h5 className="font-semibold text-gray-900 mb-2">실시간 데이터 비율</h5>
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">
+                            {relatedStocksWithPrices.filter(stock => stock.hasRealData).length} / {relatedStocksWithPrices.length} 종목
+                        </span>
+                        <div className="flex items-center gap-1">
+                            <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+                            <span className="text-xs text-gray-500">실시간</span>
+                        </div>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div 
+                            className="bg-green-500 h-2 rounded-full" 
+                            style={{ 
+                                width: `${relatedStocksWithPrices.length > 0 ? (relatedStocksWithPrices.filter(stock => stock.hasRealData).length / relatedStocksWithPrices.length) * 100 : 0}%` 
+                            }}
+                        ></div>
+                    </div>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <h5 className="font-semibold text-gray-900 mb-2">뉴스 활동도</h5>
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">
+                            최근 7일간 {news.length}건
+                        </span>
+                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            news.length > 10 ? 'bg-red-100 text-red-700' : 
+                            news.length > 5 ? 'bg-yellow-100 text-yellow-700' : 
+                            'bg-green-100 text-green-700'
+                        }`}>
+                            {news.length > 10 ? '매우 활발' : news.length > 5 ? '보통' : '조용'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div className="text-sm text-gray-600 bg-white p-4 rounded-lg">
-                💡 <strong>{keyword.keyword}</strong> 키워드는 최근 활발한
-                관심을 받고 있으며,
-                {keyword.tickers?.length || 0}개의 종목과 연관되어 있습니다.
-                {stats?.total_mentions || keyword.count || 0}건의 언급량을
-                기록했습니다.
+                💡 <strong>{keyword.keyword}</strong> 키워드는 최근 {stats?.period || '30일'}간 활발한 관심을 받고 있으며, 
+                {relatedStocksWithPrices.length || keyword.tickers?.length || 0}개의 종목과 연관되어 있습니다. 
+                총 {stats?.total_mentions || keyword.count || 0}건의 언급량을 기록했으며, 
+                관련 종목들의 평균 변동률은 <strong>
+                {relatedStocksWithPrices.length > 0 
+                    ? `${(relatedStocksWithPrices.reduce((sum, stock) => sum + (stock.change || 0), 0) / relatedStocksWithPrices.length >= 0 ? '+' : '')}${(relatedStocksWithPrices.reduce((sum, stock) => sum + (stock.change || 0), 0) / relatedStocksWithPrices.length).toFixed(2)}%`
+                    : '데이터 없음'
+                }</strong>입니다.
+                {relatedStocksWithPrices.filter(stock => stock.hasRealData).length > 0 && 
+                    ` (${relatedStocksWithPrices.filter(stock => stock.hasRealData).length}개 종목 실시간 데이터 기준)`
+                }
             </div>
             </div>
         </div>
