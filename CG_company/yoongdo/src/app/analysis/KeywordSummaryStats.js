@@ -8,6 +8,8 @@ const KeywordSummaryStats = ({ selectedPeriod }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.138:8000";
+
     useEffect(() => {
         const fetchKeywords = async () => {
             setLoading(true);
@@ -15,7 +17,7 @@ const KeywordSummaryStats = ({ selectedPeriod }) => {
             
             try {
                 const response = await fetch(
-                    `http://192.168.1.105:8000/api/popular_keywords?days=${selectedPeriod}&limit=50`
+                    `${API_BASE}/api/popular_keywords?days=${selectedPeriod}&limit=50`
                 );
                 
                 if (!response.ok) {

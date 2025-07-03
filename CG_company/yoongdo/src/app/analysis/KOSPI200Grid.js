@@ -9,6 +9,8 @@ const KOSPI200Grid = ({ search = '' }) => {
     const [error, setError] = useState(null);
     const [showAll, setShowAll] = useState(false);
 
+    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.138:8000";
+
     useEffect(() => {
         const fetchStocksWithPrices = async () => {
             setLoading(true);
@@ -16,7 +18,7 @@ const KOSPI200Grid = ({ search = '' }) => {
             
             try {
                 // 1. 종목 리스트 가져오기
-                const tickerResponse = await fetch('http://192.168.1.105:8000/api/ticker_map');
+                const tickerResponse = await fetch(`${API_BASE}/api/ticker_map`);
                 if (!tickerResponse.ok) {
                     throw new Error(`Ticker API error! status: ${tickerResponse.status}`);
                 }
@@ -34,7 +36,7 @@ const KOSPI200Grid = ({ search = '' }) => {
                 
                 const stockPromises = limitedTickers.map(async (ticker) => {
                     try {
-                        const stockResponse = await fetch(`http://192.168.1.105:8000/api/stock?ticker=${ticker.ticker}`);
+                        const stockResponse = await fetch(`${API_BASE}/api/stock?ticker=${ticker.ticker}`);
                         if (!stockResponse.ok) {
                             throw new Error(`Stock API error for ${ticker.ticker}`);
                         }

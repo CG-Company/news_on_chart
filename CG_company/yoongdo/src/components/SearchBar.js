@@ -37,7 +37,7 @@ const SearchBar = ({ ticker, setTicker }) => {
         // 로컬 백업 시도
         try {
           const API_BASE =
-            process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.105:8000";
+            process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.138:8000";
           const backupResponse = await fetch(`${API_BASE}/ticker_map.json`);
           if (backupResponse.ok) {
             const backupData = await backupResponse.json();
