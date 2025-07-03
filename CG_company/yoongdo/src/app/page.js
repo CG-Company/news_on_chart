@@ -444,7 +444,7 @@ export default function Page() {
 
   return (
     <div className="flex overflow-x-hidden">
-      <Sidebar currentPage="news" />
+      <Sidebar currentPage="dashboard" />
       <div className="flex-1 ml-52 min-w-0">
         <Header ticker={ticker} setTicker={setTicker} />
         <main className="p-8 bg-gray-50 min-w-0">
