@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { fetchTickerMap } from "../../utils/api";
+import { fetchTickerMap, fetchStock } from "../../utils/api";
 import { validateTickerMap } from "../../utils/dataValidation";
 import { SearchLoadingSpinner } from "../../components/LoadingSpinner";
 import {
@@ -11,7 +11,32 @@ import {
   Calendar,
   DollarSign,
   Activity,
+  Newspaper,
+  ExternalLink,
 } from "lucide-react";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.138:8000";
 
 const StockKeywordAnalysis = ({ onClose, selectedStock }) => {
   const [keyword, setKeyword] = useState("");
@@ -22,6 +47,7 @@ const StockKeywordAnalysis = ({ onClose, selectedStock }) => {
   const [error, setError] = useState(null);
   const [analysisResults, setAnalysisResults] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState("7"); // 7일, 30일, 90일
+  const [newsList, setNewsList] = useState([]);
   const keywordInputRef = useRef(null);
   const suggestionRefs = useRef([]);
 
@@ -102,90 +128,114 @@ const StockKeywordAnalysis = ({ onClose, selectedStock }) => {
 
     setIsLoading(true);
     setError(null);
+    setAnalysisResults(null);
+    setNewsList([]);
 
     try {
-      // 실제 API 호출 대신 모의 데이터 생성
-      const mockAnalysisData = generateMockAnalysisData(
-        searchKeyword,
-        selectedStock,
-        selectedPeriod
+      // 1. 주가 데이터 fetch
+      const stockData = await fetchStock(selectedStock.ticker);
+      // 2. 뉴스 fetch (키워드별)
+      const newsRes = await fetch(
+        `${API_BASE}/api/keyword_news_return?keyword=${encodeURIComponent(
+          searchKeyword
+        )}&days=${selectedPeriod}&limit=100`
       );
-      setAnalysisResults(mockAnalysisData);
+      const newsJson = await newsRes.json();
+      const newsArr = Array.isArray(newsJson.news) ? newsJson.news : [];
+      setNewsList(newsArr);
+      // 3. 기간 필터링 (최근 N일)
+      const days = parseInt(selectedPeriod);
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() - days);
+      // 4. 일별 데이터 생성
+      const dailyMap = {};
+      stockData.forEach((item) => {
+        if (!item.date) return;
+        if (new Date(item.date) < startDate) return;
+        dailyMap[item.date] = {
+          date: item.date,
+          stockPrice: item.close,
+          stockReturn: item.change_rate || 0,
+          keywordMentions: 0,
+          correlation: null, // 추후 계산
+        };
+      });
+      // 뉴스 날짜별 카운트
+      newsArr.forEach((news) => {
+        const d = news.date ? news.date.slice(0, 10) : null;
+        if (d && dailyMap[d]) dailyMap[d].keywordMentions += 1;
+      });
+      // 상관계수 계산 (주가변동률 vs 키워드 언급)
+      const dailyList = Object.values(dailyMap).sort((a, b) =>
+        a.date.localeCompare(b.date)
+      );
+      const priceArr = dailyList.map((d) => d.stockReturn);
+      const kwArr = dailyList.map((d) => d.keywordMentions);
+      const correlation = calcCorrelation(priceArr, kwArr);
+      // 영향도/수익률 등 임의 계산
+      const impact = Math.abs(correlation) * 100;
+      const stockReturn =
+        priceArr.reduce((a, b) => a + b, 0) / (priceArr.length || 1);
+      const keywordMentions = kwArr.reduce((a, b) => a + b, 0);
+      setAnalysisResults({
+        keyword: searchKeyword,
+        stock: selectedStock.name,
+        ticker: selectedStock.ticker,
+        period: `${selectedPeriod}일`,
+        correlation,
+        impact,
+        stockReturn,
+        keywordMentions,
+        dailyData: dailyList,
+        analysis: {
+          summary: `${searchKeyword} 키워드는 ${selectedStock.name} 주가에 ${
+            correlation > 0 ? "긍정적" : "부정적"
+          }인 영향을 미치고 있습니다.`,
+          correlationStrength:
+            Math.abs(correlation) > 0.7
+              ? "강함"
+              : Math.abs(correlation) > 0.4
+              ? "보통"
+              : "약함",
+          recommendation:
+            correlation > 0.3
+              ? "매수 고려"
+              : correlation < -0.3
+              ? "매도 고려"
+              : "관망",
+          riskLevel:
+            Math.abs(correlation) > 0.8
+              ? "높음"
+              : Math.abs(correlation) > 0.5
+              ? "보통"
+              : "낮음",
+        },
+      });
     } catch (err) {
       console.error("키워드 분석 중 오류:", err);
-      setError("키워드 분석 중 오류가 발생했습니다.");
+      setError("실제 데이터 분석 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 모의 분석 데이터 생성
-  const generateMockAnalysisData = (keyword, stock, period) => {
-    const days = parseInt(period);
-    const correlation = (Math.random() - 0.5) * 2; // -1 ~ 1
-    const impact = Math.random() * 100; // 0 ~ 100
-    const stockReturn = (Math.random() - 0.5) * 20; // -10 ~ 10%
-    const keywordMentions = Math.floor(Math.random() * 1000) + 100;
-
-    // 일별 데이터 생성
-    const dailyData = [];
-    const basePrice = 50000;
-    const baseKeywordCount = 50;
-
-    for (let i = days; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-
-      const priceChange = (Math.random() - 0.5) * 0.1; // ±5%
-      const keywordChange = (Math.random() - 0.5) * 0.2; // ±10%
-
-      dailyData.push({
-        date: date.toISOString().split("T")[0],
-        stockPrice: basePrice * (1 + priceChange),
-        keywordMentions: Math.max(
-          0,
-          baseKeywordCount + keywordChange * baseKeywordCount
-        ),
-        stockReturn: priceChange * 100,
-        correlation: correlation + (Math.random() - 0.5) * 0.1,
-      });
+  // 피어슨 상관계수 계산
+  function calcCorrelation(arr1, arr2) {
+    if (!arr1.length || !arr2.length || arr1.length !== arr2.length) return 0;
+    const n = arr1.length;
+    const avg1 = arr1.reduce((a, b) => a + b, 0) / n;
+    const avg2 = arr2.reduce((a, b) => a + b, 0) / n;
+    let num = 0,
+      den1 = 0,
+      den2 = 0;
+    for (let i = 0; i < n; i++) {
+      num += (arr1[i] - avg1) * (arr2[i] - avg2);
+      den1 += (arr1[i] - avg1) ** 2;
+      den2 += (arr2[i] - avg2) ** 2;
     }
-
-    return {
-      keyword,
-      stock: stock.name,
-      ticker: stock.ticker,
-      period: `${period}일`,
-      correlation: correlation,
-      impact: impact,
-      stockReturn: stockReturn,
-      keywordMentions: keywordMentions,
-      dailyData: dailyData,
-      analysis: {
-        summary: `${keyword} 키워드는 ${stock.name} 주가에 ${
-          correlation > 0 ? "긍정적" : "부정적"
-        }인 영향을 미치고 있습니다.`,
-        correlationStrength:
-          Math.abs(correlation) > 0.7
-            ? "강함"
-            : Math.abs(correlation) > 0.4
-            ? "보통"
-            : "약함",
-        recommendation:
-          correlation > 0.3
-            ? "매수 고려"
-            : correlation < -0.3
-            ? "매도 고려"
-            : "관망",
-        riskLevel:
-          Math.abs(correlation) > 0.8
-            ? "높음"
-            : Math.abs(correlation) > 0.5
-            ? "보통"
-            : "낮음",
-      },
-    };
-  };
+    return den1 && den2 ? num / Math.sqrt(den1 * den2) : 0;
+  }
 
   // 키보드 이벤트 처리
   const handleKeyDown = (e) => {
