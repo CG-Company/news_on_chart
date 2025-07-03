@@ -2,7 +2,7 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from utils import (
+from .utils import (
     get_stock_data, 
     get_ticker_map, 
     get_news_data, 
@@ -358,6 +358,278 @@ def get_report(ticker: str):
     except Exception as e:
         return {"error": str(e)}
 
+@app.get("/api/keyword_news_return")
+def get_keyword_news_return(
+    keyword: str = Query(..., min_length=1, description="검색할 키워드"),
+    days: int = Query(7, ge=1, le=30, description="검색할 기간(일)"),
+    limit: int = Query(50, ge=1, le=200, description="최대 뉴스 개수")
+):
+    """
+    키워드 관련 뉴스 + 각 뉴스별 1주일 후 주가/수익률/7일간 시계열 반환
+    """
+    try:
+        import pandas as pd
+        from datetime import timedelta
+        news_list = get_news_by_keyword(keyword, days, limit)
+        result = []
+        for news in news_list:
+            ticker = news.get("ticker")
+            pub_date = news.get("published_at")
+            if not ticker or not pub_date:
+                continue
+            # 뉴스 날짜 변환
+            try:
+                pub_date_dt = pd.to_datetime(pub_date)
+            except Exception:
+                continue
+            # 뉴스 당일~7일간 주가 시계열
+            sql = """
+                SELECT price_date, close_price
+                FROM stock_price
+                WHERE ticker = :ticker
+                  AND price_date >= :start_date
+                  AND price_date <= :end_date
+                ORDER BY price_date
+            """
+            params = {
+                "ticker": ticker,
+                "start_date": pub_date_dt.strftime("%Y-%m-%d"),
+                "end_date": (pub_date_dt + timedelta(days=7)).strftime("%Y-%m-%d")
+            }
+            df = pd.read_sql(text(sql), engine, params=params)
+            price_series = [
+                {"date": str(row["price_date"]), "close": row["close_price"]}
+                for _, row in df.iterrows()
+            ]
+            price_on_news = None
+            price_after_7d = None
+            if len(df) > 0:
+                price_on_news = df.iloc[0]["close_price"]
+                price_after_7d = df.iloc[-1]["close_price"] if len(df) > 1 else None
+            return_7d = None
+            if price_on_news is not None and price_after_7d is not None:
+                try:
+                    return_7d = round((price_after_7d - price_on_news) / price_on_news * 100, 2)
+                except Exception:
+                    return_7d = None
+            result.append({
+                **news,
+                "price_on_news": price_on_news,
+                "price_after_7d": price_after_7d,
+                "return_7d": return_7d,
+                "price_series": price_series
+            })
+        return safe_json({
+            "keyword": keyword,
+            "period": f"{days}일",
+            "total_news": len(result),
+            "news": result
+        })
+    except Exception as e:
+        logger.error(f"Error in get_keyword_news_return: {e}")
+        logger.error(traceback.format_exc())
+        return safe_json({
+            "keyword": keyword,
+            "period": f"{days}일",
+            "total_news": 0,
+            "news": [],
+            "error": str(e)
+        })
+
+@app.get("/api/ticker_news_return")
+def get_ticker_news_return(
+    ticker: str = Query(..., min_length=6, max_length=6, description="종목코드"),
+    days: int = Query(30, ge=1, le=90, description="검색할 기간(일)"),
+    limit: int = Query(50, ge=1, le=200, description="최대 뉴스 개수")
+):
+    """
+    종목별 뉴스 + 각 뉴스별 1주일 후 주가/수익률/7일간 시계열 반환
+    """
+    try:
+        import pandas as pd
+        from datetime import timedelta
+        # 뉴스 데이터 조회
+        sql_news = """
+            SELECT news_id, ticker, published_at, title, summary, keyword, url, sentiment, sentiment_score
+            FROM news
+            WHERE ticker = :ticker
+              AND published_at >= NOW() - INTERVAL ':days days'
+            ORDER BY published_at DESC
+            LIMIT :limit
+        """
+        news_df = pd.read_sql(text(sql_news), engine, params={"ticker": ticker, "days": days, "limit": limit})
+        result = []
+        for _, news in news_df.iterrows():
+            pub_date = news["published_at"]
+            # 뉴스 날짜 변환
+            try:
+                pub_date_dt = pd.to_datetime(pub_date)
+            except Exception:
+                continue
+            # 뉴스 당일~7일간 주가 시계열
+            sql_price = """
+                SELECT price_date, close_price
+                FROM stock_price
+                WHERE ticker = :ticker
+                  AND price_date >= :start_date
+                  AND price_date <= :end_date
+                ORDER BY price_date
+            """
+            params = {
+                "ticker": ticker,
+                "start_date": pub_date_dt.strftime("%Y-%m-%d"),
+                "end_date": (pub_date_dt + timedelta(days=7)).strftime("%Y-%m-%d")
+            }
+            price_df = pd.read_sql(text(sql_price), engine, params=params)
+            price_series = [
+                {"date": str(row["price_date"]), "close": row["close_price"]}
+                for _, row in price_df.iterrows()
+            ]
+            price_on_news = None
+            price_after_7d = None
+            if len(price_df) > 0:
+                price_on_news = price_df.iloc[0]["close_price"]
+                price_after_7d = price_df.iloc[-1]["close_price"] if len(price_df) > 1 else None
+            return_7d = None
+            if price_on_news is not None and price_after_7d is not None:
+                try:
+                    return_7d = round((price_after_7d - price_on_news) / price_on_news * 100, 2)
+                except Exception:
+                    return_7d = None
+            result.append({
+                "news_id": news["news_id"],
+                "ticker": news["ticker"],
+                "published_at": str(news["published_at"]),
+                "title": news["title"],
+                "summary": news["summary"],
+                "keyword": news["keyword"],
+                "url": news["url"],
+                "sentiment": news["sentiment"],
+                "sentiment_score": news["sentiment_score"],
+                "price_on_news": price_on_news,
+                "price_after_7d": price_after_7d,
+                "return_7d": return_7d,
+                "price_series": price_series
+            })
+        return safe_json({
+            "ticker": ticker,
+            "period": f"{days}일",
+            "total_news": len(result),
+            "news": result
+        })
+    except Exception as e:
+        logger.error(f"Error in get_ticker_news_return: {e}")
+        logger.error(traceback.format_exc())
+        return safe_json({
+            "ticker": ticker,
+            "period": f"{days}일",
+            "total_news": 0,
+            "news": [],
+            "error": str(e)
+        })
+
+@app.get("/api/ticker_keyword_relation")
+def get_ticker_keyword_relation(
+    ticker: str = Query(..., min_length=6, max_length=6, description="종목코드"),
+    keyword: str = Query(..., min_length=1, description="키워드"),
+    days: int = Query(30, ge=1, le=90, description="검색할 기간(일)"),
+    limit: int = Query(50, ge=1, le=200, description="최대 뉴스 개수")
+):
+    """
+    종목+키워드 조합 뉴스 + 각 뉴스별 1주일 후 주가/수익률/7일간 시계열 반환
+    """
+    try:
+        import pandas as pd
+        from datetime import timedelta
+        # 뉴스 데이터 조회 (키워드 포함)
+        sql_news = """
+            SELECT news_id, ticker, published_at, title, summary, keyword, url, sentiment, sentiment_score
+            FROM news
+            WHERE (
+              keyword::text ILIKE :kw
+              OR title ILIKE :kw
+              OR summary ILIKE :kw
+            )
+            AND published_at >= NOW() - INTERVAL ':days days'
+            ORDER BY 
+              CASE WHEN ticker = '000000' THEN 0 ELSE 1 END,
+              CASE WHEN ticker = :ticker THEN 0 ELSE 1 END,
+              published_at DESC
+            LIMIT :limit
+        """
+        kw_pattern = f"%{keyword}%"
+        news_df = pd.read_sql(text(sql_news), engine, params={"ticker": ticker, "kw": kw_pattern, "days": days, "limit": limit})
+        result = []
+        for _, news in news_df.iterrows():
+            pub_date = news["published_at"]
+            # 뉴스 날짜 변환
+            try:
+                pub_date_dt = pd.to_datetime(pub_date)
+            except Exception:
+                continue
+            # 뉴스 당일~7일간 주가 시계열
+            sql_price = """
+                SELECT price_date, close_price
+                FROM stock_price
+                WHERE ticker = :ticker
+                  AND price_date >= :start_date
+                  AND price_date <= :end_date
+                ORDER BY price_date
+            """
+            params = {
+                "ticker": ticker,
+                "start_date": pub_date_dt.strftime("%Y-%m-%d"),
+                "end_date": (pub_date_dt + timedelta(days=7)).strftime("%Y-%m-%d")
+            }
+            price_df = pd.read_sql(text(sql_price), engine, params=params)
+            price_series = [
+                {"date": str(row["price_date"]), "close": row["close_price"]}
+                for _, row in price_df.iterrows()
+            ]
+            price_on_news = None
+            price_after_7d = None
+            if len(price_df) > 0:
+                price_on_news = price_df.iloc[0]["close_price"]
+                price_after_7d = price_df.iloc[-1]["close_price"] if len(price_df) > 1 else None
+            return_7d = None
+            if price_on_news is not None and price_after_7d is not None:
+                try:
+                    return_7d = round((price_after_7d - price_on_news) / price_on_news * 100, 2)
+                except Exception:
+                    return_7d = None
+            result.append({
+                "news_id": news["news_id"],
+                "ticker": news["ticker"],
+                "published_at": str(news["published_at"]),
+                "title": news["title"],
+                "summary": news["summary"],
+                "keyword": news["keyword"],
+                "url": news["url"],
+                "sentiment": news["sentiment"],
+                "sentiment_score": news["sentiment_score"],
+                "price_on_news": price_on_news,
+                "price_after_7d": price_after_7d,
+                "return_7d": return_7d,
+                "price_series": price_series
+            })
+        return safe_json({
+            "ticker": ticker,
+            "keyword": keyword,
+            "period": f"{days}일",
+            "total_news": len(result),
+            "news": result
+        })
+    except Exception as e:
+        logger.error(f"Error in get_ticker_keyword_relation: {e}")
+        logger.error(traceback.format_exc())
+        return safe_json({
+            "ticker": ticker,
+            "keyword": keyword,
+            "period": f"{days}일",
+            "total_news": 0,
+            "news": [],
+            "error": str(e)
+        })
 @app.get("/api/latest_keywords")
 def get_latest_keywords(ticker: str = Query(None, description="종목코드(선택)")):
     """특정 종목(ticker)에 대해서만 최신 뉴스의 keyword를 반환. ticker가 없으면 전체 종목."""
