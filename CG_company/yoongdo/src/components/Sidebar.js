@@ -6,21 +6,21 @@ const Sidebar = ({ currentPage = "dashboard" }) => {
   const menuItems = [
     {
       id: "dashboard",
-      label: "News on chart",
+      label: "CHART",
       icon: "📊",
       href: "/",
       active: true,
     },
     {
       id: "analysis",
-      label: "Keywords",
+      label: "KEYWORDS",
       icon: "📈",
       href: "/analysis",
       active: true,
     },
     {
       id: "keyword",
-      label: "Community",
+      label: "COMMUNITY",
       icon: "📰",
       href: "/keyword",
       active: true,
@@ -32,7 +32,7 @@ const Sidebar = ({ currentPage = "dashboard" }) => {
     <div className="w-52 bg-gray-900 h-screen fixed left-0 top-0 flex flex-col z-20">
       {/* 로고 영역 */}
       <div className="p-6 border-b border-gray-700">
-        <h1 className="text-white text-xl font-bold">CG finance</h1>
+        <h1 className="text-white text-xl font-bold">NEWS ON CHART</h1>
       </div>
 
       {/* 메뉴 영역 */}
