@@ -8,6 +8,8 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('news');
 
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.138:8000";
+
   useEffect(() => {
     if (isOpen && keyword) {
       fetchKeywordData();
@@ -18,11 +20,11 @@ const KeywordDetailModal = ({ keyword, isOpen, onClose }) => {
     try {
       setLoading(true);
       
-      // 병렬로 데이터 요청 (API URL에 localhost:8000 추가)
+      // 병렬로 데이터 요청
       const [newsResponse, statsResponse, relatedResponse] = await Promise.all([
-        fetch(`http://192.168.1.105:8000/api/keyword_news?keyword=${encodeURIComponent(keyword)}&days=7&limit=20`),
-        fetch(`http://192.168.1.105:8000/api/keyword_stats?keyword=${encodeURIComponent(keyword)}&days=30`),
-        fetch(`http://192.168.1.105:8000/api/related_keywords?keyword=${encodeURIComponent(keyword)}&days=7&limit=10`)
+        fetch(`${API_BASE}/api/keyword_news?keyword=${encodeURIComponent(keyword)}&days=7&limit=20`),
+        fetch(`${API_BASE}/api/keyword_stats?keyword=${encodeURIComponent(keyword)}&days=30`),
+        fetch(`${API_BASE}/api/related_keywords?keyword=${encodeURIComponent(keyword)}&days=7&limit=10`)
       ]);
 
       const newsData = await newsResponse.json();
