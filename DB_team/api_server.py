@@ -15,7 +15,8 @@ from utils import (
     get_keyword_statistics,
     stream_summarize_news_for_period,
     get_latest_reports,
-    engine
+    engine,
+    get_latest_keywords_by_ticker
 )
 import re
 from sqlalchemy import text
@@ -356,3 +357,13 @@ def get_report(ticker: str):
         return {"ticker": ticker, "reports": reports}
     except Exception as e:
         return {"error": str(e)}
+
+@app.get("/api/latest_keywords")
+def get_latest_keywords(ticker: str = Query(None, description="종목코드(선택)")):
+    """특정 종목(ticker)에 대해서만 최신 뉴스의 keyword를 반환. ticker가 없으면 전체 종목."""
+    try:
+        result = get_latest_keywords_by_ticker(ticker)
+        return {"latest_keywords": result, "count": len(result)}
+    except Exception as e:
+        logger.error(f"Error in get_latest_keywords: {e}")
+        return {"latest_keywords": [], "error": str(e)}
