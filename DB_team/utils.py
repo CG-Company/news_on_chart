@@ -246,7 +246,7 @@ def get_panel_news_data(ticker: str, date_str: str) -> dict:
     """
     ticker: '005930' 등 종목코드
     date_str: 'YYYY-MM-DD' 형식
-    → companyNews, mainNews, macroNews 를 dict 리스트로 반환
+    → mainNews 만 반환 (거시뉴스 제거됨)
     """
     sql_common = """
     SELECT title, summary, url, published_at
@@ -256,32 +256,16 @@ def get_panel_news_data(ticker: str, date_str: str) -> dict:
     ORDER BY published_at DESC
     """
 
-    # # 3-1) 기업뉴스
-    # df_company = pd.read_sql(
-    #     text(sql_common.format(where_clause="ticker = :ticker")),
-    #     engine,
-    #     params={"ticker": ticker, "date": date_str},
-    # )
-
-    # 3-2) 메인뉴스 (is_selected = true) — 단건만
+    # 메인뉴스 (is_selected = true) — 단건만
     df_main = pd.read_sql(
         text(sql_common.format(where_clause="ticker = :ticker AND is_selected = true") + " LIMIT 1"),
         engine,
         params={"ticker": ticker, "date": date_str},
     )
 
-    # 3-3) 거시경제뉴스 (ticker = '000000')
-    df_macro = pd.read_sql(
-        text(sql_common.format(where_clause="ticker = '000000'")),
-        engine,
-        params={"date": date_str},
-    )
-
     return {
-        # "companyNews": df_company.to_dict(orient="records"),
         # mainNews를 단일 dict 또는 None 반환
         "mainNews": df_main.to_dict(orient="records")[0] if not df_main.empty else None,
-        "macroNews": df_macro.to_dict(orient="records"),
     }
 
 
@@ -322,9 +306,6 @@ def stream_summarize_news_for_period(ticker: str, period: str = "1d"):
         panel = get_panel_news_data(ticker, date_str)
         if panel.get("mainNews") and panel["mainNews"].get("summary"):
             raw_summaries.append(panel["mainNews"]["summary"])
-        for item in panel.get("macroNews", []):
-            if item.get("summary"):
-                raw_summaries.append(item["summary"])
 
     if not raw_summaries:
         raise ValueError(f"최근 {PERIOD_KR.get(period, period)}간 뉴스가 없습니다.")

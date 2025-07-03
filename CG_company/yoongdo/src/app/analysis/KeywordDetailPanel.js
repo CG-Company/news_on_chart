@@ -33,6 +33,101 @@ const [related, setRelated] = useState([]);
 const [loading, setLoading] = useState(true);
 const [error, setError] = useState(null);
 const [activeTab, setActiveTab] = useState("stocks");
+const [tickerMap, setTickerMap] = useState([]);
+const [relatedStocksWithPrices, setRelatedStocksWithPrices] = useState([]);
+
+// 티커맵 가져오기
+useEffect(() => {
+    const fetchTickerMap = async () => {
+        try {
+            const response = await fetch('http://192.168.1.105:8000/api/ticker_map');
+            if (response.ok) {
+                const data = await response.json();
+                setTickerMap(data);
+                console.log('TickerMap loaded for KeywordDetailPanel:', data.length, '종목');
+            }
+        } catch (error) {
+            console.warn('Failed to load ticker map:', error);
+        }
+    };
+    fetchTickerMap();
+}, []);
+
+// 주식 데이터 가져오기 함수
+const fetchStockData = async (ticker) => {
+    try {
+        const response = await fetch(`http://192.168.1.105:8000/api/stock?ticker=${ticker}`);
+        if (!response.ok) {
+            return null;
+        }
+        const data = await response.json();
+        const stockArray = data.stockData || [];
+        // 최신 데이터 (배열의 마지막 요소)
+        return stockArray.length > 0 ? stockArray[stockArray.length - 1] : null;
+    } catch (error) {
+        console.warn(`Error fetching stock data for ${ticker}:`, error);
+        return null;
+    }
+};
+
+// 종목명 찾기 함수
+const getCompanyName = (ticker) => {
+    const found = tickerMap.find(item => item.ticker === ticker);
+    return found ? (found.name || found.company_name) : ticker;
+};
+
+// 관련 종목의 실제 데이터 가져오기
+useEffect(() => {
+    const fetchRelatedStocksData = async () => {
+        if (!keyword?.tickers || tickerMap.length === 0) {
+            setRelatedStocksWithPrices([]);
+            return;
+        }
+
+        console.log('Fetching stock prices for keyword tickers:', keyword.tickers);
+
+        try {
+            const stocksWithPrices = await Promise.all(
+                keyword.tickers.map(async (tickerInfo) => {
+                    // tickerInfo가 객체인지 확인하고 ticker 추출
+                    const ticker = typeof tickerInfo === 'object' ? tickerInfo.ticker : tickerInfo;
+                    
+                    if (!ticker) {
+                        console.warn('Invalid ticker info:', tickerInfo);
+                        return null;
+                    }
+
+                    console.log(`Fetching stock data for: ${ticker}`);
+                    
+                    const stockData = await fetchStockData(ticker);
+                    const companyName = getCompanyName(ticker);
+                    
+                    return {
+                        ticker: ticker,
+                        name: companyName,
+                        sector: typeof tickerInfo === 'object' ? tickerInfo.sector : '기술',
+                        price: stockData ? stockData.close : (typeof tickerInfo === 'object' ? tickerInfo.price : null),
+                        change: stockData ? stockData.change_rate : (typeof tickerInfo === 'object' ? tickerInfo.change_rate : null),
+                        date: stockData ? stockData.date : null,
+                        hasRealData: !!stockData,
+                        correlation: 0.7 + Math.random() * 0.3 // 상관계수는 임시 데이터
+                    };
+                })
+            );
+
+            // null 값 제거
+            const validStocks = stocksWithPrices.filter(stock => stock !== null);
+            setRelatedStocksWithPrices(validStocks);
+            console.log('Related stocks with prices loaded:', validStocks);
+
+        } catch (error) {
+            console.error('Error fetching related stocks data:', error);
+            setRelatedStocksWithPrices([]);
+        }
+    };
+
+    fetchRelatedStocksData();
+}, [keyword, tickerMap]);
 
 useEffect(() => {
 if (!keyword) return;
@@ -146,19 +241,6 @@ return (
 );
 }
 
-// 관련 종목 데이터 (기본 데이터나 API에서 받은 데이터 사용)
-const relatedStocks =
-stats?.related_tickers ||
-keyword.tickers?.map((ticker, index) => ({
-    ticker,
-    name: `종목 ${ticker}`,
-    sector: "기술",
-    price: Math.floor(Math.random() * 200000) + 50000,
-    change: (Math.random() - 0.5) * 10,
-    correlation: 0.7 + Math.random() * 0.3,
-})) ||
-[];
-
 // 상관관계 차트 데이터 (모의 데이터)
 const correlationData = stats?.daily_stats
 ?.slice(0, 7)
@@ -270,89 +352,68 @@ return (
     <div className="p-6 overflow-y-auto max-h-[70vh]">
         {activeTab === "stocks" && (
         <div className="space-y-4">
-            {relatedStocks.length === 0 ? (
+            {relatedStocksWithPrices.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
                 <TrendingUp className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>관련 종목 정보가 없습니다.</p>
+                <p>관련 종목 정보를 불러오는 중이거나 데이터가 없습니다.</p>
             </div>
             ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {relatedStocks.map((stock, index) => {
-                return (
+                {relatedStocksWithPrices.map((stock, index) => (
                     <div
-                    key={
-                        typeof stock.ticker === "string" ||
-                        typeof stock.ticker === "number"
-                        ? `${stock.ticker}`
-                        : `stock-${index}`
-                    }
-                    className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 bg-gradient-to-r from-gray-50 to-white"
+                        key={`${stock.ticker}-${index}`}
+                        className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 bg-gradient-to-r from-gray-50 to-white"
                     >
-                    <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-gray-900">
-                            {stock.name
-                                ? String(stock.name)
-                                : `종목 ${stock.ticker ?? index}`}
-                            </h4>
-                            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium">
-                            {stock.ticker
-                                ? String(stock.ticker)
-                                : `TICKER-${index}`}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                            <span>
-                            상관계수:{" "}
-                            {typeof stock.correlation === "number"
-                                ? stock.correlation.toFixed(2)
-                                : "0.75"}
-                            </span>
-                            <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                            {stock.sector ? String(stock.sector) : "기술"}
-                            </span>
-                        </div>
-                        </div>
-                        <div className="text-right space-y-1">
-                        <div className="text-lg font-bold text-gray-900">
-                            {typeof stock.price === "number"
-                            ? stock.price.toLocaleString()
-                            : "185,000"}
-                            원
-                        </div>
-                        <div className="flex items-center gap-1">
-                            {(typeof stock.change === "number"
-                            ? stock.change
-                            : 2.5) > 0 ? (
-                            <TrendingUp className="h-4 w-4 text-green-500" />
-                            ) : (
-                            <TrendingDown className="h-4 w-4 text-red-500" />
-                            )}
-                            <span
-                            className={
-                                (typeof stock.change === "number"
-                                ? stock.change
-                                : 2.5) > 0
-                                ? "text-green-500"
-                                : "text-red-500"
-                            }
-                            >
-                            {typeof stock.change === "number" &&
-                            stock.change > 0
-                                ? "+"
-                                : ""}
-                            {typeof stock.change === "number"
-                                ? stock.change.toFixed(2)
-                                : "2.50"}
-                            %
-                            </span>
-                        </div>
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <h4 className="font-semibold text-gray-900">
+                                        {stock.name}
+                                    </h4>
+                                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium">
+                                        {stock.ticker}
+                                    </span>
+                                    {stock.hasRealData && (
+                                        <span className="inline-block w-2 h-2 bg-green-500 rounded-full" title="실시간 데이터"></span>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-gray-500">
+                                    <span>
+                                        상관계수: {stock.correlation.toFixed(2)}
+                                    </span>
+                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                        {stock.sector}
+                                    </span>
+                                </div>
+                                {stock.date && (
+                                    <div className="text-xs text-gray-400">
+                                        {stock.date} 기준
+                                    </div>
+                                )}
+                            </div>
+                            <div className="text-right space-y-1">
+                                <div className="text-lg font-bold text-gray-900">
+                                    {stock.price !== null 
+                                        ? `${stock.price.toLocaleString()}원`
+                                        : '데이터 없음'
+                                    }
+                                </div>
+                                {stock.change !== null && (
+                                    <div className="flex items-center gap-1">
+                                        {stock.change > 0 ? (
+                                            <TrendingUp className="h-4 w-4 text-green-500" />
+                                        ) : (
+                                            <TrendingDown className="h-4 w-4 text-red-500" />
+                                        )}
+                                        <span className={stock.change > 0 ? "text-green-500" : "text-red-500"}>
+                                            {stock.change > 0 ? "+" : ""}{stock.change.toFixed(2)}%
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    </div>
-                );
-                })}
+                ))}
             </div>
             )}
         </div>

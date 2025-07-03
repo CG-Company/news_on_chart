@@ -215,17 +215,20 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
     });
     return sorted.slice(0, PAGE_SIZE_COMPANY);
   }, [newsList, date]);
+
   const filteredMacroNews = useMemo(() => {
     if (!date) return macroNewsList;
     return macroNewsList.filter(
       (item) => item.published_at === date || item.date === date
     );
   }, [macroNewsList, date]);
+
   const newsListByTab =
     activeTab === "company" ? companyNewsList : macroNewsList;
   const pageSize =
     activeTab === "company" ? PAGE_SIZE_COMPANY : PAGE_SIZE_MACRO;
   const totalPages = Math.ceil(newsListByTab.length / pageSize);
+
   const pagedNews = useMemo(() => {
     const start = (page - 1) * pageSize;
     return newsListByTab.slice(start, start + pageSize);
