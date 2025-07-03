@@ -385,13 +385,14 @@ export default function NewsPage() {
   return (
     <div className="flex overflow-x-hidden">
       <Sidebar currentPage="community" />
-      <div className="flex-1 ml-52">
-        <Header
-          ticker={ticker}
-          setTicker={setTicker}
-          tickerName={tickerName}
-          setTickerName={setTickerName}
-        />
+              <div className="flex-1 ml-64">
+                  <Header
+            ticker={ticker}
+            setTicker={setTicker}
+            tickerName={tickerName}
+            setTickerName={setTickerName}
+            currentPage="community"
+          />
         <main className="p-8 bg-gray-50 min-h-screen overflow-x-auto">
           <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
             중요 리포트

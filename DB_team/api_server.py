@@ -15,7 +15,8 @@ from utils import (
     get_keyword_statistics,
     stream_summarize_news_for_period,
     get_latest_reports,
-    engine
+    engine,
+    get_latest_keywords_by_ticker
 )
 import re
 from sqlalchemy import text
@@ -29,7 +30,6 @@ import math
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Stock Analysis API", version="1.0.0")
 app = FastAPI(title="Stock Analysis API", version="1.0.0")
 
 # CORS 설정
@@ -106,7 +106,6 @@ def read_news(ticker: str = Query(..., min_length=6, max_length=6)):
 @app.get("/api/news_is_selected")
 def get_news_is_selected(ticker: str):
     """is_selected가 True인 뉴스만 반환"""
-    """is_selected가 True인 뉴스만 반환"""
     try:
         news = get_selected_news_by_ticker(ticker)
         return safe_json({"ticker": ticker, "news": news})
@@ -116,7 +115,6 @@ def get_news_is_selected(ticker: str):
 
 @app.get("/api/news_day")
 def get_news_day(ticker: str, day: str):
-    """특정 날짜 뉴스 조회"""
     """특정 날짜 뉴스 조회"""
     try:
         news = get_news_by_ticker_and_day(ticker, day)
@@ -137,7 +135,6 @@ def get_macro_news():
 
 @app.get("/api/sector_stocks")
 def get_sector_stocks_api(ticker: str):
-    """같은 섹터 종목 조회"""
     """같은 섹터 종목 조회"""
     try:
         stocks = get_sector_stocks(ticker)
@@ -360,3 +357,13 @@ def get_report(ticker: str):
         return {"ticker": ticker, "reports": reports}
     except Exception as e:
         return {"error": str(e)}
+
+@app.get("/api/latest_keywords")
+def get_latest_keywords(ticker: str = Query(None, description="종목코드(선택)")):
+    """특정 종목(ticker)에 대해서만 최신 뉴스의 keyword를 반환. ticker가 없으면 전체 종목."""
+    try:
+        result = get_latest_keywords_by_ticker(ticker)
+        return {"latest_keywords": result, "count": len(result)}
+    except Exception as e:
+        logger.error(f"Error in get_latest_keywords: {e}")
+        return {"latest_keywords": [], "error": str(e)}

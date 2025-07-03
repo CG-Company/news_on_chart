@@ -2,6 +2,7 @@
 "use client";
 import React, { useState } from "react";
 import Sidebar from "../../components/Sidebar";
+import Header from "../../components/Header";
 import KeywordPeriodTabs from "./KeywordPeriodTabs";
 import KeywordCardGrid from "./KeywordCardGrid";
 import KeywordDetailPanel from "./KeywordDetailPanel";
@@ -15,6 +16,10 @@ const ComprehensiveKeywordPage = () => {
   const [activeTab, setActiveTab] = useState("keywords");
   const [stockSearch, setStockSearch] = useState("");
   const [keywordSearch, setKeywordSearch] = useState("");
+  
+  // Header용 상태 (기본값 설정)
+  const [ticker, setTicker] = useState("000660");
+  const [tickerName, setTickerName] = useState("SK하이닉스");
 
   const handleKeywordSearch = (e) => {
     e.preventDefault();
@@ -32,32 +37,27 @@ const ComprehensiveKeywordPage = () => {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar currentPage="analysis" />
 
-      <div className="flex-1 ml-52">
-        {/* Header */}
-        <div className="bg-white shadow-sm border-b border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                시장 분석 대시보드
-              </h1>
-              <p className="text-gray-600 mt-1">
-                실시간 키워드 트렌드와 종목 분석
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Activity className="w-4 h-4" />
-                <span>실시간 업데이트</span>
-              </div>
-              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                <RefreshCw className="w-4 h-4" />
-                새로고침
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="flex-1 ml-64">
+        {/* 공통 헤더 */}
+        <Header 
+          ticker={ticker}
+          setTicker={setTicker}
+          tickerName={tickerName}
+          setTickerName={setTickerName}
+          currentPage="analysis"
+        />
 
         <div className="p-8">
+          {/* 페이지 제목 */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              시장 분석 대시보드
+            </h1>
+            <p className="text-gray-600">
+              실시간 키워드 트렌드와 종목 분석을 확인하세요
+            </p>
+          </div>
+
           {/* Tab Navigation */}
           <div className="flex space-x-1 mb-8 bg-gray-100 p-1 rounded-lg inline-flex">
             <button
