@@ -13,7 +13,7 @@ const Sidebar = ({ currentPage = "dashboard" }) => {
     },
     {
       id: "analysis",
-      label: "Analysis",
+      label: "Keyword (+ AI)",
       icon: "📈",
       href: "/analysis",
       active: true,

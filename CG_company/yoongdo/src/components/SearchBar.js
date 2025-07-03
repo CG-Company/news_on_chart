@@ -449,6 +449,19 @@ const SearchBar = ({ ticker, setTicker }) => {
                   </div>
                 </button>
               ))}
+              {/* 추가 안내 메시지 */}
+              <div className="mt-2 text-xs text-gray-500 text-center">
+                <br />
+                원하는 종목이 없다면,<br />키워드로 검색은 어때요?
+                <br />
+              </div>
+              {/* '키워드로 검색' 버튼 추가 */}
+              <button
+                className="w-full mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-800 transition"
+                onClick={() => window.location.href = '/analysis'}
+              >
+                키워드로 검색
+              </button>
             </div>
 
             {/* 키보드 단축키 안내 */}
