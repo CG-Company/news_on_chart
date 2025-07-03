@@ -607,7 +607,10 @@ const StockKeywordAnalysis = ({ onClose, selectedStock }) => {
                               {data.keywordMentions.toLocaleString()}
                             </td>
                             <td className="py-2 px-3 text-right text-gray-600">
-                              {data.correlation.toFixed(3)}
+                              {data.correlation !== null &&
+                              data.correlation !== undefined
+                                ? data.correlation.toFixed(3)
+                                : "-"}
                             </td>
                           </tr>
                         ))}
