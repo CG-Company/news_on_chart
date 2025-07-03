@@ -20,7 +20,7 @@ const Sidebar = ({ currentPage = "dashboard" }) => {
     },
     {
       id: "community",
-      label: "Community",
+      label: "Report & Community",
       icon: "📰",
       href: "/community",
       active: true,
