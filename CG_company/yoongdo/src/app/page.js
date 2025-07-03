@@ -2,6 +2,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import LandingPage from "../components/LandingPage";
 
 // 백엔드 연동 API 및 유틸리티
 import {
@@ -56,6 +57,9 @@ const NewsPanel = dynamic(() => import("../components/NewsPanel"), {
 });
 
 export default function Page() {
+  // 랜딩 페이지 상태
+  const [showLanding, setShowLanding] = useState(true);
+  
   // 기본 상태
   const [ticker, setTicker] = useState("000660");
   const [tickerName, setTickerName] = useState("SK하이닉스");
@@ -389,6 +393,31 @@ export default function Page() {
     }
   }, [ticker]);
 
+  // 랜딩 페이지 진입 핸들러
+  const handleEnterApp = useCallback(() => {
+    setShowLanding(false);
+  }, []);
+
+  // 네비게이션 핸들러
+  const handleNavigate = useCallback((page) => {
+    setShowLanding(false);
+    if (page === 'chart' || page === 'home') {
+      setSelectedPage('dashboard');
+    } else if (page === 'keyword') {
+      setSelectedPage('keyword');
+    } else if (page === 'analysis') {
+      setSelectedPage('analysis');
+    } else if (page === 'demo') {
+      // 데모 페이지로 이동 (일단 메인 앱으로)
+      setSelectedPage('dashboard');
+    }
+  }, []);
+
+  // 랜딩 페이지 표시
+  if (showLanding) {
+    return <LandingPage onEnterApp={handleEnterApp} onNavigate={handleNavigate} />;
+  }
+
   // 전체 로딩 상태
   const isInitialLoading = isLoadingTicker;
 
@@ -457,6 +486,20 @@ export default function Page() {
               ticker={ticker}
               key={selectedDate ? `news-${selectedDate}` : "news-empty"}
             />
+          ) : selectedPage === "analysis" ? (
+            <div className="space-y-8">
+              <div className="bg-white rounded-xl shadow-sm border p-6">
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">키워드 분석</h1>
+                <p className="text-gray-600">키워드 분석 페이지입니다. 개발 중입니다.</p>
+              </div>
+            </div>
+          ) : selectedPage === "keyword" ? (
+            <div className="space-y-8">
+              <div className="bg-white rounded-xl shadow-sm border p-6">
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">키워드 검색</h1>
+                <p className="text-gray-600">키워드 검색 페이지입니다. 개발 중입니다.</p>
+              </div>
+            </div>
           ) : (
             // 기졸 메인 컨텐츠 영역 (차트, 카드 등)
             <>

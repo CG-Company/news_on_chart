@@ -1,43 +1,50 @@
 // components/Header.js
 import React from "react";
 import SearchBar from "./SearchBar";
+import { Bell, Mail, User } from "lucide-react";
 
 const Header = ({ ticker, setTicker, tickerName, setTickerName }) => {
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4 relative z-50">
+    <header className="bg-white border-b border-gray-100 px-6 py-3 relative z-50">
       <div className="flex items-center justify-between">
-        {/* 페이지 제목과 검색창 */}
-        <div className="flex items-center space-x-8">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <svg
-                className="w-5 h-5 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                News on Chart
-              </h1>
-            </div>
-          </div>
+        {/* 검색창 */}
+        <div className="flex-1 max-w-md">
+          <SearchBar
+            ticker={ticker}
+            setTicker={setTicker}
+            setTickerName={setTickerName}
+          />
+        </div>
 
-          {/* 검색창 */}
-          <div className="w-96 relative">
-            <SearchBar
-              ticker={ticker}
-              setTicker={setTicker}
-              setTickerName={setTickerName}
-            />
+        {/* 우측 아이콘들 */}
+        <div className="flex items-center space-x-4">
+          {/* 메일 아이콘 */}
+          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <Mail className="w-5 h-5 text-gray-600" />
+          </button>
+
+          {/* 알림 아이콘 */}
+          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors relative">
+            <Bell className="w-5 h-5 text-gray-600" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+
+          {/* 구분선 */}
+          <div className="w-px h-6 bg-gray-200"></div>
+
+          {/* 프로필 */}
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+              <User className="w-4 h-4 text-gray-600" />
+            </div>
+            <div className="hidden sm:block">
+              <div className="text-sm font-medium text-gray-900">Aurobindo Gill</div>
+            </div>
+            <button className="p-1 hover:bg-gray-100 rounded transition-colors">
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
