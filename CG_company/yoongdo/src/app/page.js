@@ -473,7 +473,7 @@ export default function Page() {
 
   return (
     <div className="flex overflow-x-hidden">
-      <Sidebar currentPage="news" />
+      <Sidebar currentPage="dashboard" />
       <div className="flex-1 ml-52 min-w-0">
         <Header ticker={ticker} setTicker={setTicker} />
         <main className="p-8 bg-gray-50 min-w-0">
@@ -554,12 +554,9 @@ export default function Page() {
               </ErrorBoundary>
 
               {/* 차트와 뉴스 패널 */}
-              <div
-                className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-                style={{ minHeight: "600px" }}
-              >
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* 차트 영역 (2/3) */}
-                <div className="lg:col-span-2" style={{ height: "450px" }}>
+                <div className="lg:col-span-2">
                   <ErrorBoundary
                     name="ChartContainer"
                     fallback={(error, retry) => (
@@ -646,12 +643,9 @@ export default function Page() {
                 </div>
 
                 {/* 뉴스 패널 + AI 요약 배너 영역 (1/3) */}
-                <div
-                  className="lg:col-span-1 flex flex-col"
-                  style={{ height: "600px" }}
-                >
+                <div className="lg:col-span-1 flex flex-col">
                   {/* 뉴스 패널 */}
-                  <div className="flex-1" style={{ height: "500px" }}>
+                  <div className="flex-1">
                     <ErrorBoundary
                       name="NewsPanel"
                       fallback={(error, retry) => (
@@ -664,13 +658,15 @@ export default function Page() {
                         loading={isLoadingStock}
                         mainNews={mainNews}
                         ticker={ticker}
-                        key={selectedDate ? `news-${selectedDate}` : "news-empty"}
+                        key={
+                          selectedDate ? `news-${selectedDate}` : "news-empty"
+                        }
                       />
                     </ErrorBoundary>
                   </div>
 
                   {/* AI 뉴스 요약 배너 - 뉴스패널 바로 아래 */}
-                  <div className="mt-6" style={{ height: "100px" }}>
+                  <div className="mt-6">
                     <AINewsSummaryBanner ticker={ticker} />
                   </div>
                 </div>

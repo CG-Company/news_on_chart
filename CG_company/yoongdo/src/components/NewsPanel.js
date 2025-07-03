@@ -193,14 +193,14 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
   // 탭별 뉴스 데이터
   const companyNewsList = useMemo(() => {
     if (!newsList || newsList.length === 0) return [];
-    
+
     // 최신순 정렬 (published_at 또는 date)
     const sorted = [...newsList].sort((a, b) => {
       const dateA = new Date(a.published_at || a.date || 0);
       const dateB = new Date(b.published_at || b.date || 0);
       return dateB - dateA;
     });
-    
+
     if (!date) {
       // 날짜 선택이 없으면 최신 뉴스들 표시
       return sorted.slice(0, PAGE_SIZE_COMPANY);
@@ -210,7 +210,9 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
         (item) => item.published_at === date || item.date === date
       );
       // 해당 날짜에 뉴스가 없으면 최신 뉴스 표시
-      return filtered.length > 0 ? filtered : sorted.slice(0, PAGE_SIZE_COMPANY);
+      return filtered.length > 0
+        ? filtered
+        : sorted.slice(0, PAGE_SIZE_COMPANY);
     }
   }, [newsList, date]);
 
@@ -221,10 +223,12 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
     );
   }, [macroNewsList, date]);
 
-  const newsListByTab = activeTab === "company" ? companyNewsList : macroNewsList;
-  const pageSize = activeTab === "company" ? PAGE_SIZE_COMPANY : PAGE_SIZE_MACRO;
+  const newsListByTab =
+    activeTab === "company" ? companyNewsList : macroNewsList;
+  const pageSize =
+    activeTab === "company" ? PAGE_SIZE_COMPANY : PAGE_SIZE_MACRO;
   const totalPages = Math.ceil(newsListByTab.length / pageSize);
-  
+
   const pagedNews = useMemo(() => {
     const start = (page - 1) * pageSize;
     return newsListByTab.slice(start, start + pageSize);
@@ -249,10 +253,7 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
       : macroNewsList[0]) || null;
 
   return (
-    <div
-      className="bg-white rounded-lg shadow-lg p-4 w-full max-w-xl mx-auto h-full relative"
-      style={{ height: "100%" }}
-    >
+    <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-xl mx-auto relative">
       {/* 탭 */}
       <div className="flex border-b mb-4">
         {TABS.map((tab) => (
@@ -271,10 +272,7 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
       </div>
 
       {/* 메인뉴스 강조 card 완전 제거, 리스트 내에서만 메인 pill+title+summary+날짜로 통일 */}
-      <ul
-        className="divide-y divide-gray-100 mb-4 overflow-y-auto"
-        style={{ maxHeight: "calc(100% - 80px)" }}
-      >
+      <ul className="divide-y divide-gray-100 mb-4">
         {activeTab === "company" && mainNews && page === 1 && (
           <li className="py-3">
             <a
@@ -304,37 +302,35 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
             </a>
           </li>
         )}
-        {activeTab === "macro" &&
-          mainMacroNews &&
-          page === 1 && (
-            <li className="py-3">
-              <a
-                href={mainMacroNews.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block hover:bg-gray-50 rounded px-2 py-1"
-              >
-                <div className="flex items-center mb-1 gap-2 flex-nowrap">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 shrink-0">
-                    메인
-                  </span>
-                  <div className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">
-                    {mainMacroNews.title}
-                  </div>
+        {activeTab === "macro" && mainMacroNews && page === 1 && (
+          <li className="py-3">
+            <a
+              href={mainMacroNews.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block hover:bg-gray-50 rounded px-2 py-1"
+            >
+              <div className="flex items-center mb-1 gap-2 flex-nowrap">
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 shrink-0">
+                  메인
+                </span>
+                <div className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">
+                  {mainMacroNews.title}
                 </div>
-                {mainMacroNews.summary && (
-                  <div className="text-xs text-gray-600 mt-1">
-                    {mainMacroNews.summary}
-                  </div>
-                )}
-                <div className="flex justify-end">
-                  <span className="text-xs text-gray-400 font-medium mt-1">
-                    {mainMacroNews.published_at || mainMacroNews.date}
-                  </span>
+              </div>
+              {mainMacroNews.summary && (
+                <div className="text-xs text-gray-600 mt-1">
+                  {mainMacroNews.summary}
                 </div>
-              </a>
-            </li>
-          )}
+              )}
+              <div className="flex justify-end">
+                <span className="text-xs text-gray-400 font-medium mt-1">
+                  {mainMacroNews.published_at || mainMacroNews.date}
+                </span>
+              </div>
+            </a>
+          </li>
+        )}
         {/* 일반 뉴스 리스트 (메인뉴스와 중복 제거, summary 없으면 아무것도 표시 X) */}
         {pagedNews
           .filter(
@@ -378,7 +374,7 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
 
       {/* 페이지네이션 */}
       {totalPages > 1 && (
-        <div className="absolute bottom-4 left-0 w-full flex justify-center items-center gap-2">
+        <div className="flex justify-center items-center gap-2 mt-4">
           <button
             onClick={goPrev}
             disabled={page === 1}
