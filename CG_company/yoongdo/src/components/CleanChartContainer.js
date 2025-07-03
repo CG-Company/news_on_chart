@@ -849,7 +849,7 @@ function CleanChartContainer({
     async function fetchMacroNews() {
       try {
         const API_BASE =
-          process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.105:8000";
+  process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.138:8000";
         const res = await fetch(`${API_BASE}/api/macro_news`);
         const data = await res.json();
         // 날짜별로 매핑

@@ -384,7 +384,7 @@ export default function NewsPage() {
 
   return (
     <div className="flex overflow-x-hidden">
-      <Sidebar currentPage="news" />
+      <Sidebar currentPage="community" />
       <div className="flex-1 ml-52">
         <Header
           ticker={ticker}
