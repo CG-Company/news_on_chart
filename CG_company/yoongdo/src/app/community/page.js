@@ -437,6 +437,12 @@ export default function NewsPage() {
                                 </span>
                               )
                             )}
+                              <span className="inline-block bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded ml-2">
+                                {news.author}
+                              </span>
+                              <span className="inline-block bg-green-100 text-gray-500 text-xs px-2 py-1 rounded ml-2">
+                                {news.date?.split(".")[0]}년도
+                              </span>
                           </div>
                         </div>
                       </a>
