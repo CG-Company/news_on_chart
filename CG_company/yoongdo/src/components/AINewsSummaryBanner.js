@@ -11,226 +11,222 @@ export default function AINewsSummaryBanner({ ticker }) {
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState(null);
   const [debugInfo, setDebugInfo] = useState(null);
+  const [hasStarted, setHasStarted] = useState(false); // 요약 시작 여부
 
-  useEffect(() => {
+  const fetchSummary = async () => {
     if (!ticker) return;
-    let cancelled = false;
-    const fetchSummary = async () => {
-      setSummaryLoading(true);
-      setSummaryError(null);
-      setSummaryText("");
-      const startTime = Date.now();
-      const url = `${API_BASE}/api/news_summary/stream?ticker=${ticker}&period=${summaryPeriod}`;
-      try {
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const stream = response.body;
-        if (!stream) throw new Error("서버 응답에 스트림 바디가 없습니다.");
-        const reader = stream.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        let done = false;
-        while (!done && !cancelled) {
-          const { value, done: doneReading } = await reader.read();
-          done = doneReading;
-          if (value) {
-            buffer += decoder.decode(value, { stream: true });
-            let parts = buffer.split("\n\n");
-            buffer = parts.pop();
-            for (const part of parts) {
-              if (part.startsWith("data:")) {
-                const dataStr = part.replace(/^data:\s*/, "");
-                if (dataStr === "[DONE]") {
-                  done = true;
-                  break;
-                }
-                try {
-                  const json = JSON.parse(dataStr);
-                  if (json.content) {
-                    setSummaryText((prev) => prev + json.content);
-                  }
-                } catch (e) {}
+    
+    setSummaryLoading(true);
+    setSummaryError(null);
+    setSummaryText("");
+    setHasStarted(true);
+    
+    const startTime = Date.now();
+    const url = `${API_BASE}/api/news_summary/stream?ticker=${ticker}&period=${summaryPeriod}`;
+    
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const stream = response.body;
+      if (!stream) throw new Error("서버 응답에 스트림 바디가 없습니다.");
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let done = false;
+      
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        if (value) {
+          buffer += decoder.decode(value, { stream: true });
+          let parts = buffer.split("\n\n");
+          buffer = parts.pop();
+          for (const part of parts) {
+            if (part.startsWith("data:")) {
+              const dataStr = part.replace(/^data:\s*/, "");
+              if (dataStr === "[DONE]") {
+                done = true;
+                break;
               }
+              try {
+                const json = JSON.parse(dataStr);
+                if (json.content) {
+                  setSummaryText((prev) => prev + json.content);
+                }
+              } catch (e) {}
             }
           }
         }
-        const responseTime = Date.now() - startTime;
-        setDebugInfo((prev) => ({ ...(prev || {}), responseTime }));
-      } catch (err) {
-        const responseTime = Date.now() - startTime;
-        setDebugInfo((prev) => ({ ...(prev || {}), responseTime }));
-        setSummaryError(
-          `요약을 불러오는 중 오류가 발생했습니다: ${err.message}`
-        );
-      } finally {
-        setSummaryLoading(false);
       }
-    };
+      const responseTime = Date.now() - startTime;
+      setDebugInfo((prev) => ({ ...(prev || {}), responseTime }));
+    } catch (err) {
+      const responseTime = Date.now() - startTime;
+      setDebugInfo((prev) => ({ ...(prev || {}), responseTime }));
+      setSummaryError(
+        `요약을 불러오는 중 오류가 발생했습니다: ${err.message}`
+      );
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  const handleSummarize = () => {
     fetchSummary();
-    return () => {
-      cancelled = true;
-    };
-  }, [ticker, summaryPeriod]);
+  };
 
   const retrySummary = () => {
     setSummaryError(null);
     setSummaryText("");
-    // useEffect가 다시 실행되도록 ticker를 임시로 변경했다가 복원
-    const currentTicker = ticker;
-    // 강제로 다시 실행
-    setSummaryPeriod(summaryPeriod);
+    fetchSummary();
   };
 
   if (!ticker) return null;
 
   return (
-    <div
-      style={{
-        background: "#f8fafc",
-        border: "1px solid #e2e8f0",
-        borderRadius: "8px",
-        padding: "12px",
-        fontSize: "12px",
-        color: "#475569",
-        position: "relative",
-        height: "100%",
-        overflow: "auto",
-      }}
-    >
-      {/* 개발자 배너 스타일 */}
-      <div
-        style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}
-      >
-        <span style={{ fontSize: "14px", marginRight: "6px" }}>🤖</span>
-        <span style={{ fontWeight: "600", color: "#1e293b" }}>
-          AI 뉴스 요약
-        </span>
-        {debugInfo && (
-          <span
-            style={{ marginLeft: "auto", fontSize: "10px", color: "#64748b" }}
-          >
-            {debugInfo.newsCount}건 | {debugInfo.responseTime}ms
-          </span>
-        )}
-      </div>
-
-      {/* 기간 선택 */}
-      <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
-        <button
-          onClick={() => setSummaryPeriod("1m")}
-          disabled={summaryLoading}
-          style={{
-            fontSize: "10px",
-            padding: "2px 6px",
-            background: summaryPeriod === "1m" ? "#3b82f6" : "#f1f5f9",
-            color: summaryPeriod === "1m" ? "white" : "#64748b",
-            border: "none",
-            borderRadius: "4px",
-            cursor: summaryLoading ? "not-allowed" : "pointer",
-            opacity: summaryLoading ? 0.5 : 1,
-          }}
-        >
-          1M
-        </button>
-        <button
-          onClick={() => setSummaryPeriod("3m")}
-          disabled={summaryLoading}
-          style={{
-            fontSize: "10px",
-            padding: "2px 6px",
-            background: summaryPeriod === "3m" ? "#3b82f6" : "#f1f5f9",
-            color: summaryPeriod === "3m" ? "white" : "#64748b",
-            border: "none",
-            borderRadius: "4px",
-            cursor: summaryLoading ? "not-allowed" : "pointer",
-            opacity: summaryLoading ? 0.5 : 1,
-          }}
-        >
-          3M
-        </button>
-        <button
-          onClick={() => setSummaryPeriod("1y")}
-          disabled={summaryLoading}
-          style={{
-            fontSize: "10px",
-            padding: "2px 6px",
-            background: summaryPeriod === "1y" ? "#3b82f6" : "#f1f5f9",
-            color: summaryPeriod === "1y" ? "white" : "#64748b",
-            border: "none",
-            borderRadius: "4px",
-            cursor: summaryLoading ? "not-allowed" : "pointer",
-            opacity: summaryLoading ? 0.5 : 1,
-          }}
-        >
-          1Y
-        </button>
-        {summaryError && (
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200 rounded-xl p-4 shadow-lg">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+            <span className="text-white text-sm font-bold">AI</span>
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">뉴스 요약</h3>
+        </div>
+        
+        {/* 기간 선택 + 요약하기 버튼 */}
+        <div className="flex items-center gap-2">
+          {/* 기간 선택 버튼들 */}
+          <div className="flex gap-1">
+            <button
+              onClick={() => setSummaryPeriod("1m")}
+              disabled={summaryLoading}
+              className={`px-2 py-1 rounded text-xs font-medium transition-all duration-200 ${
+                summaryPeriod === "1m"
+                  ? "bg-blue-500 text-white shadow-md"
+                  : "bg-white text-gray-600 hover:bg-blue-50 border border-gray-200"
+              } ${summaryLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              1M
+            </button>
+            <button
+              onClick={() => setSummaryPeriod("3m")}
+              disabled={summaryLoading}
+              className={`px-2 py-1 rounded text-xs font-medium transition-all duration-200 ${
+                summaryPeriod === "3m"
+                  ? "bg-blue-500 text-white shadow-md"
+                  : "bg-white text-gray-600 hover:bg-blue-50 border border-gray-200"
+              } ${summaryLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              3M
+            </button>
+            <button
+              onClick={() => setSummaryPeriod("1y")}
+              disabled={summaryLoading}
+              className={`px-2 py-1 rounded text-xs font-medium transition-all duration-200 ${
+                summaryPeriod === "1y"
+                  ? "bg-blue-500 text-white shadow-md"
+                  : "bg-white text-gray-600 hover:bg-blue-50 border border-gray-200"
+              } ${summaryLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              1Y
+            </button>
+          </div>
+          
+          {/* 요약하기 버튼 */}
           <button
-            onClick={retrySummary}
-            style={{
-              fontSize: "10px",
-              padding: "2px 6px",
-              background: "#ef4444",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
+            onClick={handleSummarize}
+            disabled={summaryLoading}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${
+              summaryLoading
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-blue-500 text-white hover:bg-blue-600"
+            }`}
           >
-            재시도
+            {summaryLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-400 rounded-full animate-spin"></div>
+                분석중
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                요약하기
+              </>
+            )}
           </button>
-        )}
+          
+          {summaryError && (
+            <button
+              onClick={retrySummary}
+              className="px-3 py-1 rounded-full text-xs font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
+            >
+              재시도
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 요약문 */}
-      <div style={{ fontSize: "11px", lineHeight: "1.4", color: "#475569" }}>
+      <div className="bg-white rounded-lg p-4 min-h-[120px] max-h-[300px] overflow-y-auto border border-gray-100">
         {summaryLoading && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              color: "#64748b",
-            }}
-          >
-            <div
-              style={{
-                width: "10px",
-                height: "10px",
-                border: "1px solid #cbd5e1",
-                borderTop: "1px solid #3b82f6",
-                borderRadius: "50%",
-                animation: "spin 1s linear infinite",
-              }}
-            ></div>
-            요약 생성 중...
+          <div className="flex items-center justify-center py-8">
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
+              <span className="text-gray-600 font-medium">AI가 뉴스를 분석하고 있습니다...</span>
+            </div>
           </div>
         )}
 
         {summaryError && (
-          <div style={{ color: "#ef4444", fontSize: "10px" }}>
-            ⚠️ {summaryError}
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="text-red-500 text-2xl mb-2">⚠️</div>
+              <p className="text-red-600 text-sm font-medium">{summaryError}</p>
+            </div>
           </div>
         )}
 
         {!summaryLoading && !summaryError && summaryText && (
           <div>
-            {summaryText}
+            <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+              {summaryText}
+            </div>
             {debugInfo && debugInfo.newsCount > 0 && (
-              <div
-                style={{ marginTop: "4px", fontSize: "9px", color: "#64748b" }}
-              >
-                📊 {debugInfo.newsCount}건 분석
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded-full font-medium">
+                    📊 {debugInfo.newsCount}건 분석
+                  </span>
+                  <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full font-medium">
+                    ⚡ {debugInfo.responseTime}ms
+                  </span>
+                </div>
               </div>
             )}
           </div>
         )}
 
         {!summaryLoading && !summaryError && !summaryText && (
-          <div style={{ color: "#64748b", fontSize: "10px" }}>
-            요약할 뉴스가 없습니다.
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              {!hasStarted ? (
+                <>
+                  <div className="text-blue-400 text-2xl mb-2">🤖</div>
+                  <p className="text-gray-600 text-sm font-medium mb-1">AI 뉴스 요약 준비완료</p>
+                  <p className="text-gray-500 text-xs">기간을 선택하고 &apos;요약하기&apos; 버튼을 눌러주세요</p>
+                </>
+              ) : (
+                <>
+                  <div className="text-gray-400 text-2xl mb-2">📄</div>
+                  <p className="text-gray-500 text-sm">요약할 뉴스가 없습니다.</p>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -2,8 +2,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { fetchMacroNews } from "../utils/api";
 
-const PAGE_SIZE_COMPANY = 5;
-const PAGE_SIZE_MACRO = 5;
+const PAGE_SIZE_COMPANY = 8;
+const PAGE_SIZE_MACRO = 7;
 
 const TABS = [
   { key: "company", label: "기업뉴스" },
@@ -255,7 +255,7 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
   return (
     <div
       className="bg-white rounded-lg shadow-lg p-4 w-full max-w-xl mx-auto h-full relative"
-      style={{ height: "100%" }}
+      style={{ height: "900px" }}
     >
       {/* 탭 */}
       <div className="flex border-b mb-4">
@@ -277,7 +277,7 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
       {/* 메인뉴스 강조 card 완전 제거, 리스트 내에서만 메인 pill+title+summary+날짜로 통일 */}
       <ul
         className="divide-y divide-gray-100 mb-4 overflow-y-auto"
-        style={{ maxHeight: "calc(100% - 80px)" }}
+        style={{ height: "780px" }}
       >
         {activeTab === "company" && mainNews && page === 1 && (
           <li className="py-3">
