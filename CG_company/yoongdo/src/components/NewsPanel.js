@@ -193,14 +193,14 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
   // 탭별 뉴스 데이터
   const companyNewsList = useMemo(() => {
     if (!newsList || newsList.length === 0) return [];
-    
+
     // 최신순 정렬 (published_at 또는 date)
     const sorted = [...newsList].sort((a, b) => {
       const dateA = new Date(a.published_at || a.date || 0);
       const dateB = new Date(b.published_at || b.date || 0);
       return dateB - dateA;
     });
-    
+
     if (!date) {
       // 날짜 선택이 없으면 최신 뉴스들 표시
       return sorted.slice(0, PAGE_SIZE_COMPANY);
@@ -210,7 +210,9 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
         (item) => item.published_at === date || item.date === date
       );
       // 해당 날짜에 뉴스가 없으면 최신 뉴스 표시
-      return filtered.length > 0 ? filtered : sorted.slice(0, PAGE_SIZE_COMPANY);
+      return filtered.length > 0
+        ? filtered
+        : sorted.slice(0, PAGE_SIZE_COMPANY);
     }
   }, [newsList, date]);
 
@@ -221,10 +223,12 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
     );
   }, [macroNewsList, date]);
 
-  const newsListByTab = activeTab === "company" ? companyNewsList : macroNewsList;
-  const pageSize = activeTab === "company" ? PAGE_SIZE_COMPANY : PAGE_SIZE_MACRO;
+  const newsListByTab =
+    activeTab === "company" ? companyNewsList : macroNewsList;
+  const pageSize =
+    activeTab === "company" ? PAGE_SIZE_COMPANY : PAGE_SIZE_MACRO;
   const totalPages = Math.ceil(newsListByTab.length / pageSize);
-  
+
   const pagedNews = useMemo(() => {
     const start = (page - 1) * pageSize;
     return newsListByTab.slice(start, start + pageSize);
@@ -304,37 +308,35 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
             </a>
           </li>
         )}
-        {activeTab === "macro" &&
-          mainMacroNews &&
-          page === 1 && (
-            <li className="py-3">
-              <a
-                href={mainMacroNews.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block hover:bg-gray-50 rounded px-2 py-1"
-              >
-                <div className="flex items-center mb-1 gap-2 flex-nowrap">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 shrink-0">
-                    메인
-                  </span>
-                  <div className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">
-                    {mainMacroNews.title}
-                  </div>
+        {activeTab === "macro" && mainMacroNews && page === 1 && (
+          <li className="py-3">
+            <a
+              href={mainMacroNews.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block hover:bg-gray-50 rounded px-2 py-1"
+            >
+              <div className="flex items-center mb-1 gap-2 flex-nowrap">
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 shrink-0">
+                  메인
+                </span>
+                <div className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">
+                  {mainMacroNews.title}
                 </div>
-                {mainMacroNews.summary && (
-                  <div className="text-xs text-gray-600 mt-1">
-                    {mainMacroNews.summary}
-                  </div>
-                )}
-                <div className="flex justify-end">
-                  <span className="text-xs text-gray-400 font-medium mt-1">
-                    {mainMacroNews.published_at || mainMacroNews.date}
-                  </span>
+              </div>
+              {mainMacroNews.summary && (
+                <div className="text-xs text-gray-600 mt-1">
+                  {mainMacroNews.summary}
                 </div>
-              </a>
-            </li>
-          )}
+              )}
+              <div className="flex justify-end">
+                <span className="text-xs text-gray-400 font-medium mt-1">
+                  {mainMacroNews.published_at || mainMacroNews.date}
+                </span>
+              </div>
+            </a>
+          </li>
+        )}
         {/* 일반 뉴스 리스트 (메인뉴스와 중복 제거, summary 없으면 아무것도 표시 X) */}
         {pagedNews
           .filter(

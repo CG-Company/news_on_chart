@@ -14,74 +14,53 @@ export default function AINewsSummaryBanner({ ticker }) {
 
   useEffect(() => {
     if (!ticker) return;
-
+    let cancelled = false;
     const fetchSummary = async () => {
       setSummaryLoading(true);
       setSummaryError(null);
       setSummaryText("");
-
       const startTime = Date.now();
-
+      const url = `${API_BASE}/api/news_summary/stream?ticker=${ticker}&period=${summaryPeriod}`;
       try {
-        const response = await fetch(
-          `${API_BASE}/api/news_summary?ticker=${ticker}&period=${summaryPeriod}`
-        );
-
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-
-        const data = await response.json();
-        const responseTime = Date.now() - startTime;
-
-        console.log("📊 응답 데이터:", {
-          data,
-          responseTime: `${responseTime}ms`,
-          hasSummary: !!data.summary,
-          summaryLength: data.summary?.length || 0,
-        });
-
-        // 디버깅 정보 저장
-        setDebugInfo({
-          newsCount: data.news_count || 0,
-          cached: data.cached || false,
-          responseTime,
-          period: data.period || summaryPeriod,
-        });
-
-        if (data.summary) {
-          // 문제가 있는 요약문 체크
-          const problematicTexts = [
-            "LLM 요약 결과",
-            "973건 뉴스 기반",
-            "예시",
-            "요약 생성 중 오류",
-            "API 키가 설정되지",
-            "OpenAI",
-          ];
-
-          const hasProblems = problematicTexts.some((text) =>
-            data.summary.includes(text)
-          );
-
-          if (hasProblems) {
-            console.warn("⚠️ 문제가 있는 요약문 감지:", data.summary);
-            setSummaryError("요약 생성에 실패했습니다. 다시 시도해주세요.");
-          } else {
-            setSummaryText(data.summary);
+        const stream = response.body;
+        if (!stream) throw new Error("서버 응답에 스트림 바디가 없습니다.");
+        const reader = stream.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let done = false;
+        while (!done && !cancelled) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          if (value) {
+            buffer += decoder.decode(value, { stream: true });
+            let parts = buffer.split("\n\n");
+            buffer = parts.pop();
+            for (const part of parts) {
+              if (part.startsWith("data:")) {
+                const dataStr = part.replace(/^data:\s*/, "");
+                if (dataStr === "[DONE]") {
+                  done = true;
+                  break;
+                }
+                try {
+                  const json = JSON.parse(dataStr);
+                  if (json.content) {
+                    setSummaryText((prev) => prev + json.content);
+                  }
+                } catch (e) {}
+              }
+            }
           }
-        } else {
-          setSummaryError("요약 결과를 받을 수 없습니다.");
         }
+        const responseTime = Date.now() - startTime;
+        setDebugInfo((prev) => ({ ...(prev || {}), responseTime }));
       } catch (err) {
         const responseTime = Date.now() - startTime;
-        console.error("❌ 요약 요청 실패:", {
-          error: err.message,
-          responseTime: `${responseTime}ms`,
-          ticker,
-          period: summaryPeriod,
-        });
-
+        setDebugInfo((prev) => ({ ...(prev || {}), responseTime }));
         setSummaryError(
           `요약을 불러오는 중 오류가 발생했습니다: ${err.message}`
         );
@@ -89,8 +68,10 @@ export default function AINewsSummaryBanner({ ticker }) {
         setSummaryLoading(false);
       }
     };
-
     fetchSummary();
+    return () => {
+      cancelled = true;
+    };
   }, [ticker, summaryPeriod]);
 
   const retrySummary = () => {

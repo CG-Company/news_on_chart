@@ -2,6 +2,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import LandingPage from "../components/LandingPage";
 
 // 백엔드 연동 API 및 유틸리티
 import {
@@ -56,6 +57,34 @@ const NewsPanel = dynamic(() => import("../components/NewsPanel"), {
 });
 
 export default function Page() {
+  // 랜딩 페이지 상태 - URL 파라미터로 제어
+  const [showLanding, setShowLanding] = useState(true);
+  
+  // URL 파라미터 변경 감지
+  useEffect(() => {
+    const checkSkipLanding = () => {
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const shouldSkip = urlParams.get('skipLanding');
+        setShowLanding(!shouldSkip);
+      }
+    };
+    
+    // 초기 로드 시 확인
+    checkSkipLanding();
+    
+    // URL 변경 감지 (뒤로가기/앞으로가기 등)
+    const handlePopState = () => {
+      checkSkipLanding();
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+  
   // 기본 상태
   const [ticker, setTicker] = useState("000660");
   const [tickerName, setTickerName] = useState("SK하이닉스");
@@ -389,6 +418,43 @@ export default function Page() {
     }
   }, [ticker]);
 
+  // 랜딩 페이지 진입 핸들러
+  const handleEnterApp = useCallback(() => {
+    setShowLanding(false);
+    setSelectedPage('dashboard'); // 기본 대시보드로 이동
+  }, []);
+
+  // 네비게이션 핸들러
+  const handleNavigate = useCallback((page) => {
+    setShowLanding(false);
+    if (page === 'chart' || page === 'home') {
+      setSelectedPage('dashboard');
+    } else if (page === 'keyword') {
+      setSelectedPage('keyword');
+    } else if (page === 'analysis') {
+      // Analysis 페이지는 별도 라우트로 이동
+      window.location.href = '/analysis';
+      return;
+    } else if (page === 'community') {
+      // Community 페이지는 별도 라우트로 이동
+      window.location.href = '/community';
+      return;
+    } else if (page === 'demo') {
+      // 데모 페이지로 이동 (일단 메인 앱으로)
+      setSelectedPage('dashboard');
+    }
+  }, []);
+
+  // 랜딩페이지로 돌아가는 핸들러
+  const handleBackToLanding = useCallback(() => {
+    setShowLanding(true);
+  }, []);
+
+  // 랜딩 페이지 표시
+  if (showLanding) {
+    return <LandingPage onEnterApp={handleEnterApp} onNavigate={handleNavigate} />;
+  }
+
   // 전체 로딩 상태
   const isInitialLoading = isLoadingTicker;
 
@@ -444,9 +510,9 @@ export default function Page() {
 
   return (
     <div className="flex overflow-x-hidden">
-      <Sidebar currentPage="dashboard" />
-      <div className="flex-1 ml-52 min-w-0">
-        <Header ticker={ticker} setTicker={setTicker} />
+              <Sidebar currentPage="dashboard" onBackToLanding={handleBackToLanding} />
+              <div className="flex-1 ml-64 min-w-0">
+                  <Header ticker={ticker} setTicker={setTicker} currentPage="dashboard" />
         <main className="p-8 bg-gray-50 min-w-0">
           {selectedPage === "news" ? (
             <NewsPanel
@@ -457,6 +523,20 @@ export default function Page() {
               ticker={ticker}
               key={selectedDate ? `news-${selectedDate}` : "news-empty"}
             />
+          ) : selectedPage === "analysis" ? (
+            <div className="space-y-8">
+              <div className="bg-white rounded-xl shadow-sm border p-6">
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">키워드 분석</h1>
+                <p className="text-gray-600">키워드 분석 페이지입니다. 개발 중입니다.</p>
+              </div>
+            </div>
+          ) : selectedPage === "keyword" ? (
+            <div className="space-y-8">
+              <div className="bg-white rounded-xl shadow-sm border p-6">
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">키워드 검색</h1>
+                <p className="text-gray-600">키워드 검색 페이지입니다. 개발 중입니다.</p>
+              </div>
+            </div>
           ) : (
             // 기졸 메인 컨텐츠 영역 (차트, 카드 등)
             <>
@@ -511,12 +591,9 @@ export default function Page() {
               </ErrorBoundary>
 
               {/* 차트와 뉴스 패널 */}
-              <div
-                className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-                style={{ minHeight: "600px" }}
-              >
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* 차트 영역 (2/3) */}
-                <div className="lg:col-span-2" style={{ height: "450px" }}>
+                <div className="lg:col-span-2">
                   <ErrorBoundary
                     name="ChartContainer"
                     fallback={(error, retry) => (
@@ -603,12 +680,9 @@ export default function Page() {
                 </div>
 
                 {/* 뉴스 패널 + AI 요약 배너 영역 (1/3) */}
-                <div
-                  className="lg:col-span-1 flex flex-col"
-                  style={{ height: "600px" }}
-                >
+                <div className="lg:col-span-1 flex flex-col">
                   {/* 뉴스 패널 */}
-                  <div className="flex-1" style={{ height: "500px" }}>
+                  <div className="flex-1">
                     <ErrorBoundary
                       name="NewsPanel"
                       fallback={(error, retry) => (
@@ -621,13 +695,15 @@ export default function Page() {
                         loading={isLoadingStock}
                         mainNews={mainNews}
                         ticker={ticker}
-                        key={selectedDate ? `news-${selectedDate}` : "news-empty"}
+                        key={
+                          selectedDate ? `news-${selectedDate}` : "news-empty"
+                        }
                       />
                     </ErrorBoundary>
                   </div>
 
                   {/* AI 뉴스 요약 배너 - 뉴스패널 바로 아래 */}
-                  <div className="mt-6" style={{ height: "100px" }}>
+                  <div className="mt-6">
                     <AINewsSummaryBanner ticker={ticker} />
                   </div>
                 </div>

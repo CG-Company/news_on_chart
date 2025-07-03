@@ -278,16 +278,16 @@ const SearchBar = ({ ticker, setTicker }) => {
     <div className="relative w-full" ref={inputRef}>
       {/* 메인 검색 입력 */}
       <div
-        className={`flex items-center bg-white rounded-xl border transition-all duration-200 shadow-md ${
+        className={`flex items-center bg-white rounded-full border transition-all duration-200 shadow-sm hover:shadow-md ${
           error
-            ? "border-red-300 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-200"
-            : "border-gray-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200"
+            ? "border-red-300 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100"
+            : "border-gray-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100"
         }`}
       >
         {/* 검색 아이콘 */}
-        <div className="pl-3">
+        <div className="pl-4">
           <svg
-            className={`w-5 h-5 ${error ? "text-red-400" : "text-gray-400"}`}
+            className={`w-4 h-4 ${error ? "text-red-400" : "text-gray-400"}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -304,7 +304,7 @@ const SearchBar = ({ ticker, setTicker }) => {
         {/* 입력 필드 */}
         <input
           ref={inputRef}
-          className="flex-1 outline-none bg-transparent py-2.5 px-3 text-sm text-gray-900 placeholder-gray-500"
+          className="flex-1 outline-none bg-transparent py-3 px-4 text-sm text-gray-900 placeholder-gray-400 rounded-l-full"
           value={input}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -313,7 +313,7 @@ const SearchBar = ({ ticker, setTicker }) => {
               setShowSuggestions(true);
             }
           }}
-          placeholder="종목명 또는 코드를 입력하세요"
+          placeholder="Search for various stocks"
           disabled={isLoading}
           autoComplete="off"
           spellCheck="false"
@@ -349,7 +349,7 @@ const SearchBar = ({ ticker, setTicker }) => {
 
         {/* 검색 버튼 */}
         <button
-          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-sm font-medium rounded-r-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md mr-1"
           onClick={() => handleSearch()}
           disabled={isLoading || !(input || "").trim()}
         >

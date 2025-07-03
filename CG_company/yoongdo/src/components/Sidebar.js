@@ -2,25 +2,25 @@
 import React from "react";
 import Link from "next/link";
 
-const Sidebar = ({ currentPage = "dashboard" }) => {
+const Sidebar = ({ currentPage = "dashboard", onBackToLanding }) => {
   const menuItems = [
     {
       id: "dashboard",
-      label: "News on chart",
-      icon: "📊",
-      href: "/",
+      label: "NEWS & CHART",
+      icon: "📊", 
+      href: "/?skipLanding=true",
       active: true,
     },
     {
       id: "analysis",
-      label: "Analysis",
+      label: "ANALYSIS",
       icon: "📈",
       href: "/analysis",
       active: true,
     },
     {
       id: "community",
-      label: "Community",
+      label: "COMMUNITY",
       icon: "📰",
       href: "/community",
       active: true,
@@ -29,10 +29,22 @@ const Sidebar = ({ currentPage = "dashboard" }) => {
   ];
 
   return (
-    <div className="w-52 bg-gray-900 h-screen fixed left-0 top-0 flex flex-col z-20">
+    <div className="w-64 bg-gray-900 h-screen fixed left-0 top-0 flex flex-col z-20">
       {/* 로고 영역 */}
       <div className="p-6 border-b border-gray-700">
-        <h1 className="text-white text-xl font-bold">CG finance</h1>
+        <button 
+          onClick={() => {
+            if (onBackToLanding) {
+              onBackToLanding();
+            } else {
+              // 다른 페이지에서는 메인 페이지로 이동 (랜딩페이지 건너뛰기)
+              window.location.href = '/?skipLanding=true';
+            }
+          }}
+          className="text-white text-xl font-bold hover:text-blue-400 transition-colors cursor-pointer"
+        >
+          NEWS ON CHART
+        </button>
       </div>
 
       {/* 메뉴 영역 */}
