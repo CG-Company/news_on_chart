@@ -714,3 +714,52 @@ def get_news_by_keyword(keyword: str, days: int = 7, limit: int = 50):
     df['published_at'] = pd.to_datetime(df['published_at']).dt.strftime('%Y-%m-%d %H:%M')
     
     return df.to_dict(orient="records")
+
+def get_latest_keywords_by_ticker(ticker=None):
+    """특정 종목(ticker)에 대해서만 최신 뉴스의 keywords(배열)를 반환. ticker가 None이면 전체 종목. is_selected=True만 대상."""
+    def split_keywords(keyword_str):
+        # 중괄호, 따옴표, 공백 등 제거 후 쉼표/세미콜론/슬래시/| 등으로 분리
+        if not keyword_str:
+            return []
+        s = keyword_str.strip()
+        s = s.strip('{}[]()"\' )')
+        # 여러 구분자로 분리
+        import re
+        parts = re.split(r'[;,/|\\]+', s)
+        # 각 파트에서 다시 쉼표로 분리
+        keywords = []
+        for part in parts:
+            keywords.extend([k.strip(' "\' )') for k in part.split(',')])
+        # 빈 문자열, None, 'None', 'null' 등 제거
+        return [k for k in keywords if k and k.lower() not in ('none', 'null', 'nan')]
+    try:
+        if ticker:
+            sql = """
+            SELECT ticker, keyword
+            FROM news
+            WHERE ticker = :ticker
+              AND is_selected = true
+              AND keyword IS NOT NULL AND keyword != '' AND keyword != 'None' AND keyword != 'null'
+            ORDER BY published_at DESC
+            LIMIT 1
+            """
+            import pandas as pd
+            df = pd.read_sql(text(sql), engine, params={"ticker": ticker})
+        else:
+            sql = """
+            SELECT DISTINCT ON (ticker) ticker, keyword
+            FROM news
+            WHERE is_selected = true
+              AND keyword IS NOT NULL AND keyword != '' AND keyword != 'None' AND keyword != 'null'
+            ORDER BY ticker, published_at DESC
+            """
+            import pandas as pd
+            df = pd.read_sql(text(sql), engine)
+        result = [
+            {"ticker": row["ticker"], "keywords": split_keywords(row["keyword"])}
+            for _, row in df.iterrows()
+        ]
+        return result
+    except Exception as e:
+        logger.error(f"Error in get_latest_keywords_by_ticker: {e}")
+        return []

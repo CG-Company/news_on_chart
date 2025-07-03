@@ -253,7 +253,10 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
       : macroNewsList[0]) || null;
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-xl mx-auto relative">
+    <div
+      className="bg-white rounded-lg shadow-lg p-4 w-full max-w-xl mx-auto h-full relative"
+      style={{ height: "100%" }}
+    >
       {/* 탭 */}
       <div className="flex border-b mb-4">
         {TABS.map((tab) => (
@@ -272,7 +275,10 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
       </div>
 
       {/* 메인뉴스 강조 card 완전 제거, 리스트 내에서만 메인 pill+title+summary+날짜로 통일 */}
-      <ul className="divide-y divide-gray-100 mb-4">
+      <ul
+        className="divide-y divide-gray-100 mb-4 overflow-y-auto"
+        style={{ maxHeight: "calc(100% - 80px)" }}
+      >
         {activeTab === "company" && mainNews && page === 1 && (
           <li className="py-3">
             <a
@@ -374,7 +380,7 @@ const NewsPanel = ({ date, news, loading, mainNews, ticker }) => {
 
       {/* 페이지네이션 */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-4">
+        <div className="absolute bottom-4 left-0 w-full flex justify-center items-center gap-2">
           <button
             onClick={goPrev}
             disabled={page === 1}
