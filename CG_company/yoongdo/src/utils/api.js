@@ -1,6 +1,6 @@
 // utils/api.js - 백엔드 FastAPI 연동 버전
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://192.168.1.138:8000";
+  process.env.NEXT_PUBLIC_API_BASE || "http://3.148.243.246:8000";
 const REQUEST_TIMEOUT = 30000; // 15초 (DB 쿼리 시간 고려)
 
 // 공통 fetch 래퍼 함수
