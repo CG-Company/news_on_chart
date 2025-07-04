@@ -2,7 +2,7 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from .utils import (
+from utils import (
     get_stock_data, 
     get_ticker_map, 
     get_news_data, 
