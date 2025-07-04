@@ -219,43 +219,23 @@ const StockDetailPanel = ({ ticker, name, onClose }) => {
                       {article.keyword &&
                       article.keyword !== "{None}" &&
                       article.keyword !== "None" ? (
-                        article.keyword
-                      ) : (
-                        <span className="text-gray-400">키워드 없음</span>
-                      )}
-                    </div>
-                    {/* sentiment */}
-                    <div className="flex items-center gap-2 text-xs mt-1">
-                      <span className="font-semibold text-purple-700">
-                        감성:
-                      </span>
-                      {article.sentiment && article.sentiment !== "None" ? (
-                        <span
-                          className={
-                            article.sentiment === "positive"
-                              ? "text-green-600"
-                              : article.sentiment === "negative"
-                              ? "text-red-600"
-                              : "text-gray-600"
-                          }
-                        >
-                          {article.sentiment === "positive"
-                            ? "긍정"
-                            : article.sentiment === "negative"
-                            ? "부정"
-                            : article.sentiment}
+                        <span className="flex flex-wrap gap-1">
+                          {article.keyword
+                            .split(",")
+                            .map((k) => k.trim())
+                            .map((k) => k.replace(/[^\w\s가-힣]/g, "")) // 특수문자 제거
+                            .filter((k) => k.length > 0)
+                            .map((keyword, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs"
+                              >
+                                {keyword}
+                              </span>
+                            ))}
                         </span>
                       ) : (
-                        <span className="text-gray-400">감성 정보 없음</span>
-                      )}
-                      <span className="ml-2 font-semibold text-gray-500">
-                        점수:
-                      </span>
-                      {article.sentiment_score !== null &&
-                      article.sentiment_score !== undefined ? (
-                        <span>{article.sentiment_score}</span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-gray-400">키워드 없음</span>
                       )}
                     </div>
                     <div className="flex items-center justify-between text-xs text-gray-500">
@@ -340,43 +320,23 @@ const StockDetailPanel = ({ ticker, name, onClose }) => {
                       {article.keyword &&
                       article.keyword !== "{None}" &&
                       article.keyword !== "None" ? (
-                        article.keyword
-                      ) : (
-                        <span className="text-gray-400">키워드 없음</span>
-                      )}
-                    </div>
-                    {/* sentiment */}
-                    <div className="flex items-center gap-2 text-xs mt-1">
-                      <span className="font-semibold text-purple-700">
-                        감성:
-                      </span>
-                      {article.sentiment && article.sentiment !== "None" ? (
-                        <span
-                          className={
-                            article.sentiment === "positive"
-                              ? "text-green-600"
-                              : article.sentiment === "negative"
-                              ? "text-red-600"
-                              : "text-gray-600"
-                          }
-                        >
-                          {article.sentiment === "positive"
-                            ? "긍정"
-                            : article.sentiment === "negative"
-                            ? "부정"
-                            : article.sentiment}
+                        <span className="flex flex-wrap gap-1">
+                          {article.keyword
+                            .split(",")
+                            .map((k) => k.trim())
+                            .map((k) => k.replace(/[^\w\s가-힣]/g, "")) // 특수문자 제거
+                            .filter((k) => k.length > 0)
+                            .map((keyword, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs"
+                              >
+                                {keyword}
+                              </span>
+                            ))}
                         </span>
                       ) : (
-                        <span className="text-gray-400">감성 정보 없음</span>
-                      )}
-                      <span className="ml-2 font-semibold text-gray-500">
-                        점수:
-                      </span>
-                      {article.sentiment_score !== null &&
-                      article.sentiment_score !== undefined ? (
-                        <span>{article.sentiment_score}</span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-gray-400">키워드 없음</span>
                       )}
                     </div>
                     <div className="flex items-center justify-between text-xs text-gray-500">

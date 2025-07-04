@@ -71,16 +71,16 @@ const KeywordCardGrid = ({ selectedPeriod, onSelectKeyword, search = '' }) => {
                 // API 응답 구조에 맞게 데이터 추출
                 const keywordsData = data.keywords || [];
                 
-                // 각 키워드의 관련 종목들에 대해 실제 주식 데이터 가져오기
+                // 각 키워드의 관련 종목들에 대해 실제 주식 데이터 가져오기 (배치 처리)
                 const processedKeywords = await Promise.all(
                     keywordsData.map(async (keyword, index) => {
                         console.log(`Processing keyword: ${keyword.keyword}`, keyword.tickers);
                         
                         const tickers = keyword.tickers || [];
                         
-                        // 각 티커에 대해 실제 주식 데이터 가져오기 (최대 5개만)
-                        const tickersWithPrices = await Promise.all(
-                            tickers.slice(0, 5).map(async (tickerInfo) => {
+                        // 각 티커에 대해 실제 주식 데이터 가져오기 (최대 3개만, 더 빠른 로딩)
+                        const tickersWithPrices = await Promise.allSettled(
+                            tickers.slice(0, 3).map(async (tickerInfo) => {
                                 // tickerInfo가 객체인지 확인하고 ticker 추출
                                 const ticker = typeof tickerInfo === 'object' ? tickerInfo.ticker : tickerInfo;
                                 
@@ -106,8 +106,10 @@ const KeywordCardGrid = ({ selectedPeriod, onSelectKeyword, search = '' }) => {
                             })
                         );
 
-                        // null 값 제거
-                        const validTickers = tickersWithPrices.filter(ticker => ticker !== null);
+                        // 성공한 결과만 추출하고 null 값 제거
+                        const validTickers = tickersWithPrices
+                            .filter(result => result.status === 'fulfilled' && result.value !== null)
+                            .map(result => result.value);
 
                         return {
                             ...keyword,
@@ -148,25 +150,105 @@ const KeywordCardGrid = ({ selectedPeriod, onSelectKeyword, search = '' }) => {
     // 로딩 상태
     if (loading) {
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                {[...Array(6)].map((_, i) => (
-                    <div key={i} className="bg-white rounded-xl shadow-sm border p-6 animate-pulse">
-                        <div className="h-4 bg-gray-200 rounded mb-4"></div>
-                        <div className="h-6 bg-gray-200 rounded mb-4"></div>
-                        <div className="space-y-2">
-                            <div className="h-3 bg-gray-200 rounded"></div>
-                            <div className="h-3 bg-gray-200 rounded"></div>
-                            <div className="h-2 bg-gray-200 rounded"></div>
+            <div className="mb-8">
+                <div className="bg-gradient-to-br from-purple-50 via-white to-blue-50 rounded-xl shadow-lg border p-8 mb-6 relative overflow-hidden">
+                    {/* 배경 애니메이션 */}
+                    <div className="absolute inset-0 opacity-20">
+                        <div className="absolute top-8 right-8 w-16 h-16 bg-purple-400 rounded-full animate-pulse"></div>
+                        <div className="absolute bottom-8 left-8 w-12 h-12 bg-blue-400 rounded-full animate-pulse delay-500"></div>
+                    </div>
+
+                    {/* 로딩 헤더 */}
+                    <div className="relative z-10 text-center mb-6">
+                        <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-r from-purple-500 to-blue-600 rounded-full mb-4 animate-bounce">
+                            <Hash className="w-7 h-7 text-white" />
                         </div>
-                        <div className="mt-4 space-y-2">
-                            <div className="h-3 bg-gray-200 rounded"></div>
-                            <div className="h-3 bg-gray-200 rounded"></div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                            🔍 키워드 분석 중...
+                        </h3>
+                        <p className="text-gray-600">
+                            인기 키워드와 관련 종목 데이터를 수집하고 있습니다
+                        </p>
+                    </div>
+
+                    {/* 진행 단계 */}
+                    <div className="relative z-10 flex justify-center space-x-6 mb-6">
+                        <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                            <span className="text-sm text-gray-700">키워드 수집</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse delay-300"></div>
+                            <span className="text-sm text-gray-700">종목 매칭</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse delay-700"></div>
+                            <span className="text-sm text-gray-700">실시간 데이터</span>
                         </div>
                     </div>
-                ))}
-                <div className="col-span-full text-center text-sm text-gray-500">
-                    키워드별 실제 주식 데이터를 불러오는 중입니다...
+
+                    <div className="relative z-10 text-center text-sm text-gray-500">
+                        💡 {selectedPeriod}일 기간의 인기 키워드를 분석하고 있습니다
+                    </div>
                 </div>
+
+                {/* 스켈레톤 카드들 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(6)].map((_, i) => (
+                        <div 
+                            key={i} 
+                            className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border p-6 animate-pulse hover:shadow-md transition-all duration-300"
+                            style={{
+                                animationDelay: `${i * 150}ms`,
+                                animation: 'fadeInUp 0.8s ease-out forwards'
+                            }}
+                        >
+                            <div className="space-y-4">
+                                {/* 헤더 */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full w-12 animate-pulse"></div>
+                                        <div className="h-8 w-8 bg-gradient-to-r from-blue-200 to-blue-300 rounded-lg animate-pulse delay-200"></div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="h-3 bg-gray-200 rounded w-8 mb-1 animate-pulse delay-300"></div>
+                                        <div className="h-4 bg-gradient-to-r from-green-200 to-green-300 rounded w-10 animate-pulse delay-500"></div>
+                                    </div>
+                                </div>
+                                
+                                {/* 키워드명 */}
+                                <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 rounded w-3/4 animate-pulse delay-400"></div>
+                                
+                                {/* 통계 */}
+                                <div className="flex gap-4">
+                                    <div className="h-4 bg-gradient-to-r from-purple-200 to-purple-300 rounded w-16 animate-pulse delay-600"></div>
+                                    <div className="h-4 bg-gradient-to-r from-blue-200 to-blue-300 rounded w-12 animate-pulse delay-800"></div>
+                                </div>
+                                
+                                {/* 종목 정보 */}
+                                <div className="space-y-2">
+                                    <div className="h-3 bg-gray-200 rounded w-full animate-pulse delay-1000"></div>
+                                    <div className="h-3 bg-gray-200 rounded w-5/6 animate-pulse delay-1200"></div>
+                                    <div className="h-2 bg-gradient-to-r from-blue-200 to-blue-400 rounded w-full animate-pulse delay-1400"></div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* CSS 애니메이션 */}
+                <style jsx>{`
+                    @keyframes fadeInUp {
+                        from {
+                            opacity: 0;
+                            transform: translateY(20px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+                `}</style>
             </div>
         );
     }

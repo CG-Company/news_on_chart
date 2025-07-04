@@ -528,7 +528,7 @@ const SearchBar = ({ ticker, setTicker }) => {
               <div className="text-xs text-gray-600 space-y-1">
                 <div>• 정확한 종목명을 입력해보세요</div>
                 <div>• 6자리 종목 코드로 검색해보세요</div>
-                <div>• 예: "삼성전자" 또는 "005930"</div>
+                <div>• 예: &quot;삼성전자&quot; 또는 &quot;005930&quot;</div>
               </div>
             </div>
           </div>

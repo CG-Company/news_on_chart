@@ -625,9 +625,9 @@ const StockKeywordAnalysis = ({ onClose, selectedStock }) => {
           {!analysisResults && (
             <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
               <div className="font-medium mb-1">사용법:</div>
-              <div>1. 분석할 키워드(예: "환율", "금리")를 입력</div>
+              <div>1. 분석할 키워드(예: &quot;환율&quot;, &quot;금리&quot;)를 입력</div>
               <div>2. 분석 기간을 선택 (7일, 30일, 90일)</div>
-              <div>3. "분석" 버튼을 클릭하여 상관관계 및 영향도 확인</div>
+                              <div>3. &quot;분석&quot; 버튼을 클릭하여 상관관계 및 영향도 확인</div>
               <div>4. 차트와 상세 데이터로 키워드와 주가의 관계 분석</div>
             </div>
           )}
