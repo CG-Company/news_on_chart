@@ -1,38 +1,324 @@
-import React from "react";
+// components/NewsPanel.js (업데이트됨)
+import React, { useState, useMemo, useEffect } from "react";
+import { fetchMacroNews } from "../utils/api";
 
-const NewsPanel = ({ date, news }) => {
+const PAGE_SIZE = 5;
+
+const TABS = [
+  { key: 'company', label: '기업뉴스' },
+  { key: 'macro', label: '거시경제' },
+];
+
+const NewsPanel = ({ date, news, loading, mainNews }) => {
+  const [activeTab, setActiveTab] = useState('company');
+  const [page, setPage] = useState(1);
+  const [macroNewsList, setMacroNewsList] = useState([]);
+  const [macroLoading, setMacroLoading] = useState(false);
+  const [macroError, setMacroError] = useState(null);
+
+  // 거시경제 탭 선택 시 거시경제 뉴스 fetch
+  useEffect(() => {
+    if (activeTab === 'macro') {
+      setMacroLoading(true);
+      setMacroError(null);
+      fetchMacroNews()
+        .then((data) => {
+          setMacroNewsList(data);
+          setMacroLoading(false);
+        })
+        .catch((err) => {
+          setMacroError('거시경제 뉴스 로딩 실패');
+          setMacroNewsList([]);
+          setMacroLoading(false);
+        });
+    }
+  }, [activeTab]);
+
+  // 뉴스 아이템 컴포넌트
+  const NewsItem = ({ title, source, time, summary, sentiment, url }) => {
+    const handleClick = (e) => {
+      if (url) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    };
+
+    return (
+      <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 last:border-b-0">
+        <div className="flex items-start space-x-3">
+          {/* 뉴스 아이콘 */}
+          <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg
+              className="w-4 h-4 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+
+          {/* 뉴스 내용 */}
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-medium text-gray-900 line-clamp-2 leading-5">
+              {url ? (
+                <a
+                  href={url}
+                  onClick={handleClick}
+                  className="hover:underline cursor-pointer"
+                  title="새창에서 열기"
+                >
+                  {title}
+                </a>
+              ) : (
+                title
+              )}
+            </h4>
+            <div className="flex items-center space-x-2 mt-1">
+              {source && (
+                <span className="text-xs text-gray-500">{source}</span>
+              )}
+              {time && (
+                <>
+                  <span className="text-xs text-gray-400">•</span>
+                  <span className="text-xs text-gray-500">{time}</span>
+                </>
+              )}
+              {sentiment && (
+                <>
+                  <span className="text-xs text-gray-400">•</span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full ${
+                      sentiment === "positive"
+                        ? "bg-green-100 text-green-600"
+                        : sentiment === "negative"
+                        ? "bg-red-100 text-red-600"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {sentiment === "positive"
+                      ? "긍정"
+                      : sentiment === "negative"
+                      ? "부정"
+                      : "중립"}
+                  </span>
+                </>
+              )}
+            </div>
+            {summary && (
+              <p className="text-xs text-gray-600 mt-2 line-clamp-3 leading-4">
+                {summary}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 로딩 스켈레톤
+  const LoadingSkeleton = () => (
+    <div className="p-4 border-b border-gray-100">
+      <div className="flex items-start space-x-3">
+        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+        <div className="flex-1">
+          <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+          <div className="h-3 bg-gray-200 rounded animate-pulse w-3/4 mb-2"></div>
+          <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // 뉴스 데이터 파싱
+  let newsList = [];
+  if (Array.isArray(news)) {
+    newsList = news;
+  } else if (news && (news.companyNews || news.macroNews)) {
+    const companyNews = news.companyNews || [];
+    const macroNews = news.macroNews || [];
+
+    console.log("🔍 NewsPanel 뉴스 데이터:", { companyNews, macroNews });
+
+    // 뉴스 데이터가 객체인지 문자열인지 확인하여 처리
+    const processNews = (newsItem) => {
+      if (typeof newsItem === "string") {
+        return { title: newsItem, source: "Company News" };
+      } else if (typeof newsItem === "object" && newsItem.title) {
+        const processed = {
+          title: newsItem.title,
+          url: newsItem.url,
+          published_at: newsItem.published_at,
+          summary: newsItem.summary,
+          source: "Company News",
+        };
+        console.log("🔗 처리된 뉴스 (기업):", processed);
+        return processed;
+      }
+      return newsItem;
+    };
+
+    const processMacroNews = (newsItem) => {
+      if (typeof newsItem === "string") {
+        return { title: newsItem, source: "Economic News" };
+      } else if (typeof newsItem === "object" && newsItem.title) {
+        const processed = {
+          title: newsItem.title,
+          url: newsItem.url,
+          published_at: newsItem.published_at,
+          summary: newsItem.summary,
+          source: "Economic News",
+        };
+        console.log("🔗 처리된 뉴스 (거시):", processed);
+        return processed;
+      }
+      return newsItem;
+    };
+
+    newsList = [
+      ...companyNews.map(processNews),
+      ...macroNews.map(processMacroNews),
+    ];
+
+    console.log("📋 최종 뉴스 리스트:", newsList);
+  }
+
+  // 탭별 뉴스 데이터
+  const companyNewsList = newsList;
+  const filteredMacroNews = useMemo(() => {
+    if (!date) return macroNewsList;
+    return macroNewsList.filter((item) => item.published_at === date || item.date === date);
+  }, [macroNewsList, date]);
+  const newsListByTab = activeTab === 'company' ? companyNewsList : filteredMacroNews;
+  const totalPages = Math.ceil(newsListByTab.length / PAGE_SIZE);
+  const pagedNews = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return newsListByTab.slice(start, start + PAGE_SIZE);
+  }, [newsListByTab, page]);
+
+  // 페이지 이동
+  const goPrev = () => setPage((p) => Math.max(1, p - 1));
+  const goNext = () => setPage((p) => Math.min(totalPages, p + 1));
+
+  // 탭 변경 시 페이지 초기화
+  const handleTab = (tab) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 h-full">
-      <h3 className="text-lg font-bold mb-2">뉴스 상세</h3>
-      {date ? (
-        <>
-          <div className="mb-2 text-gray-600">날짜: {date}</div>
-          <div className="mb-3">
-            <b className="text-indigo-600">[기업 뉴스]</b>
-            {news.companyNews && news.companyNews.length > 0 ? (
-              <ul className="list-disc ml-5 mt-1">
-                {news.companyNews.map((n, i) => <li key={i}>{n}</li>)}
-              </ul>
-            ) : (
-              <div className="text-gray-400">해당일 기업 뉴스 없음</div>
+    <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-xl mx-auto">
+      {/* 탭 */}
+      <div className="flex border-b mb-4">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            className={`px-4 py-2 font-semibold text-sm border-b-2 transition-colors duration-150 ${
+              activeTab === tab.key
+                ? 'border-blue-500 text-blue-700'
+                : 'border-transparent text-gray-500 hover:text-blue-500'
+            }`}
+            onClick={() => handleTab(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 메인뉴스 강조 (기업 탭, mainNews 있을 때만, 첫 페이지에서만) */}
+      {activeTab === 'company' && mainNews && page === 1 && (
+        <div className="mb-4 p-4 bg-gradient-to-r from-blue-100 to-blue-50 rounded-lg border-2 border-blue-400 shadow flex items-start gap-3 relative">
+          <div className="w-8 h-8 flex items-center justify-center bg-blue-500 rounded-full text-white mr-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
+          </div>
+          <div className="flex-1">
+            <div className="text-blue-900 font-bold text-lg mb-1 flex items-center">
+              <span>메인뉴스</span>
+              <span className="ml-2 px-2 py-0.5 text-xs bg-blue-200 text-blue-800 rounded-full">주요</span>
+            </div>
+            <div className="text-base font-semibold text-blue-900 mb-1">{mainNews.title}</div>
+            {mainNews.summary && (
+              <div className="text-blue-700 text-sm mb-1">{mainNews.summary}</div>
+            )}
+            {mainNews.keyword && (
+              <div className="text-xs text-blue-500 mb-1">키워드: {mainNews.keyword}</div>
+            )}
+            {mainNews.url && (
+              <a
+                href={mainNews.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-500 underline hover:text-blue-700"
+              >
+                기사 바로가기
+              </a>
             )}
           </div>
-          <div>
-            <b className="text-indigo-600">[거시 뉴스]</b>
-            {news.macroNews && news.macroNews.length > 0 ? (
-              <ul className="list-disc ml-5 mt-1">
-                {news.macroNews.map((n, i) => <li key={i}>{n}</li>)}
-              </ul>
-            ) : (
-              <div className="text-gray-400">해당일 거시 뉴스 없음</div>
-            )}
-          </div>
-        </>
+        </div>
+      )}
+
+      {/* 뉴스 리스트 (mainNews와 중복 제거) */}
+      {activeTab === 'macro' && macroLoading ? (
+        <div className="py-8 text-center text-gray-400">거시경제 뉴스 로딩 중...</div>
+      ) : activeTab === 'macro' && macroError ? (
+        <div className="py-8 text-center text-red-400">{macroError}</div>
       ) : (
-        <div className="text-gray-400">오른쪽에서 날짜를 선택하거나, 차트에서 뉴스 더보기를 클릭하세요.</div>
+        <ul className="divide-y divide-gray-100 mb-4">
+          {pagedNews.length === 0 ? (
+            <li className="py-6 text-center text-gray-400">뉴스 없음</li>
+          ) : (
+            pagedNews
+              .filter(news => !(activeTab === 'company' && mainNews && page === 1 && news.title === mainNews.title))
+              .map((news, idx) => (
+                <li key={idx} className="py-3">
+                  <a
+                    href={news.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block hover:bg-gray-50 rounded px-2 py-1"
+                  >
+                    <div className="font-semibold text-gray-900 text-sm mb-1">{news.title}</div>
+                    {news.keyword && (
+                      <div className="text-xs text-orange-500 mb-1">{news.keyword}</div>
+                    )}
+                    <div className="text-xs text-gray-400">{news.published_at || news.date}</div>
+                  </a>
+                </li>
+              ))
+          )}
+        </ul>
+      )}
+
+      {/* 페이지네이션 */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2">
+          <button
+            onClick={goPrev}
+            disabled={page === 1}
+            className="px-2 py-1 text-sm rounded border border-gray-200 bg-gray-50 disabled:opacity-40"
+          >
+            &lt;
+          </button>
+          <span className="text-xs text-gray-600">
+            {page} / {totalPages}
+          </span>
+          <button
+            onClick={goNext}
+            disabled={page === totalPages}
+            className="px-2 py-1 text-sm rounded border border-gray-200 bg-gray-50 disabled:opacity-40"
+          >
+            &gt;
+          </button>
+        </div>
       )}
     </div>
   );
 };
 
-export default NewsPanel; 
+export default NewsPanel;
